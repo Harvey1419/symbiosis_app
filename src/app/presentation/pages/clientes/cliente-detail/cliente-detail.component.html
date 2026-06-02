@@ -1,0 +1,98 @@
+<div class="page">
+  <header class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Volver
+    </button>
+    <div class="header-content">
+      <h1>{{ clienteNombre() }}</h1>
+      <p class="subtitle">Facturas procesadas para este cliente</p>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <span class="spinner"></span>
+      <p>Cargando facturas...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <p>Error al cargar las facturas. Intenta de nuevo.</p>
+    </div>
+  } @else {
+    <div class="sync-bar">
+      <button class="btn-sync" (click)="syncSiigo()" [disabled]="syncing()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        @if (syncing()) {
+          Sincronizando...
+        } @else {
+          Sync Siigo
+        }
+      </button>
+    </div>
+
+    @if (facturas().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <p>No hay facturas para este cliente</p>
+        <span class="empty-hint">Sincroniza desde DIAN para obtener facturas</span>
+      </div>
+    } @else {
+      <div class="facturas-list">
+        @for (factura of facturas(); track factura.track_id) {
+          <div class="factura-card" [class]="getSemaphoreClass(factura)">
+            <div class="factura-header">
+              <div class="factura-main">
+                <span class="factura-vendor">{{ factura.vendor_name || 'Sin proveedor' }}</span>
+                <span class="factura-nro">{{ factura.factura_nro || 'N/A' }}</span>
+              </div>
+              <span class="status-badge" [class]="factura.status">{{ formatStatus(factura.status) }}</span>
+            </div>
+
+            <div class="factura-meta">
+              <div class="meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                {{ factura.fecha_emision ? (factura.fecha_emision | date:'dd MMM yyyy') : 'Sin fecha' }}
+              </div>
+              <div class="meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                {{ factura.total_pagar ? (factura.total_pagar | number:'1.0-0') : '0' }}
+              </div>
+              <div class="meta-item confianza" [class]="getSemaphoreClass(factura)">
+                <span class="confianza-dot"></span>
+                Confianza: {{ getConfianzaMin(factura) }}%
+              </div>
+            </div>
+
+            @if (factura.filas && factura.filas.length) {
+              <div class="factura-items">
+                <span class="items-count">{{ factura.filas.length }} items</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,75 @@
+<div class="login-page">
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="brand-logo">S</div>
+      <h1>symbiosis</h1>
+      <p>Automatización contable inteligente</p>
+    </div>
+    <div class="brand-features">
+      <div class="feature-item">
+        <span class="feature-check">✓</span>
+        <span>Descarga automática de facturas DIAN</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-check">✓</span>
+        <span>Clasificación con IA contextual</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-check">✓</span>
+        <span>Excel listo para importar a Siigo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-container">
+      <h2>Iniciar Sesión</h2>
+      <p class="form-subtitle">Accede a tu cuenta para continuar</p>
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label for="email">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            [(ngModel)]="credentials.email"
+            placeholder="tu@email.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            [(ngModel)]="credentials.password"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        @if (errorMsg()) {
+          <div class="error-message">
+            {{ errorMsg() }}
+          </div>
+        }
+
+        <button type="submit" class="submit-btn" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner"></span>
+            Cargando...
+          } @else {
+            Ingresar
+          }
+        </button>
+      </form>
+
+      <p class="form-footer">
+        ¿No tienes cuenta? <a routerLink="/auth/register">Regístrate</a>
+      </p>
+    </div>
+  </div>
+</div>

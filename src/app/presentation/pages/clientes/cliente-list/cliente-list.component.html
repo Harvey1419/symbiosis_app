@@ -1,0 +1,78 @@
+<div class="page">
+  <header class="page-header">
+    <div class="header-left">
+      <h1>Listado de Clientes</h1>
+      <p class="subtitle">Gestiona tu cartera de clientes y monitoriza su salud operativa.</p>
+    </div>
+    <button class="btn-add">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Agregar Empresa
+    </button>
+  </header>
+
+  <div class="content-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <span class="spinner"></span>
+        <p>Cargando firmas...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <p>Error al cargar las firmas. Intenta de nuevo.</p>
+      </div>
+    } @else {
+      <p-table [value]="firmas()" styleClass="firmas-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="col-cliente">Cliente</th>
+            <th class="col-nit">NIT / Identificacion</th>
+            <th class="col-servicio">Servicio Principal</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-acciones">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-firma>
+          <tr (click)="onIngresar(firma)" class="clickable-row">
+            <td class="col-cliente">
+              <div class="cliente-cell">
+                <div class="avatar" [class]="'color-' + (getInitials(firma.firma_user).charCodeAt(0) % 4)">
+                  {{ getInitials(firma.firma_user) }}
+                </div>
+                <div class="cliente-info">
+                  <span class="cliente-nombre">{{ firma.firma_user }}</span>
+                  <span class="cliente-nit">ID: {{ firma.firma_user.substring(0, 6).toUpperCase() }}-{{ firma.id }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="col-nit">
+              <span class="nit-text" [class.muted]="isNitMuted(firma.nit)">{{ firma.nit || 'N/A' }}</span>
+            </td>
+            <td class="col-servicio">
+              <span class="service-badge" [class]="firma.tipo_siigo">
+                {{ getTipoLabel(firma.tipo_siigo) }}
+              </span>
+            </td>
+            <td class="col-estado">
+              <span class="status-badge" [class]="getStatusClass(firma)">
+                {{ getStatusLabel(firma) }}
+              </span>
+            </td>
+            <td class="col-acciones" (click)="$event.stopPropagation()">
+              <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ firma.firma_user }}">
+                Ingresar
+              </button>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="empty-message">No hay firmas registradas</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </div>
+</div>

@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@analogjs/vitest-angular': patches/@analogjs__vitest-angular.patch

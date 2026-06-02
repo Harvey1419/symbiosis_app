@@ -1,0 +1,223 @@
+// ============================================================
+// Symbiosis Lab — Design System
+// Fuente de verdad: /symbiosis/Branding/Manual de marca -Symbiosis.pdf
+// Paleta: #032425 (primary) / #F1FF58 (yellow) / #416858 (secondary)
+//          #E5EAE6 (complement-1) / #F5F6F6 (complement-2)
+// Tipografia display: Poppins Bold | Cuerpo: Helvetica / Inter
+// ============================================================
+
+// -----------------------------------------------------------
+// Color & Brand Tokens
+// -----------------------------------------------------------
+:root {
+  // Paleta de marca
+  --color-primary: #032425;
+  --color-yellow: #f1ff58;
+  --color-secondary: #416858;
+  --color-complement-1: #e5eae6;
+  --color-complement-2: #f5f6f6;
+
+  // Estados
+  --color-error: #d92626;
+  --color-warning: #f1ff58;
+  --color-success: #416858;
+
+  // Superficies (modo claro como base — fondo crema neutro)
+  --background: var(--color-complement-2);
+  --surface: #ffffff;
+  --surface-muted: var(--color-complement-1);
+  --surface-inverse: var(--color-primary);
+
+  // Texto
+  --text-primary: var(--color-primary);
+  --text-muted: #4f6967;
+  --text-on-primary: var(--color-complement-2);
+  --text-on-yellow: var(--color-primary);
+
+  // Bordes y separadores
+  --border-subtle: rgba(3, 36, 37, 0.12);
+  --border-strong: rgba(3, 36, 37, 0.24);
+
+  // Tipografia
+  --font-display: 'Poppins', system-ui, sans-serif;
+  --font-body: 'Helvetica Neue', Helvetica, 'Inter', Arial, sans-serif;
+
+  // Espaciado base
+  --spacing-unit: 4px;
+
+  // Radios (manual de marca: esquinas suaves, no excesivamente redondeadas)
+  --radius-base: 4px;
+  --radius-card: 8px;
+  --radius-pill: 9999px;
+
+  // Tipografia auxiliar
+  --line-height-body: 1.4;
+  --line-height-tight: 1.15;
+
+  // Layout
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+}
+
+// -----------------------------------------------------------
+// Tipografia — escalas mixin (compatibilidad con componentes)
+// -----------------------------------------------------------
+@mixin headline-xl {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+@mixin headline-lg {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+}
+
+@mixin headline-md {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+}
+
+@mixin title-md {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+@mixin body-lg {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: var(--line-height-body);
+}
+
+@mixin body-md {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: var(--line-height-body);
+}
+
+@mixin label-md {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@mixin label-sm {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// -----------------------------------------------------------
+// Superficies y elevacion — mixin (compatibilidad)
+// -----------------------------------------------------------
+@mixin ghost-border {
+  border: 1px solid var(--border-subtle);
+}
+
+@mixin surface-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+
+@mixin surface-elevated {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: 0 2px 8px rgba(3, 36, 37, 0.06);
+}
+
+// -----------------------------------------------------------
+// Reset selectivo — no aplastamos margins de elementos
+// que necesitan ritmo vertical natural.
+// -----------------------------------------------------------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--background);
+  color: var(--text-primary);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+  transition: color 120ms ease;
+
+  &:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+// -----------------------------------------------------------
+// Scrollbar
+// -----------------------------------------------------------
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) var(--surface-muted);
+}
+
+// -----------------------------------------------------------
+// Focus visible — accesibilidad
+// -----------------------------------------------------------
+:focus-visible {
+  outline: 2px solid var(--color-yellow);
+  outline-offset: 2px;
+}

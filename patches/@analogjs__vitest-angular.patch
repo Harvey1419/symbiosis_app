@@ -1,0 +1,29 @@
+diff --git a/src/index.js b/src/index.js
+index 737dbaf89d7cdf674e8b0a54041e3c5480749dcd..500033c11db477839c877bc0153e0fe5f0d7cdba 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -1,4 +1,4 @@
+-import vitestBuilder from './lib/builders/test/vitest.impl';
+-import vitestApplicationBuilder from './lib/builders/build/vitest.impl';
++import vitestBuilder from './lib/builders/test/vitest.impl.js';
++import vitestApplicationBuilder from './lib/builders/build/vitest.impl.js';
+ export { vitestBuilder, vitestApplicationBuilder };
+ //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi8uLi9wYWNrYWdlcy92aXRlc3QtYW5ndWxhci9zcmMvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsT0FBTyxhQUFhLE1BQU0saUNBQWlDLENBQUM7QUFDNUQsT0FBTyx3QkFBd0IsTUFBTSxrQ0FBa0MsQ0FBQztBQUV4RSxPQUFPLEVBQUUsYUFBYSxFQUFFLHdCQUF3QixFQUFFLENBQUMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgdml0ZXN0QnVpbGRlciBmcm9tICcuL2xpYi9idWlsZGVycy90ZXN0L3ZpdGVzdC5pbXBsJztcbmltcG9ydCB2aXRlc3RBcHBsaWNhdGlvbkJ1aWxkZXIgZnJvbSAnLi9saWIvYnVpbGRlcnMvYnVpbGQvdml0ZXN0LmltcGwnO1xuXG5leHBvcnQgeyB2aXRlc3RCdWlsZGVyLCB2aXRlc3RBcHBsaWNhdGlvbkJ1aWxkZXIgfTtcbiJdfQ==
+\ No newline at end of file
+diff --git a/src/lib/builders/build/vitest.impl.js b/src/lib/builders/build/vitest.impl.js
+index 6599e8e1db4c4d94053c2179c0e82ad0ebbb940e..c3ca25378680add568f74afaefee7fd446c0b153 100644
+--- a/src/lib/builders/build/vitest.impl.js
++++ b/src/lib/builders/build/vitest.impl.js
+@@ -1,9 +1,9 @@
+ import { createBuilder } from '@angular-devkit/architect';
+ import * as path from 'path';
+ import { globSync } from 'tinyglobby';
+-import { createAngularMemoryPlugin } from './plugins/angular-memory-plugin';
+-import { esbuildDownlevelPlugin } from './plugins/esbuild-downlevel-plugin';
+-import { getBuildApplicationFunction } from './devkit';
++import { createAngularMemoryPlugin } from './plugins/angular-memory-plugin.js';
++import { esbuildDownlevelPlugin } from './plugins/esbuild-downlevel-plugin.js';
++import { getBuildApplicationFunction } from './devkit.js';
+ export var ResultKind;
+ (function (ResultKind) {
+     ResultKind[ResultKind["Failure"] = 0] = "Failure";
