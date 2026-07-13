@@ -1,11 +1,11 @@
 .page {
-  max-width: 1440px;
+  max-width: var(--container-max);
   margin: 0 auto;
   padding-top: 8px;
 }
 
 .page-header {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .loading-state,
@@ -21,9 +21,9 @@
 }
 
 .empty-state {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
 
   .empty-icon {
     color: var(--text-muted);
@@ -53,12 +53,12 @@
 }
 
 .factura-card {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
   padding: 16px 20px;
-  border-left: 4px solid var(--border-strong);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  border-left: 4px solid var(--surface-border);
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 200ms ease;
   display: block;
   color: inherit;
   text-decoration: none;
@@ -68,12 +68,12 @@
     transform: translateX(2px);
     box-shadow: var(--shadow-md);
     text-decoration: none;
+    background: var(--surface-card-hover);
   }
 
-  // Status-based left border (vibrante)
+  // Status-based left border (vibrante sobre dark)
   &.status-pendiente {
     border-left-color: var(--color-warning);
-    background: linear-gradient(to right, color-mix(in srgb, var(--color-warning) 4%, var(--surface)), var(--surface));
   }
 
   &.status-clasificando {
@@ -82,17 +82,14 @@
 
   &.status-causada {
     border-left-color: var(--color-success);
-    background: linear-gradient(to right, color-mix(in srgb, var(--color-success) 4%, var(--surface)), var(--surface));
   }
 
   &.status-finalizada {
-    border-left-color: var(--color-primary);
-    background: linear-gradient(to right, color-mix(in srgb, var(--color-primary) 4%, var(--surface)), var(--surface));
+    border-left-color: var(--color-yellow);
   }
 
   &.status-error {
     border-left-color: var(--color-error);
-    background: linear-gradient(to right, color-mix(in srgb, var(--color-error) 4%, var(--surface)), var(--surface));
   }
 }
 
@@ -111,32 +108,32 @@
 }
 
 .factura-vendor {
+  font-family: var(--font-display);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-strong);
   font-size: 15px;
   letter-spacing: -0.01em;
 }
 
 .factura-nro {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   letter-spacing: 0.02em;
 }
 
-// Status badges con colores vibrantes del branding
+// Status badges — dark-friendly with soft backgrounds
 .status-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  background: var(--surface-muted);
-  color: var(--text-muted);
 
   &.pendiente {
     background: var(--color-warning-soft);
@@ -149,8 +146,8 @@
   }
 
   &.finalizada {
-    background: color-mix(in srgb, var(--color-yellow) 35%, transparent);
-    color: var(--color-primary);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
   }
 
   &.error {
@@ -216,11 +213,11 @@
 .factura-items {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--surface-border);
 }
 
 .items-count {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;

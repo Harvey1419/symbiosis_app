@@ -1,27 +1,27 @@
 .cuenta-page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 
   .plan-card {
-    background: var(--surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-card);
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-xl);
     padding: 1.5rem;
     position: relative;
     overflow: hidden;
+    transition: background-color 200ms ease;
 
-    // Yellow accent bar
     &::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: var(--accent-bar-height);
+      height: 3px;
       background: var(--color-yellow);
     }
 
@@ -29,12 +29,13 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 1rem;
 
       h2 {
         margin: 0 0 0.5rem;
         font-family: var(--font-display);
         font-size: 1.5rem;
-        color: var(--text-primary);
+        color: var(--text-strong);
       }
 
       .plan-dates {
@@ -52,13 +53,18 @@
         display: flex;
         justify-content: space-between;
         margin-bottom: 0.75rem;
-        color: var(--text-primary);
+        color: var(--text-strong);
+        font-weight: 500;
       }
 
       .usage-period {
         display: block;
         margin-top: 0.5rem;
         color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
     }
   }
@@ -69,7 +75,7 @@
       margin: 0 0 1rem;
       font-family: var(--font-display);
       font-size: 1.25rem;
-      color: var(--text-primary);
+      color: var(--text-strong);
     }
   }
 
@@ -79,22 +85,23 @@
     gap: 1rem;
 
     .plan-tile {
-      background: var(--surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-card);
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-xl);
       padding: 1.25rem;
+      transition: background-color 200ms ease, border-color 200ms ease;
 
       h4 {
         margin: 0 0 0.5rem;
         font-family: var(--font-display);
         font-size: 1.125rem;
-        color: var(--text-primary);
+        color: var(--text-strong);
       }
 
       .plan-price {
         font-size: 1.5rem;
         font-weight: 600;
-        color: var(--color-primary);
+        color: var(--color-yellow);
         margin: 0.5rem 0;
       }
 

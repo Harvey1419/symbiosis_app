@@ -4,11 +4,12 @@ import { TokenService } from '@core/token.service';
 import { Router } from '@angular/router';
 import { SidebarService } from '@core/sidebar.service';
 import { ButtonModule } from 'primeng/button';
+import { ThemeToggleButtonComponent } from '@app/shared/theme-toggle/theme-toggle.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, ButtonModule],
+  imports: [RouterLink, RouterLinkActive, ButtonModule, ThemeToggleButtonComponent],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })

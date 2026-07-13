@@ -3,13 +3,14 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem 1.75rem;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
   position: relative;
   overflow: hidden;
+  transition: background-color 200ms ease, border-color 200ms ease;
 
   // Yellow accent bar on top — brand detail
   &::before {
@@ -18,23 +19,24 @@
     top: 0;
     left: 0;
     right: 0;
-    height: var(--accent-bar-height);
+    height: 3px;
     background: var(--color-yellow);
   }
 
   .header-content {
     h1 {
       margin: 0;
-      font-size: 2rem;
+      font-family: var(--font-display);
+      font-size: 1.75rem;
       font-weight: 700;
-      color: var(--color-primary);
       letter-spacing: -0.01em;
+      color: var(--text-strong);
     }
 
     .subtitle {
-      margin: 0.5rem 0 0;
+      margin: 0.4rem 0 0;
       color: var(--text-muted);
-      font-size: 0.95rem;
+      font-size: 0.875rem;
     }
   }
 

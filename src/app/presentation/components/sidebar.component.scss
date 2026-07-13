@@ -12,12 +12,12 @@
   color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border-inverse);
-  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid var(--sidebar-border);
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1), background 200ms ease;
   overflow: hidden;
   position: relative;
 
-  // Yellow accent stripe on the right edge
+  // Yellow accent stripe on the right edge (brand detail)
   &::after {
     content: '';
     position: absolute;
@@ -50,9 +50,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 1.25rem;
-  border-bottom: 1px solid var(--border-inverse);
-  min-height: 72px;
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid var(--sidebar-border);
+  min-height: var(--topbar-height);
 }
 
 .sidebar-logo {
@@ -62,22 +62,23 @@
   overflow: hidden;
 
   .logo-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
     background: var(--color-yellow);
     color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 1.25rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-family: var(--font-display);
     flex-shrink: 0;
   }
 
   .logo-text {
     font-family: var(--font-display);
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--sidebar-text);
     white-space: nowrap;
@@ -88,11 +89,11 @@
 
 .collapse-btn {
   background: transparent;
-  border: 1px solid var(--border-inverse);
+  border: 1px solid var(--sidebar-border);
   color: var(--sidebar-text-muted);
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,7 +104,7 @@
   &:hover {
     background: var(--sidebar-bg-hover);
     color: var(--sidebar-text);
-    border-color: var(--sidebar-accent);
+    border-color: var(--color-yellow);
   }
 }
 
@@ -120,10 +121,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-md);
   color: var(--sidebar-text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
@@ -131,6 +132,7 @@
   white-space: nowrap;
   overflow: hidden;
   position: relative;
+  font-family: var(--font-body);
 
   svg {
     flex-shrink: 0;
@@ -149,11 +151,10 @@
   }
 
   &.active {
-    background: rgba(241, 255, 88, 0.12);
+    background: var(--surface-active);
     color: var(--sidebar-text-active);
     font-weight: 600;
 
-    // Yellow left bar on active
     &::before {
       content: '';
       position: absolute;
@@ -167,21 +168,36 @@
   }
 
   &.logout-btn {
-    color: #fca5a5;
+    color: var(--color-error);
 
     &:hover {
-      background: rgba(220, 38, 38, 0.15);
-      color: #fecaca;
+      background: var(--color-error-soft);
+      color: var(--color-error);
     }
   }
 }
 
 .sidebar-bottom {
   padding: 1rem 0.75rem;
-  border-top: 1px solid var(--border-inverse);
+  border-top: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  app-theme-toggle {
+    flex-shrink: 0;
+  }
+
+  .logout-btn {
+    flex: 1;
+    margin: 0;
+  }
 }
 
 .user-info {
@@ -189,8 +205,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
   overflow: hidden;
 
   .user-avatar {

@@ -1,200 +1,218 @@
 // ============================================================
 // Symbiosis Lab — Design System
-// Fuente de verdad: /symbiosis/Branding/Manual de marca -Symbiosis.pdf
-// Paleta: #032425 (primary) / #F1FF58 (yellow) / #416858 (secondary)
-//          #E5EAE6 (complement-1) / #F5F6F6 (complement-2)
-// Tipografia display: Poppins Bold | Cuerpo: Helvetica / Inter
+// Source: Stitch project "Symbiosis Data Management Tool"
+//         (Luminous Dark Management style guide)
+// Primary palette: #032425 / #F1FF58 / #416858 / #E5EAE6 / #F5F6F6
+// Typography: Hanken Grotesk (display + body) | JetBrains Mono (labels)
 // ============================================================
 
-// PrimeIcons (PR-0 platform-web-mvp)
+// PrimeIcons
 @import "primeicons/primeicons.css";
 
 // -----------------------------------------------------------
-// Color & Brand Tokens
+// Color & Brand Tokens (Light mode — dark mode applied via .app-dark)
 // -----------------------------------------------------------
 :root {
-  // Paleta de marca
-  --color-primary: #032425;
+  // === Brand palette ===
+  --color-primary: #032425;            // Symbiosis deep teal-green
   --color-primary-soft: #0a3a3c;
   --color-primary-strong: #021a1b;
-  --color-yellow: #f1ff58;
+  --color-yellow: #f1ff58;             // Brand accent
   --color-yellow-soft: #f5ff8a;
   --color-yellow-strong: #d4e234;
-  --color-secondary: #416858;
+  --color-yellow-container: #dfec47;   // Alt accent from Stitch
+  --color-secondary: #416858;          // Forest green
   --color-secondary-soft: #5a8274;
   --color-complement-1: #e5eae6;
   --color-complement-2: #f5f6f6;
 
-  // Estados (vibrantes para alta legibilidad sobre light bg)
-  --color-error: #dc2626;
-  --color-error-soft: #fef2f2;
-  --color-warning: #d97706;
-  --color-warning-soft: #fef3c7;
-  --color-success: #059669;
-  --color-success-soft: #d1fae5;
-  --color-info: #0284c7;
-  --color-info-soft: #e0f2fe;
+  // === Surfaces (Luminous Dark Management) ===
+  --surface-base: #001717;             // Level 0 — canvas
+  --surface: #032425;                 // Sidebar / main bg
+  --surface-elevated: #0a2f30;         // Level 1 — cards, sidebar items
+  --surface-higher: #143a3b;          // Level 2 — modals, popovers
+  --surface-border: #1a3d3e;
+  --surface-divider: rgba(200, 233, 233, 0.08);
+  --surface-hover: rgba(200, 233, 233, 0.06);
+  --surface-active: rgba(241, 255, 88, 0.08);
 
-  // Superficies (modo claro como base — fondo crema neutro)
-  --background: #fafbf8;
-  --surface: #ffffff;
-  --surface-muted: #f1f3ee;
-  --surface-strong: #e5eae6;
-  --surface-inverse: var(--color-primary);
-  --surface-yellow: var(--color-yellow);
+  // === Text (Stitch on-surface mint) ===
+  --text-primary: #c8e9e9;
+  --text-vibrant: #f1ff58;
+  --text-muted: #8a9f96;
+  --text-on-yellow: #032425;
+  --text-on-primary: #2f3300;
+  --text-on-error: #ffdad6;
+  --text-strong: #f5f6f6;
 
-  // Sidebar (dark, brand-aligned)
-  --sidebar-bg: var(--color-primary);
-  --sidebar-bg-hover: var(--color-primary-soft);
-  --sidebar-text: #e5eae6;
-  --sidebar-text-muted: #9fb3b1;
-  --sidebar-text-active: var(--color-yellow);
-  --sidebar-border: rgba(241, 255, 88, 0.18);
-  --sidebar-accent: var(--color-yellow);
+  // === Borders / outlines ===
+  --border-subtle: rgba(200, 233, 233, 0.12);
+  --border-strong: rgba(200, 233, 233, 0.24);
+  --outline: #92927b;
+  --outline-variant: #474835;
 
-  // Texto
-  --text-primary: var(--color-primary);
-  --text-muted: #4f6967;
-  --text-on-primary: #ffffff;
-  --text-on-yellow: var(--color-primary);
-  --text-on-inverse: var(--color-complement-2);
+  // === States ===
+  --color-success: #a6d0bc;            // Secondary from Stitch
+  --color-success-soft: rgba(166, 208, 188, 0.18);
+  --color-warning: #f1ff58;            // Yellow acts as warning
+  --color-warning-soft: rgba(241, 255, 88, 0.18);
+  --color-error: #ffb4ab;
+  --color-error-soft: rgba(255, 180, 171, 0.18);
+  --color-info: #c8e9e9;
+  --color-info-soft: rgba(200, 233, 233, 0.18);
 
-  // Bordes y separadores
-  --border-subtle: rgba(3, 36, 37, 0.12);
-  --border-strong: rgba(3, 36, 37, 0.24);
-  --border-inverse: rgba(255, 255, 255, 0.12);
-
-  // Accent bar (page-header, sidebar)
-  --accent-bar-height: 4px;
-
-  // Status border (cards de facturas)
+  // === Status borders (cards de facturas) ===
   --status-border-pendiente: var(--color-warning);
   --status-border-clasificando: var(--color-info);
   --status-border-causada: var(--color-success);
-  --status-border-finalizada: var(--color-primary);
+  --status-border-finalizada: var(--color-yellow);
   --status-border-error: var(--color-error);
 
-  // Tipografia
-  --font-display: 'Poppins', system-ui, sans-serif;
-  --font-body: 'Helvetica Neue', Helvetica, 'Inter', Arial, sans-serif;
+  // === Typography ===
+  --font-display: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  // Espaciado base
+  // === Spacing (4px base grid) ===
   --spacing-unit: 4px;
+  --spacing-gutter: 16px;
+  --spacing-page-margin: 24px;
+  --container-max: 1440px;
 
-  // Radios (manual de marca: esquinas suaves, no excesivamente redondeadas)
+  // === Radios (Soft 0.25rem from Stitch) ===
+  --radius-sm: 2px;
   --radius-base: 4px;
-  --radius-card: 8px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-pill: 9999px;
 
-  // Tipografia auxiliar
-  --line-height-body: 1.4;
-  --line-height-tight: 1.15;
-
-  // Layout
+  // === Layout ===
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
+  --topbar-height: 64px;
 
-  // Shadows
-  --shadow-sm: 0 1px 2px rgba(3, 36, 37, 0.06);
-  --shadow-md: 0 4px 12px rgba(3, 36, 37, 0.10);
-  --shadow-lg: 0 10px 25px rgba(3, 36, 37, 0.12);
-  --shadow-yellow-glow: 0 0 0 3px rgba(241, 255, 88, 0.45);
+  // === Shadows (subtle, dark-tinted) ===
+  --shadow-sm: 0 1px 2px rgba(1, 18, 18, 0.5);
+  --shadow-md: 0 4px 12px rgba(1, 18, 18, 0.6);
+  --shadow-lg: 0 10px 25px rgba(1, 18, 18, 0.7);
+  --shadow-yellow-glow: 0 0 0 3px rgba(241, 255, 88, 0.35);
+
+  // === Sidebar tokens ===
+  --sidebar-bg: var(--color-primary);
+  --sidebar-bg-hover: #0a3a3c;
+  --sidebar-text: #c8e9e9;
+  --sidebar-text-muted: #6f8580;
+  --sidebar-text-active: var(--color-yellow);
+  --sidebar-accent: var(--color-yellow);
+  --sidebar-border: rgba(200, 233, 233, 0.08);
 }
 
 // -----------------------------------------------------------
-// Tipografia — escalas mixin (compatibilidad con componentes)
+// Dark mode overrides (.app-dark) — DEFAULT
+// -----------------------------------------------------------
+:root,
+:root.app-dark {
+  --background: var(--surface-base);
+  --surface-card: var(--surface-elevated);
+  --surface-card-hover: #143a3b;
+  --surface-input: #0a2f30;
+}
+
+// Light mode override (when user toggles theme)
+:root.app-light {
+  --background: #f5f6f6;
+  --surface-card: #ffffff;
+  --surface-card-hover: #fafbf8;
+  --surface-input: #ffffff;
+  --text-primary: #032425;
+  --text-vibrant: #f1ff58;
+  --text-muted: #4f6967;
+  --text-strong: #032425;
+  --border-subtle: rgba(3, 36, 37, 0.12);
+  --border-strong: rgba(3, 36, 37, 0.24);
+  --surface-border: #e5eae6;
+  --sidebar-bg: #ffffff;
+  --sidebar-bg-hover: #f5f6f6;
+  --sidebar-text: #032425;
+  --sidebar-text-muted: #4f6967;
+  --sidebar-text-active: #032425;
+  --sidebar-accent: #f1ff58;
+  --sidebar-border: #e5eae6;
+}
+
+// -----------------------------------------------------------
+// Typography mixins
 // -----------------------------------------------------------
 @mixin headline-xl {
   font-family: var(--font-display);
-  font-size: 44px;
+  font-size: 48px;
   font-weight: 700;
-  line-height: var(--line-height-tight);
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
 }
 
 @mixin headline-lg {
   font-family: var(--font-display);
   font-size: 32px;
-  font-weight: 700;
-  line-height: var(--line-height-tight);
-  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-strong);
 }
 
 @mixin headline-md {
   font-family: var(--font-display);
   font-size: 24px;
   font-weight: 600;
-  line-height: var(--line-height-tight);
-  color: var(--text-primary);
+  line-height: 32px;
+  color: var(--text-strong);
 }
 
 @mixin title-md {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 1.25;
-  color: var(--text-primary);
+  line-height: 28px;
+  color: var(--text-strong);
 }
 
 @mixin body-lg {
   font-family: var(--font-body);
   font-size: 16px;
   font-weight: 400;
-  line-height: var(--line-height-body);
+  line-height: 24px;
 }
 
 @mixin body-md {
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 400;
-  line-height: var(--line-height-body);
+  line-height: 20px;
 }
 
 @mixin label-md {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 @mixin label-sm {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-weight: 500;
+  line-height: 14px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 // -----------------------------------------------------------
-// Superficies y elevacion — mixin (compatibilidad)
-// -----------------------------------------------------------
-@mixin ghost-border {
-  border: 1px solid var(--border-subtle);
-}
-
-@mixin surface-card {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-}
-
-@mixin surface-elevated {
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-md);
-}
-
-@mixin status-border-left($color) {
-  border-left: 4px solid $color;
-}
-
-// -----------------------------------------------------------
-// Reset selectivo
+// Reset
 // -----------------------------------------------------------
 *,
 *::before,
@@ -206,6 +224,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 html {
@@ -216,18 +235,19 @@ body {
   font-family: var(--font-body);
   background: var(--background);
   color: var(--text-primary);
-  line-height: var(--line-height-body);
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 a {
-  color: var(--color-secondary);
+  color: var(--color-yellow);
   text-decoration: none;
   transition: color 120ms ease;
 
   &:hover {
-    color: var(--color-primary);
+    color: var(--color-yellow-soft);
     text-decoration: underline;
   }
 }
@@ -246,17 +266,21 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface-muted);
+  background: var(--surface-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--surface-border);
   border-radius: var(--radius-pill);
+
+  &:hover {
+    background: var(--outline-variant);
+  }
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) var(--surface-muted);
+  scrollbar-color: var(--surface-border) var(--surface-base);
 }
 
 // -----------------------------------------------------------
