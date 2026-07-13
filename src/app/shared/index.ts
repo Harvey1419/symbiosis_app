@@ -6,3 +6,4 @@ export * from './stat-card/stat-card.component';
 export * from './status-badge/status-badge.component';
 export * from './confirm-dialog/confirm.service';
 export * from './theme-toggle/theme-toggle.component';
+export * from './sync-banner/sync-banner.component';

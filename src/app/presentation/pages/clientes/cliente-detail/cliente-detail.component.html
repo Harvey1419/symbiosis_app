@@ -22,9 +22,15 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
-    <div class="sync-bar">
-      <app-sync-button [nit]="nit()" (synced)="onSynced()" />
-    </div>
+    <app-sync-banner
+      title="Sincronizar con Siigo Nube"
+      subtitle="Actualiza las facturas de este cliente en Symbiosis."
+      [lastSync]="lastSync()"
+      statusMessage="Catálogos listos para clasificar"
+      [catalogs]="catalogosSiigo()"
+      [loading]="syncLoading()"
+      (sync)="onSync()"
+    />
 
     @if (facturas().length === 0) {
       <div class="empty-state">
