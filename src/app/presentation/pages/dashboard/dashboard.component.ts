@@ -4,11 +4,12 @@ import { TokenService } from '@core/token.service';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
 import { FacturaRepository } from '@data/repositories/factura.repository';
 import { CommonModule } from '@angular/common';
+import { PageHeaderComponent, StatCardComponent, LoadingStateComponent } from '@app/shared';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, PageHeaderComponent, StatCardComponent, LoadingStateComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

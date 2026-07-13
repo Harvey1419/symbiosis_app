@@ -1,0 +1,28 @@
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+  border-radius: var(--radius-card);
+  color: var(--color-error);
+
+  .error-message {
+    flex: 1;
+    font-size: 0.875rem;
+  }
+
+  .dismiss-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: var(--color-error);
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}

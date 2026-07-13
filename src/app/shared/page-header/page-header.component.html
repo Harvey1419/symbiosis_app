@@ -1,0 +1,13 @@
+<header class="page-header">
+  <div class="header-content">
+    <h1>{{ title() }}</h1>
+    @if (subtitle()) {
+      <p class="subtitle">{{ subtitle() }}</p>
+    }
+  </div>
+  @if (actionRef(); as ref) {
+    <div class="header-actions">
+      <ng-container [ngTemplateOutlet]="ref"></ng-container>
+    </div>
+  }
+</header>

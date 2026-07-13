@@ -1,0 +1,9 @@
+<div class="error-banner" role="alert">
+  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+  <span class="error-message">{{ message() }}</span>
+  @if (dismissible()) {
+    <button class="dismiss-btn" (click)="dismissed.emit()" aria-label="Cerrar">
+      <i class="pi pi-times"></i>
+    </button>
+  }
+</div>

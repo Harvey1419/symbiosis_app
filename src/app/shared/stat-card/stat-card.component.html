@@ -1,0 +1,9 @@
+<div class="stat-card" [attr.data-variant]="variant()">
+  <div class="stat-icon">
+    <i [class]="iconClass()" aria-hidden="true"></i>
+  </div>
+  <div class="stat-content">
+    <span class="stat-value">{{ value() }}</span>
+    <span class="stat-label">{{ label() }}</span>
+  </div>
+</div>

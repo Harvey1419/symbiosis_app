@@ -1,17 +1,26 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { DividerModule } from 'primeng/divider';
 import { forkJoin } from 'rxjs';
 import { SuscripcionRepository } from '@data/repositories/suscripcion.repository';
 import { SuscripcionMe, UsageRow, Plan } from '@domain/models/suscripcion.model';
+import { PageHeaderComponent, LoadingStateComponent, ErrorBannerComponent, StatusBadgeComponent } from '@app/shared';
 
 @Component({
   selector: 'app-cuenta',
   standalone: true,
-  imports: [CommonModule, ProgressBarModule, TagModule, TableModule, DividerModule],
+  imports: [
+    CommonModule,
+    ProgressBarModule,
+    TableModule,
+    DividerModule,
+    PageHeaderComponent,
+    LoadingStateComponent,
+    ErrorBannerComponent,
+    StatusBadgeComponent,
+  ],
   templateUrl: './cuenta.component.html',
   styleUrl: './cuenta.component.scss',
 })
@@ -28,14 +37,6 @@ export class CuentaComponent implements OnInit {
     const m = this.me();
     if (!m || m.limite === 0) return 0;
     return Math.min(100, Math.round((m.used / m.limite) * 100));
-  });
-
-  readonly estadoSeverity = computed<'success' | 'info' | 'warn' | 'danger'>(() => {
-    const e = this.me()?.estado;
-    if (e === 'active') return 'success';
-    if (e === 'trialing') return 'info';
-    if (e === 'past_due') return 'warn';
-    return 'danger';
   });
 
   ngOnInit(): void {
