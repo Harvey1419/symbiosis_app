@@ -4,20 +4,37 @@
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 2rem;
+  padding: 1.5rem 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+
+  // Yellow accent bar on top — brand detail
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--accent-bar-height);
+    background: var(--color-yellow);
+  }
 
   .header-content {
     h1 {
       margin: 0;
-      font-family: var(--font-display);
       font-size: 2rem;
-      font-weight: 600;
-      color: var(--text-primary);
+      font-weight: 700;
+      color: var(--color-primary);
+      letter-spacing: -0.01em;
     }
 
     .subtitle {
       margin: 0.5rem 0 0;
       color: var(--text-muted);
-      font-size: 0.9375rem;
+      font-size: 0.95rem;
     }
   }
 

@@ -11,6 +11,19 @@
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-card);
     padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+
+    // Yellow accent bar
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--accent-bar-height);
+      background: var(--color-yellow);
+    }
 
     .plan-header {
       display: flex;

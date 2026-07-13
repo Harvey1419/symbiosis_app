@@ -15,31 +15,64 @@
 :root {
   // Paleta de marca
   --color-primary: #032425;
+  --color-primary-soft: #0a3a3c;
+  --color-primary-strong: #021a1b;
   --color-yellow: #f1ff58;
+  --color-yellow-soft: #f5ff8a;
+  --color-yellow-strong: #d4e234;
   --color-secondary: #416858;
+  --color-secondary-soft: #5a8274;
   --color-complement-1: #e5eae6;
   --color-complement-2: #f5f6f6;
 
-  // Estados
-  --color-error: #d92626;
-  --color-warning: #f1ff58;
-  --color-success: #416858;
+  // Estados (vibrantes para alta legibilidad sobre light bg)
+  --color-error: #dc2626;
+  --color-error-soft: #fef2f2;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-success: #059669;
+  --color-success-soft: #d1fae5;
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
 
   // Superficies (modo claro como base — fondo crema neutro)
-  --background: var(--color-complement-2);
+  --background: #fafbf8;
   --surface: #ffffff;
-  --surface-muted: var(--color-complement-1);
+  --surface-muted: #f1f3ee;
+  --surface-strong: #e5eae6;
   --surface-inverse: var(--color-primary);
+  --surface-yellow: var(--color-yellow);
+
+  // Sidebar (dark, brand-aligned)
+  --sidebar-bg: var(--color-primary);
+  --sidebar-bg-hover: var(--color-primary-soft);
+  --sidebar-text: #e5eae6;
+  --sidebar-text-muted: #9fb3b1;
+  --sidebar-text-active: var(--color-yellow);
+  --sidebar-border: rgba(241, 255, 88, 0.18);
+  --sidebar-accent: var(--color-yellow);
 
   // Texto
   --text-primary: var(--color-primary);
   --text-muted: #4f6967;
-  --text-on-primary: var(--color-complement-2);
+  --text-on-primary: #ffffff;
   --text-on-yellow: var(--color-primary);
+  --text-on-inverse: var(--color-complement-2);
 
   // Bordes y separadores
   --border-subtle: rgba(3, 36, 37, 0.12);
   --border-strong: rgba(3, 36, 37, 0.24);
+  --border-inverse: rgba(255, 255, 255, 0.12);
+
+  // Accent bar (page-header, sidebar)
+  --accent-bar-height: 4px;
+
+  // Status border (cards de facturas)
+  --status-border-pendiente: var(--color-warning);
+  --status-border-clasificando: var(--color-info);
+  --status-border-causada: var(--color-success);
+  --status-border-finalizada: var(--color-primary);
+  --status-border-error: var(--color-error);
 
   // Tipografia
   --font-display: 'Poppins', system-ui, sans-serif;
@@ -60,6 +93,12 @@
   // Layout
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
+
+  // Shadows
+  --shadow-sm: 0 1px 2px rgba(3, 36, 37, 0.06);
+  --shadow-md: 0 4px 12px rgba(3, 36, 37, 0.10);
+  --shadow-lg: 0 10px 25px rgba(3, 36, 37, 0.12);
+  --shadow-yellow-glow: 0 0 0 3px rgba(241, 255, 88, 0.45);
 }
 
 // -----------------------------------------------------------
@@ -147,12 +186,15 @@
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  box-shadow: 0 2px 8px rgba(3, 36, 37, 0.06);
+  box-shadow: var(--shadow-md);
+}
+
+@mixin status-border-left($color) {
+  border-left: 4px solid $color;
 }
 
 // -----------------------------------------------------------
-// Reset selectivo — no aplastamos margins de elementos
-// que necesitan ritmo vertical natural.
+// Reset selectivo
 // -----------------------------------------------------------
 *,
 *::before,
@@ -218,7 +260,7 @@ button {
 }
 
 // -----------------------------------------------------------
-// Focus visible — accesibilidad
+// Focus visible
 // -----------------------------------------------------------
 :focus-visible {
   outline: 2px solid var(--color-yellow);

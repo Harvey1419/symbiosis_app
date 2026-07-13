@@ -1,176 +1,136 @@
-.sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
+:host {
+  display: block;
   height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar {
   width: var(--sidebar-width);
-  background: var(--surface-container);
-  border-right: 1px solid var(--surface-border);
+  height: 100vh;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
+  border-right: 1px solid var(--border-inverse);
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  z-index: 50;
-  transition: width 250ms ease-out;
+  position: relative;
+
+  // Yellow accent stripe on the right edge
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--sidebar-accent);
+    opacity: 0.6;
+  }
 
   &.collapsed {
     width: var(--sidebar-collapsed);
 
     .logo-text,
-    .nav-label {
+    .nav-label,
+    .user-info {
       opacity: 0;
-      visibility: hidden;
-      width: 0;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .logo-icon {
-      margin: 0;
+      pointer-events: none;
     }
 
     .nav-item {
       justify-content: center;
-      padding: 0.875rem;
-    }
-
-    .logout-btn {
-      justify-content: center;
-      padding: 0.875rem;
+      padding: 0.75rem;
     }
   }
 }
 
 .sidebar-top {
-  padding: 20px 16px 16px;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid var(--border-inverse);
+  min-height: 72px;
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
+  overflow: hidden;
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--color-yellow);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--sidebar-text);
+    white-space: nowrap;
+    transition: opacity 220ms ease;
+    letter-spacing: -0.01em;
+  }
 }
 
-.logo-icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  background: var(--primary-container);
-  color: var(--on-primary-container);
-  border-radius: 8px;
+.collapse-btn {
+  background: transparent;
+  border: 1px solid var(--border-inverse);
+  color: var(--sidebar-text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-}
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 150ms ease;
 
-.logo-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--on-surface);
-  white-space: nowrap;
-  transition: opacity 200ms ease, visibility 200ms ease;
+  &:hover {
+    background: var(--sidebar-bg-hover);
+    color: var(--sidebar-text);
+    border-color: var(--sidebar-accent);
+  }
 }
 
 .nav-section {
+  flex: 1;
+  padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 12px;
-  flex: 1;
+  gap: 0.25rem;
   overflow-y: auto;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: var(--on-surface-variant);
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: var(--sidebar-text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
   text-decoration: none;
-  padding: 12px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 400;
-  transition: background 150ms ease, color 150ms ease;
-  white-space: nowrap;
   cursor: pointer;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-
-  svg {
-    flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-  }
-
-  &:hover {
-    color: var(--on-surface);
-    background: var(--surface-container-high);
-  }
-
-  &.active {
-    background: var(--surface-container-highest);
-    color: var(--on-surface);
-    font-weight: 500;
-
-    svg {
-      color: var(--primary-container);
-    }
-  }
-}
-
-.sidebar-bottom {
-  padding: 12px;
-  flex-shrink: 0;
-  border-top: 1px solid var(--surface-border);
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  margin-bottom: 4px;
-  color: var(--on-surface-variant);
-  border-radius: 6px;
+  transition: all 150ms ease;
   white-space: nowrap;
   overflow: hidden;
-
-  .user-avatar {
-    flex-shrink: 0;
-    font-size: 18px;
-    width: 18px;
-    text-align: center;
-  }
-
-  .user-name {
-    font-size: 14px;
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: opacity 200ms ease, visibility 200ms ease;
-  }
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--on-surface-variant);
-  padding: 12px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 400;
-  transition: background 150ms ease, color 150ms ease;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
+  position: relative;
 
   svg {
     flex-shrink: 0;
@@ -179,38 +139,80 @@
   }
 
   .nav-label {
-    transition: opacity 200ms ease, visibility 200ms ease;
+    transition: opacity 220ms ease;
   }
 
   &:hover {
-    color: var(--error);
-    background: rgba(255, 180, 171, 0.08);
+    background: var(--sidebar-bg-hover);
+    color: var(--sidebar-text);
+    text-decoration: none;
+  }
+
+  &.active {
+    background: rgba(241, 255, 88, 0.12);
+    color: var(--sidebar-text-active);
+    font-weight: 600;
+
+    // Yellow left bar on active
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 25%;
+      bottom: 25%;
+      width: 3px;
+      background: var(--sidebar-accent);
+      border-radius: 0 2px 2px 0;
+    }
+  }
+
+  &.logout-btn {
+    color: #fca5a5;
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.15);
+      color: #fecaca;
+    }
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar * {
-    transition: none !important;
-    animation: none !important;
-  }
+.sidebar-bottom {
+  padding: 1rem 0.75rem;
+  border-top: 1px solid var(--border-inverse);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-// p-button logout — estiliza el boton interno de PrimeNG para que encaje
-// con el estilo nav-item del sidebar (full-width, alineado a la izquierda).
-:host ::ng-deep .logout-btn.p-button {
-  justify-content: flex-start;
-  width: 100%;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 400;
-  padding: 12px 14px;
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
 
-  .p-button-label {
-    flex: 0 0 auto;
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-yellow);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
   }
 
-  &:hover {
-    background: rgba(255, 180, 171, 0.08);
+  .user-name {
+    color: var(--sidebar-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
