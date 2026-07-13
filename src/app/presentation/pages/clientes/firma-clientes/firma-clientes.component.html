@@ -22,7 +22,15 @@
       <div class="error-state">
         <p>Error al cargar los clientes. Intenta de nuevo.</p>
       </div>
-    } @else {
+    }     @else {
+      <app-sync-status-pill
+        service="Siigo Contador"
+        status="ok"
+        [lastSync]="lastSync()"
+        [loading]="syncLoading()"
+        (sync)="onSync()"
+      />
+
       <p-table [value]="clientes()" styleClass="clientes-table">
         <ng-template pTemplate="header">
           <tr>

@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+.sync-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 0.625rem 0.5rem 1rem;
+  transition: background-color 200ms ease, border-color 200ms ease;
+
+  &:hover {
+    border-color: var(--color-yellow);
+  }
+
+  &.syncing {
+    border-color: var(--color-yellow);
+    background: color-mix(in srgb, var(--color-yellow) 5%, var(--surface-card));
+  }
+}
+
+.status-icon {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+
+  &.spinning {
+    color: var(--color-yellow);
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pill-text {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+
+  .service-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+
+  .separator {
+    color: var(--outline-variant);
+  }
+
+  .status-ok {
+    color: var(--color-success);
+    font-weight: 500;
+  }
+
+  .status-pending {
+    color: var(--color-warning);
+    font-weight: 500;
+  }
+
+  .status-never {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+}
+
+:host ::ng-deep .sync-btn {
+  .p-button {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
