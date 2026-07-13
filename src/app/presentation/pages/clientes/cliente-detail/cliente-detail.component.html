@@ -148,8 +148,8 @@
       <ng-template pTemplate="header">
         <tr>
           <th style="width: 3rem"><p-tableCheckbox /></th>
-          <th pSortableColumn="track_id" style="width: 140px">
-            ID factura <p-sortIcon field="track_id" />
+          <th pSortableColumn="factura_nro" style="width: 140px">
+            Nro factura <p-sortIcon field="factura_nro" />
           </th>
           <th pSortableColumn="fecha_emision" style="width: 120px">
             Fecha emisión <p-sortIcon field="fecha_emision" />
@@ -173,7 +173,7 @@
           <td (click)="$event.stopPropagation()">
             <p-tableCheckbox [value]="f" />
           </td>
-          <td class="track-cell">{{ f.track_id || '—' }}</td>
+          <td class="track-cell">{{ f.factura_nro || f.track_id || '—' }}</td>
           <td>{{ formatDate(f.fecha_emision) }}</td>
           <td class="vendor-cell">{{ f.vendor_name || 'Sin proveedor' }}</td>
           <td>
