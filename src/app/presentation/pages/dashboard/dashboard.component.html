@@ -7,14 +7,14 @@
   </ng-template>
 
   <app-page-header
-    title="Bienvenido@"
+    [title]="usuario() ? 'Bienvenido, ' + usuario()!.nombre : 'Bienvenido'"
     subtitle="Gestiona la causacion contable de tus clientes"
     [actionRef]="actionTpl" />
 
   <div class="stats-grid">
     <app-stat-card
       label="Clientes"
-      [value]="clientes().length"
+      [value]="totalClientes()"
       iconClass="pi pi-users" />
 
     <app-stat-card
@@ -32,5 +32,12 @@
 
   @if (loading()) {
     <app-loading-state message="Cargando informacion..." />
+  } @else if (error(); as err) {
+    <app-error-banner [message]="err" />
+  } @else if (totalClientes() === 0 && facturas().length === 0) {
+    <app-empty-state
+      title="Sin datos para mostrar"
+      description="Cuando sincronices clientes y facturas, veras aqui el resumen."
+      iconClass="pi pi-chart-bar" />
   }
 </div>

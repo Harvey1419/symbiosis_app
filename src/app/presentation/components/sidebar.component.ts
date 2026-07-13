@@ -3,11 +3,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TokenService } from '@core/token.service';
 import { Router } from '@angular/router';
 import { SidebarService } from '@core/sidebar.service';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, ButtonModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
@@ -16,6 +17,7 @@ export class SidebarComponent {
   private readonly router = inject(Router);
   readonly sidebarService = inject(SidebarService);
 
+  readonly usuario = this.tokenService.usuario;
   collapsed = this.sidebarService.collapsed;
 
   toggleCollapse(): void {

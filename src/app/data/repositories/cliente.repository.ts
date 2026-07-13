@@ -2,20 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { Cliente } from '@domain/models/cliente.model';
 
 @Injectable({ providedIn: 'root' })
 export class ClienteRepository {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
-
-  getClientes(): Observable<Cliente[]> {
-    return this.http.get<Cliente[]>(`${this.apiUrl}/clientes`);
-  }
-
-  getCliente(nit: number): Observable<Cliente> {
-    return this.http.get<Cliente>(`${this.apiUrl}/clientes/${nit}`);
-  }
 
   /**
    * Disparador de sincronización de trazabilidad contable para un cliente.

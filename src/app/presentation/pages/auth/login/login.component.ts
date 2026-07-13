@@ -26,7 +26,7 @@ export class LoginComponent {
     this.errorMsg.set('');
     this.authRepo.login(this.credentials).subscribe({
       next: (res) => {
-        this.tokenService.setToken(res.token);
+        this.tokenService.setAuth({ token: res.token, usuario: res.usuario });
         this.router.navigate(['/dashboard']);
       },
       error: (err: { error?: { error?: string } }) => {
