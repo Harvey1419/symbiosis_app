@@ -1,0 +1,56 @@
+.job-detail-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  :host ::ng-deep {
+    .p-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-muted);
+      border-radius: 12px;
+    }
+
+    .p-tablist {
+      border-bottom: 1px solid var(--surface-muted);
+    }
+
+    .p-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  .num-col {
+    text-align: right;
+  }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.875rem;
+  }
+
+  .muted {
+    color: var(--color-secondary);
+  }
+
+  .error-message {
+    max-width: 400px;
+    word-break: break-word;
+  }
+
+  .detalle-code {
+    display: inline-block;
+    max-width: 300px;
+    max-height: 80px;
+    overflow: auto;
+    background: var(--surface-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--color-secondary);
+  }
+}

@@ -1,0 +1,117 @@
+<div class="job-detail-page">
+  <app-page-header
+    title="Detalle del Job"
+    [subtitle]="'ID: ' + jobId()"
+    [actionRef]="actions"
+  >
+    <ng-template #actions>
+      <p-button
+        icon="pi pi-arrow-left"
+        label="Volver"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/dashboard"
+      />
+    </ng-template>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state message="Cargando job..." />
+  }
+
+  @if (error(); as err) {
+    <app-error-banner [message]="err" />
+  }
+
+  @if (!loading() && !error()) {
+    <p-card>
+      <p-tabs [value]="activeTab()" (valueChange)="switchTab($any($event))">
+        <p-tablist>
+          <p-tab value="invoices">
+            <i class="pi pi-file"></i> Invoices ({{ invoicesTotal() }})
+          </p-tab>
+          <p-tab value="errores">
+            <i class="pi pi-exclamation-triangle"></i> Errores ({{ errorsTotal() }})
+          </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <p-tabpanel value="invoices">
+            @if (invoices().length === 0) {
+              <app-empty-state
+                title="Sin invoices"
+                description="Este job no procesó invoices"
+                iconClass="pi pi-file"
+              />
+            } @else {
+              <p-table [value]="invoices()" [paginator]="invoicesTotal() > 10" [rows]="10">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Track ID</th>
+                    <th>Vendor</th>
+                    <th>Status</th>
+                    <th class="num-col">Total</th>
+                    <th>Creado</th>
+                    <th></th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-f>
+                  <tr>
+                    <td><span class="mono">{{ f.track_id }}</span></td>
+                    <td>{{ f.vendor_name || '—' }}</td>
+                    <td><p-tag [value]="f.status" severity="info" /></td>
+                    <td class="num-col">{{ f.total_pagar | number: '1.0-0' }}</td>
+                    <td>{{ f.created_at | date: 'short' }}</td>
+                    <td>
+                      <p-button
+                        icon="pi pi-external-link"
+                        severity="secondary"
+                        [text]="true"
+                        size="small"
+                        [routerLink]="['/clientes', f.client_nit, 'factura', f.id]"
+                        pTooltip="Ver factura"
+                      />
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            }
+          </p-tabpanel>
+          <p-tabpanel value="errores">
+            @if (errors().length === 0) {
+              <app-empty-state
+                title="Sin errores"
+                description="Este job no tuvo errores"
+                iconClass="pi pi-check-circle"
+              />
+            } @else {
+              <p-table [value]="errors()" [paginator]="errorsTotal() > 10" [rows]="10">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th style="width: 140px">Fecha</th>
+                    <th style="width: 100px">Tipo</th>
+                    <th>Mensaje</th>
+                    <th>Detalle</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-e>
+                  <tr>
+                    <td>{{ e.created_at | date: 'short' }}</td>
+                    <td><p-tag [value]="e.tipo" severity="danger" /></td>
+                    <td class="error-message">{{ e.mensaje }}</td>
+                    <td>
+                      @if (e.detalle) {
+                        <code class="detalle-code">{{ e.detalle | json }}</code>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            }
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </p-card>
+  }
+</div>
