@@ -23,18 +23,7 @@
     </div>
   } @else {
     <div class="sync-bar">
-      <button class="btn-sync" (click)="syncSiigo()" [disabled]="syncing()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10"/>
-          <polyline points="1 20 1 14 7 14"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-        @if (syncing()) {
-          Sincronizando...
-        } @else {
-          Sync Siigo
-        }
-      </button>
+      <app-sync-button [nit]="nit()" (synced)="onSynced()" />
     </div>
 
     @if (facturas().length === 0) {
@@ -53,7 +42,8 @@
     } @else {
       <div class="facturas-list">
         @for (factura of facturas(); track factura.track_id) {
-          <div class="factura-card" [class]="getSemaphoreClass(factura)">
+          <a class="factura-card" [class]="getSemaphoreClass(factura)"
+             [routerLink]="['/clientes', nit(), 'factura', factura.id]">
             <div class="factura-header">
               <div class="factura-main">
                 <span class="factura-vendor">{{ factura.vendor_name || 'Sin proveedor' }}</span>
@@ -90,7 +80,7 @@
                 <span class="items-count">{{ factura.filas.length }} items</span>
               </div>
             }
-          </div>
+          </a>
         }
       </div>
     }

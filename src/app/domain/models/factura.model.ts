@@ -10,7 +10,41 @@ export interface FacturaItem {
   iva_nombre?: string;
   iva_pct?: number;
   iva_valor?: number;
+  rete_code?: string;
+  rete_pct?: number;
   ai_reason?: string;
+}
+
+/**
+ * Body for PATCH /api/facturas/:id/items/:idx
+ * Only these three fields are editable; all others are read-only.
+ */
+export interface UpdateItemBody {
+  cuenta?: string;
+  iva_code?: string | null;
+  rete_code?: string | null;
+}
+
+/**
+ * Row from GET /api/facturas/:id/historico — historical causacion entries
+ * for the same vendor_nit + client_nit.
+ */
+export interface HistoricoRow {
+  id: string;
+  client_nit: string;
+  vendor_nit: string;
+  vendor_name: string | null;
+  fecha: string | null;
+  item_text: string | null;
+  item_value: number | null;
+  account_code: string;
+  account_name: string | null;
+  iva_code: string | null;
+  iva_pct: number | null;
+  rete_code: string | null;
+  rete_pct: number | null;
+  has_tax: boolean | null;
+  created_at: string;
 }
 
 export interface Factura {
@@ -24,7 +58,7 @@ export interface Factura {
   fecha_emision?: string;
   payment_due_date?: string;
   filas: FacturaItem[];
-  status: 'clasificando' | 'pendiente' | 'causada' | 'error';
+  status: 'clasificando' | 'pendiente' | 'causada' | 'finalizada' | 'error';
   subtotal?: number;
   total_iva?: number;
   total_pagar?: number;

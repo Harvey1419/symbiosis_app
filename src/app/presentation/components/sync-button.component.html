@@ -1,14 +1,14 @@
 <button
   (click)="sync()"
-  [disabled]="loading() || synced()"
+  [disabled]="loading() || justSynced()"
   class="sync-btn"
-  [class.success]="synced()"
+  [class.success]="justSynced()"
   [class.error]="hasError()"
 >
   @if (loading()) {
     <span class="spinner-btn"></span>
     Sync
-  } @else if (synced()) {
+  } @else if (justSynced()) {
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <polyline points="20,6 9,17 4,12"/>
     </svg>

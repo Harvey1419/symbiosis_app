@@ -1,0 +1,272 @@
+<div class="factura-detail-page">
+  <p-toast position="bottom-right" />
+  <p-confirmDialog />
+
+  <app-page-header
+    title="Detalle de Factura"
+    [subtitle]="factura()?.vendor_name || factura()?.factura_nro || ''"
+  >
+    <ng-template #actions>
+      <p-button
+        icon="pi pi-arrow-left"
+        label="Volver al cliente"
+        severity="secondary"
+        [outlined]="true"
+        [routerLink]="['/clientes', nit()]"
+      />
+    </ng-template>
+  </app-page-header>
+
+  @if (loading()) {
+    <app-loading-state message="Cargando factura..." />
+  }
+
+  @if (error(); as err) {
+    <app-error-banner [message]="err" />
+  }
+
+  @if (factura(); as f) {
+    <p-card header="Datos de la factura" styleClass="meta-card">
+      <div class="meta-grid">
+        <div class="meta-field">
+          <span class="meta-label">Estado</span>
+          <app-status-badge [status]="f.status" />
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Proveedor</span>
+          <span class="meta-value">{{ f.vendor_name || 'N/A' }}</span>
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Nro</span>
+          <span class="meta-value mono">{{ f.factura_nro || 'N/A' }}</span>
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Fecha</span>
+          <span class="meta-value">{{ f.fecha_emision ? (f.fecha_emision | date: 'dd MMM yyyy') : 'N/A' }}</span>
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Total</span>
+          <span class="meta-value mono">{{ f.total_pagar ? (f.total_pagar | number: '1.0-0') : '0' }}</span>
+        </div>
+        <div class="meta-field">
+          <span class="meta-label">Confianza min</span>
+          <p-tag
+            [value]="getConfianzaMin(f) + '%'"
+            [severity]="getConfianzaSeverity(getConfianzaMin(f))"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    @if (f.status === 'pendiente' || f.status === 'causada' || f.status === 'finalizada') {
+      <p-card styleClass="actions-card">
+        <div class="actions-bar">
+          @if (f.status === 'pendiente') {
+            <p-button
+              label="Causar"
+              icon="pi pi-check"
+              (onClick)="causar()"
+              [disabled]="actionLoading()"
+              severity="primary"
+            />
+          }
+          @if (f.status === 'causada') {
+            <p-button
+              label="Finalizar"
+              icon="pi pi-cloud-upload"
+              (onClick)="finalizar()"
+              [disabled]="actionLoading()"
+              severity="success"
+            />
+            <p-button
+              label="Reabrir a Pendiente"
+              icon="pi pi-undo"
+              (onClick)="reabrir('pendiente')"
+              [disabled]="actionLoading()"
+              severity="secondary"
+              [outlined]="true"
+            />
+          }
+          @if (f.status === 'finalizada') {
+            <p-button
+              label="Reabrir a Causada"
+              icon="pi pi-undo"
+              (onClick)="reabrir('causada')"
+              [disabled]="actionLoading()"
+              severity="secondary"
+              [outlined]="true"
+            />
+            <p-button
+              label="Reabrir a Pendiente"
+              icon="pi pi-undo"
+              (onClick)="reabrir('pendiente')"
+              [disabled]="actionLoading()"
+              severity="secondary"
+              [outlined]="true"
+            />
+          }
+          @if (actionLoading()) {
+            <p-progressSpinner styleClass="action-spinner" strokeWidth="4" />
+          }
+        </div>
+      </p-card>
+    }
+
+    <p-card header="Items" styleClass="items-card">
+      @if (f.filas.length === 0) {
+        <app-empty-state title="Sin items" description="Esta factura no tiene filas" iconClass="pi pi-list" />
+      } @else {
+        <p-table [value]="f.filas" styleClass="items-table" [scrollable]="true" scrollHeight="500px">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 50px">#</th>
+              <th>Cuenta PUC</th>
+              <th>Descripción</th>
+              <th style="width: 100px" class="num-col">Débito</th>
+              <th style="width: 100px" class="num-col">Crédito</th>
+              <th style="width: 80px">IVA</th>
+              <th style="width: 80px">Rete</th>
+              <th style="width: 90px">Confianza</th>
+              @if (canEdit()) {
+                <th style="width: 160px">Acciones</th>
+              }
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-fila let-i="rowIndex">
+            <tr [class.editing]="editingIdx() === i">
+              <td>{{ i }}</td>
+              <td>
+                @if (editingIdx() === i && draft(); as d) {
+                  <p-autoComplete
+                    [(ngModel)]="d.cuenta"
+                    (completeMethod)="searchCuentasEvent($event)"
+                    [forceSelection]="false"
+                    [dropdown]="true"
+                    appendTo="body"
+                    field="account_code"
+                    placeholder="Buscar cuenta..."
+                    styleClass="cuenta-ac"
+                  />
+                } @else {
+                  <span class="mono">{{ fila.cuenta || '—' }}</span>
+                  @if (fila.cuenta) {
+                    <span class="cuenta-nombre">{{ getCuentaName(fila.cuenta) }}</span>
+                  }
+                }
+              </td>
+              <td>{{ fila.descripcion }}</td>
+              <td class="num-col">{{ fila.debito | number: '1.0-0' }}</td>
+              <td class="num-col">{{ fila.credito | number: '1.0-0' }}</td>
+              <td>
+                @if (editingIdx() === i && draft(); as d) {
+                  <input
+                    pInputText
+                    type="text"
+                    [ngModel]="d.iva_code"
+                    (ngModelChange)="updateDraft('iva_code', $any($event))"
+                    placeholder="—"
+                    class="cell-input"
+                  />
+                } @else {
+                  <span class="mono">{{ fila.iva_code || '—' }}</span>
+                }
+              </td>
+              <td>
+                @if (editingIdx() === i && draft(); as d) {
+                  <input
+                    pInputText
+                    type="text"
+                    [ngModel]="d.rete_code"
+                    (ngModelChange)="updateDraft('rete_code', $any($event))"
+                    placeholder="—"
+                    class="cell-input"
+                  />
+                } @else {
+                  <span class="mono">{{ fila.rete_code || '—' }}</span>
+                }
+              </td>
+              <td>
+                <p-tag
+                  [value]="(fila.confianza ?? 0) + '%'"
+                  [severity]="getConfianzaSeverity(fila.confianza)"
+                />
+              </td>
+              @if (canEdit()) {
+                <td>
+                  @if (editingIdx() === i) {
+                    <div class="row-actions">
+                      <p-button
+                        icon="pi pi-check"
+                        severity="success"
+                        size="small"
+                        [disabled]="actionLoading()"
+                        (onClick)="saveEdit()"
+                        pTooltip="Guardar"
+                      />
+                      <p-button
+                        icon="pi pi-times"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="cancelEdit()"
+                        pTooltip="Cancelar"
+                      />
+                    </div>
+                  } @else {
+                    <p-button
+                      icon="pi pi-pencil"
+                      label="Editar"
+                      severity="secondary"
+                      [outlined]="true"
+                      size="small"
+                      (onClick)="startEdit(i)"
+                    />
+                  }
+                </td>
+              }
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+
+    <p-card header="Histórico de causación" styleClass="historico-card">
+      <p class="hint">Clasificaciones previas del mismo proveedor — útil para referencia al editar.</p>
+      @if (historico().length === 0) {
+        <app-empty-state
+          title="Sin histórico"
+          description="No hay causaciones previas para este proveedor"
+          iconClass="pi pi-history"
+        />
+      } @else {
+        <p-table [value]="historico()" [paginator]="historico().length > 10" [rows]="10" styleClass="historico-table">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Fecha</th>
+              <th>Cuenta</th>
+              <th>Detalle</th>
+              <th class="num-col">Valor</th>
+              <th>IVA</th>
+              <th>Rete</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ row.fecha ? (row.fecha | date: 'dd MMM yyyy') : '—' }}</td>
+              <td>
+                <span class="mono">{{ row.account_code }}</span>
+                @if (row.account_name) {
+                  <span class="cuenta-nombre">{{ row.account_name }}</span>
+                }
+              </td>
+              <td>{{ row.item_text || '—' }}</td>
+              <td class="num-col">{{ row.item_value ? (row.item_value | number: '1.0-0') : '0' }}</td>
+              <td><span class="mono">{{ row.iva_code || '—' }}</span></td>
+              <td><span class="mono">{{ row.rete_code || '—' }}</span></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+  }
+</div>

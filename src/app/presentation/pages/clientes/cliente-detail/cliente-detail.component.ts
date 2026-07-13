@@ -1,25 +1,23 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FacturaRepository } from '@data/repositories/factura.repository';
-import { ClienteRepository } from '@data/repositories/cliente.repository';
 import { Factura } from '@domain/models/factura.model';
+import { SyncButtonComponent } from '@presentation/components/sync-button.component';
 
 @Component({
   selector: 'app-cliente-detail',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, RouterLink, SyncButtonComponent],
   templateUrl: './cliente-detail.component.html',
   styleUrl: './cliente-detail.component.scss'
 })
 export class ClienteDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly facturaRepo = inject(FacturaRepository);
-  private readonly clienteRepo = inject(ClienteRepository);
 
   nit = signal<number>(0);
   readonly loading = signal(true);
-  readonly syncing = signal(false);
   readonly error = signal(false);
   readonly facturas = signal<Factura[]>([]);
   readonly clienteNombre = signal<string>('');
@@ -45,7 +43,7 @@ export class ClienteDetailComponent implements OnInit {
 
   getConfianzaMin(factura: Factura): number {
     if (!factura.filas?.length) return 0;
-    return Math.min(...factura.filas.map((f: any) => f.confianza || 0));
+    return Math.min(...factura.filas.map((f) => f.confianza || 0));
   }
 
   getSemaphoreClass(factura: Factura): string {
@@ -59,6 +57,7 @@ export class ClienteDetailComponent implements OnInit {
     const map: Record<string, string> = {
       pendiente: 'Pendiente',
       causada: 'Causada',
+      finalizada: 'Finalizada',
       error: 'Error',
       clasificando: 'Clasificando'
     };
@@ -69,22 +68,11 @@ export class ClienteDetailComponent implements OnInit {
     window.history.back();
   }
 
-  syncSiigo(): void {
-    if (this.syncing()) return;
-    this.syncing.set(true);
-    this.clienteRepo.sincronizarTrazabilidad(this.nit()).subscribe({
-      next: () => {
-        this.syncing.set(false);
-        // Reload facturas after sync
-        this.facturaRepo.getFacturas(this.nit()).subscribe({
-          next: (data: Factura[]) => { this.facturas.set(data); this.loading.set(false); },
-          error: () => { this.error.set(true); this.loading.set(false); }
-        });
-      },
-      error: () => {
-        this.syncing.set(false);
-        this.error.set(true);
-      }
+  /** Called when SyncButtonComponent emits `synced` — reloads the facturas list. */
+  onSynced(): void {
+    this.facturaRepo.getFacturas(this.nit()).subscribe({
+      next: (data: Factura[]) => { this.facturas.set(data); },
+      error: () => { this.error.set(true); }
     });
   }
 }

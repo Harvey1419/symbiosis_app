@@ -1,4 +1,4 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
 
@@ -11,22 +11,26 @@ import { ClienteRepository } from '@data/repositories/cliente.repository';
 export class SyncButtonComponent {
   nit = input.required<number>();
 
+  /** Emits when sync completes successfully so the parent can reload data. */
+  readonly synced = output<void>();
+
   private readonly clienteRepo = inject(ClienteRepository);
 
   readonly loading = signal(false);
-  readonly synced = signal(false);
+  readonly justSynced = signal(false);
   readonly hasError = signal(false);
 
   sync(): void {
     this.loading.set(true);
     this.hasError.set(false);
-    this.synced.set(false);
+    this.justSynced.set(false);
 
     this.clienteRepo.sincronizarTrazabilidad(this.nit()).subscribe({
       next: () => {
         this.loading.set(false);
-        this.synced.set(true);
-        setTimeout(() => this.synced.set(false), 3000);
+        this.justSynced.set(true);
+        this.synced.emit();
+        setTimeout(() => this.justSynced.set(false), 3000);
       },
       error: () => {
         this.loading.set(false);
