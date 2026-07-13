@@ -36,10 +36,10 @@ describe('LoadingStateComponent', () => {
     expect(container.classList.contains('compact')).toBe(true);
   });
 
-  it('muestra el spinner', () => {
+  it('muestra el spinner de PrimeNG', () => {
     fixture.detectChanges();
 
-    const spinner = fixture.nativeElement.querySelector('.spinner');
+    const spinner = fixture.nativeElement.querySelector('p-progressSpinner, .p-progress-spinner');
     expect(spinner).toBeTruthy();
   });
 });

@@ -139,11 +139,12 @@
                 @if (editingIdx() === i && draft(); as d) {
                   <p-autoComplete
                     [(ngModel)]="d.cuenta"
-                    (completeMethod)="searchCuentasEvent($event)"
+                    [suggestions]="cuentasFiltradas()"
+                    (completeMethod)="searchCuentas($event)"
                     [forceSelection]="false"
                     [dropdown]="true"
                     appendTo="body"
-                    field="account_code"
+                    optionLabel="account_code"
                     placeholder="Buscar cuenta..."
                     styleClass="cuenta-ac"
                   />

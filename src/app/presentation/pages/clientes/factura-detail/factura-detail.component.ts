@@ -83,6 +83,7 @@ export class FacturaDetailComponent implements OnInit {
   readonly factura = signal<Factura | null>(null);
   readonly historico = signal<HistoricoRow[]>([]);
   readonly cuentasPuc = signal<CuentaPuc[]>([]);
+  readonly cuentasFiltradas = signal<CuentaPuc[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly actionLoading = signal(false);
@@ -131,20 +132,17 @@ export class FacturaDetailComponent implements OnInit {
 
   // --- Autocomplete for cuenta PUC ---
 
-  searchCuentas(event: AutoCompleteCompleteEvent): CuentaPuc[] {
+  /** PrimeNG p-autoComplete callback — assigns to signal, not returns. */
+  searchCuentas(event: AutoCompleteCompleteEvent): void {
     const query = event.query.toLowerCase();
-    return this.cuentasPuc()
+    const filtered = this.cuentasPuc()
       .filter(
         (c) =>
           c.account_code.toLowerCase().includes(query) ||
           c.account_name.toLowerCase().includes(query),
       )
       .slice(0, 20);
-  }
-
-  /** Wrapper for template (avoids $event type issues with strict tsconfig). */
-  searchCuentasEvent(event: { query: string }): CuentaPuc[] {
-    return this.searchCuentas(event as AutoCompleteCompleteEvent);
+    this.cuentasFiltradas.set(filtered);
   }
 
   getCuentaName(code: string): string {
@@ -209,6 +207,7 @@ export class FacturaDetailComponent implements OnInit {
       title: 'Causar factura',
       message: '¿Confirmas causar esta factura? Una vez causada no podrás editar los items.',
       acceptLabel: 'Causar',
+      acceptSeverity: 'primary',
     });
     if (!ok) return;
     this.runAction(this.facturaRepo.causar(this.facturaId()), 'Factura causada');
@@ -219,6 +218,7 @@ export class FacturaDetailComponent implements OnInit {
       title: 'Finalizar factura',
       message: '¿Confirmas finalizar esta factura?',
       acceptLabel: 'Finalizar',
+      acceptSeverity: 'success',
     });
     if (!ok) return;
     this.runAction(this.facturaRepo.finalizar(this.facturaId()), 'Factura finalizada');
@@ -232,6 +232,7 @@ export class FacturaDetailComponent implements OnInit {
           ? 'La factura volverá a pendiente y se podrán editar los items.'
           : 'La factura volverá a causada.',
       acceptLabel: 'Reabrir',
+      acceptSeverity: 'warn',
     });
     if (!ok) return;
     this.runAction(this.facturaRepo.reabrir(this.facturaId(), target), 'Factura reabierta');
