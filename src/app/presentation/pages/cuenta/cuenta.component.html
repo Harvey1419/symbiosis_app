@@ -1,0 +1,86 @@
+<div class="cuenta-page">
+  <header class="cuenta-header">
+    <h1>Mi Cuenta</h1>
+    <p class="subtitle">Plan actual y consumo</p>
+  </header>
+
+  @if (loading()) {
+    <div class="loading">Cargando...</div>
+  }
+
+  @if (error(); as err) {
+    <div class="error-banner">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>{{ err }}</span>
+    </div>
+  }
+
+  @if (me(); as m) {
+    <section class="plan-card">
+      <div class="plan-header">
+        <div>
+          <h2>{{ m.plan.nombre }}</h2>
+          <p-tag [value]="m.estado" [severity]="estadoSeverity()"></p-tag>
+        </div>
+        <div class="plan-dates">
+          <small>Inicio: {{ m.fecha_inicio | date: 'mediumDate' }}</small>
+          <small>Fin: {{ m.fecha_fin | date: 'mediumDate' }}</small>
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="usage-section">
+        <div class="usage-header">
+          <strong>Consumo del mes</strong>
+          <span>{{ m.used }} / {{ m.limite }} facturas</span>
+        </div>
+        <p-progressBar [value]="usagePercent()"></p-progressBar>
+        <small class="usage-period">Periodo: {{ m.periodo_actual }}</small>
+      </div>
+    </section>
+
+    <section class="history">
+      <h3>Historico de consumo</h3>
+      <p-table [value]="usage()" [paginator]="usage().length > 10" [rows]="10">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Periodo</th>
+            <th>Facturas procesadas</th>
+            <th>Limite</th>
+            <th>% Uso</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td>{{ row.periodo }}</td>
+            <td>{{ row.used }}</td>
+            <td>{{ row.limite }}</td>
+            <td>{{ row.limite > 0 ? ((row.used / row.limite) * 100).toFixed(0) : 0 }}%</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="4">Sin historico aun</td></tr>
+        </ng-template>
+      </p-table>
+    </section>
+  }
+
+  @if (planes().length > 0) {
+    <section class="planes">
+      <h3>Planes disponibles</h3>
+      <div class="planes-grid">
+        @for (plan of planes(); track plan.codigo) {
+          <article class="plan-tile">
+            <h4>{{ plan.nombre }}</h4>
+            <p class="plan-price">{{ formatCurrency(plan.precio_mensual_cop) }}/mes</p>
+            <ul>
+              <li>{{ plan.limite_facturas_mes ?? 'Ilimitadas' }} facturas/mes</li>
+              <li>Soporte: {{ plan.soporte_nivel }}</li>
+            </ul>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</div>

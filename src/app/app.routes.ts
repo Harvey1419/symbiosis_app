@@ -31,5 +31,10 @@ export const routes: Routes = [
     loadComponent: () => import('./presentation/pages/clientes/cliente-detail/cliente-detail.component').then(m => m.ClienteDetailComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'cuenta',
+    loadComponent: () => import('./presentation/pages/cuenta/cuenta.component').then(m => m.CuentaComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];
