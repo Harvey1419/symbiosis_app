@@ -30,7 +30,6 @@
             <th class="col-cliente">Cliente</th>
             <th class="col-nit">NIT / Identificacion</th>
             <th class="col-servicio">Servicio Principal</th>
-            <th class="col-estado">Estado</th>
             <th class="col-acciones">Acciones</th>
           </tr>
         </ng-template>
@@ -55,11 +54,6 @@
                 {{ getTipoLabel(firma.tipo_siigo) }}
               </span>
             </td>
-            <td class="col-estado">
-              <span class="status-badge" [class]="getStatusClass(firma)">
-                {{ getStatusLabel(firma) }}
-              </span>
-            </td>
             <td class="col-acciones" (click)="$event.stopPropagation()">
               <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ firma.firma_user }}">
                 Ingresar
@@ -69,7 +63,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="5" class="empty-message">No hay firmas registradas</td>
+            <td colspan="4" class="empty-message">No hay firmas registradas</td>
           </tr>
         </ng-template>
       </p-table>
