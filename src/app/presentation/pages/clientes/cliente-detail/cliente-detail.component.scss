@@ -1,231 +1,503 @@
 .page {
-  max-width: var(--container-max);
+  max-width: 100%;
   margin: 0 auto;
   padding-top: 8px;
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--surface-card-hover);
+    color: var(--text-strong);
+    border-color: var(--color-yellow);
+  }
+
+  svg { flex-shrink: 0; }
+}
+
+.header-content {
+  h1 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
 }
 
 .loading-state,
-.error-state,
-.empty-state {
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   padding: 48px;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
-.empty-state {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
+.error-state { color: var(--color-error); }
 
-  .empty-icon {
-    color: var(--text-muted);
-    font-size: 2.5rem;
-    margin-bottom: 8px;
-  }
-
-  .empty-hint {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--surface-border);
+  border-top-color: var(--color-yellow);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.sync-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 // ============================================================
-// Facturas List — Cards con borde lateral de status
+// Filter Bar
 // ============================================================
-.facturas-list {
-  display: flex;
-  flex-direction: column;
+.filters-bar {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr 1fr 1.2fr 1.4fr;
   gap: 12px;
-}
-
-.factura-card {
+  align-items: end;
   background: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-xl);
   padding: 16px 20px;
-  border-left: 4px solid var(--surface-border);
-  transition: transform 150ms ease, box-shadow 150ms ease, background-color 200ms ease;
-  display: block;
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
+  margin-bottom: 16px;
+  transition: background-color 200ms ease, border-color 200ms ease;
 
-  &:hover {
-    transform: translateX(2px);
-    box-shadow: var(--shadow-md);
-    text-decoration: none;
-    background: var(--surface-card-hover);
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr 1fr;
   }
-
-  // Status-based left border (vibrante sobre dark)
-  &.status-pendiente {
-    border-left-color: var(--color-warning);
-  }
-
-  &.status-clasificando {
-    border-left-color: var(--color-info);
-  }
-
-  &.status-causada {
-    border-left-color: var(--color-success);
-  }
-
-  &.status-finalizada {
-    border-left-color: var(--color-yellow);
-  }
-
-  &.status-error {
-    border-left-color: var(--color-error);
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.factura-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  gap: 16px;
-}
-
-.factura-main {
+.filter-field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  min-width: 0;
+
+  .filter-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
 }
 
-.factura-vendor {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--text-strong);
-  font-size: 15px;
-  letter-spacing: -0.01em;
+.toggle-field {
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 38px;
+
+    .toggle-label {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+  }
 }
 
-.factura-nro {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
-}
-
-// Status badges — dark-friendly with soft backgrounds
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-
-  &.pendiente {
-    background: var(--color-warning-soft);
-    color: var(--color-warning);
+:host ::ng-deep {
+  .filter-select,
+  .filter-datepicker {
+    width: 100%;
   }
 
-  &.causada {
+  .p-select,
+  .p-datepicker {
+    background: var(--surface-higher);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-md);
+    color: var(--text-strong);
+    font-size: 0.8125rem;
+    height: 38px;
+
+    .p-select-label,
+    input {
+      color: var(--text-strong);
+      font-size: 0.8125rem;
+    }
+
+    .p-select-placeholder {
+      color: var(--text-muted);
+    }
+
+    &:not(.p-disabled):hover {
+      border-color: var(--color-yellow);
+    }
+
+    &.p-focus {
+      border-color: var(--color-yellow);
+      box-shadow: var(--shadow-yellow-glow);
+    }
+  }
+
+  .p-datepicker-trigger {
+    color: var(--text-muted);
+  }
+
+  // Dark dropdown panel
+  .p-select-overlay,
+  .p-datepicker-panel,
+  .p-multiselect-overlay {
+    background: var(--surface-higher) !important;
+    border: 1px solid var(--surface-border) !important;
+    color: var(--text-strong) !important;
+
+    .p-select-option,
+    .p-multiselect-option {
+      color: var(--text-strong) !important;
+      font-size: 0.8125rem;
+
+      &:hover {
+        background: var(--surface-card-hover) !important;
+      }
+
+      &.p-select-option-selected,
+      &.p-highlight {
+        background: color-mix(in srgb, var(--color-yellow) 18%, transparent) !important;
+        color: var(--color-yellow) !important;
+      }
+    }
+  }
+
+  .p-toggleswitch-slider {
+    background: var(--surface-border);
+  }
+
+  .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+    background: var(--color-yellow);
+  }
+}
+
+.export-btn {
+  margin-left: auto;
+}
+
+// ============================================================
+// Active filters indicator
+// ============================================================
+.active-filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  .clear-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid var(--surface-border);
+    color: var(--color-yellow);
+    border-radius: var(--radius-md);
+    padding: 4px 10px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 150ms ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-yellow) 12%, transparent);
+      border-color: var(--color-yellow);
+    }
+  }
+}
+
+// ============================================================
+// Search Bar
+// ============================================================
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+  padding: 0 12px 0 16px;
+  margin-bottom: 12px;
+  transition: border-color 200ms ease;
+
+  &:focus-within {
+    border-color: var(--color-yellow);
+  }
+
+  .search-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-strong);
+    font-size: 0.875rem;
+    height: 40px;
+    outline: none;
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+
+  .search-actions {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+:host ::ng-deep .search-bar .p-button {
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+}
+
+// ============================================================
+// PrimeNG Table — Dark
+// ============================================================
+:host ::ng-deep {
+  .facturas-table {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+
+    .p-datatable-header {
+      background: var(--surface-card);
+      border: none;
+      padding: 0;
+    }
+
+    .p-datatable-thead > tr > th {
+      background: var(--surface-higher);
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.875rem 1rem;
+      border: none;
+      border-bottom: 1px solid var(--surface-border);
+      white-space: nowrap;
+
+      .p-sortable-column-icon,
+      .p-sortable-column-badge {
+        color: var(--text-muted);
+        margin-left: 0.5rem;
+      }
+    }
+
+    .p-datatable-tbody > tr {
+      background: var(--surface-card);
+      transition: background 150ms ease;
+      cursor: pointer;
+
+      > td {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 1px solid var(--surface-border);
+        color: var(--text-strong);
+        font-size: 0.8125rem;
+        vertical-align: middle;
+      }
+
+      &:last-child > td {
+        border-bottom: none;
+      }
+
+      &:hover > td {
+        background: var(--surface-higher) !important;
+      }
+
+      // Selected row (PrimeNG p-table selection)
+      &.p-datatable-row-selected {
+        background: color-mix(in srgb, var(--color-yellow) 8%, var(--surface-card)) !important;
+      }
+    }
+
+    .p-datatable-tbody > tr:last-child > td {
+      border-bottom: none;
+    }
+
+    // Paginator
+    .p-paginator {
+      background: transparent;
+      color: var(--text-muted);
+      border-top: 1px solid var(--surface-border);
+      padding: 0.75rem 1rem;
+
+      .p-paginator-page,
+      .p-paginator-next,
+      .p-paginator-prev,
+      .p-paginator-first,
+      .p-paginator-last {
+        color: var(--text-muted);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+        min-width: 32px;
+        height: 32px;
+
+        &:not(.p-disabled):not(.p-highlight):hover {
+          background: var(--surface-highter) !important;
+          color: var(--text-strong) !important;
+        }
+
+        &.p-highlight {
+          background: var(--color-yellow) !important;
+          color: var(--color-primary) !important;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+// Cell-specific styles
+.track-cell {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+.vendor-cell {
+  font-weight: 500;
+  color: var(--text-strong);
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.money-cell {
+  font-family: var(--font-mono);
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.tipo-factura-compra {
     background: var(--color-success-soft);
     color: var(--color-success);
   }
 
-  &.finalizada {
+  &.tipo-nota-crédito {
     background: var(--color-warning-soft);
     color: var(--color-warning);
   }
-
-  &.error {
-    background: var(--color-error-soft);
-    color: var(--color-error);
-  }
-
-  &.clasificando {
-    background: var(--color-info-soft);
-    color: var(--color-info);
-  }
 }
 
-.factura-meta {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+.confianza-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.green { background: var(--color-success); }
+  &.yellow { background: var(--color-warning); }
+  &.red { background: var(--color-error); }
 }
 
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-muted);
-  font-size: 13px;
-
-  svg {
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-}
-
-.confianza {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 13px;
-
-  .confianza-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  &.green {
-    color: var(--color-success);
-    .confianza-dot { background: var(--color-success); box-shadow: 0 0 0 3px var(--color-success-soft); }
-  }
-
-  &.yellow {
-    color: var(--color-warning);
-    .confianza-dot { background: var(--color-warning); box-shadow: 0 0 0 3px var(--color-warning-soft); }
-  }
-
-  &.red {
-    color: var(--color-error);
-    .confianza-dot { background: var(--color-error); box-shadow: 0 0 0 3px var(--color-error-soft); }
-  }
-}
-
-.factura-items {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--surface-border);
-}
-
-.items-count {
+.confianza-text {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .factura-card {
-    transition: none;
+// ============================================================
+// Empty States
+// ============================================================
+.empty-message {
+  padding: 0 !important;
+}
+
+.empty-state,
+.empty-filtered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.empty-filtered {
+  i { font-size: 2rem; color: var(--text-muted); }
+
+  .clear-filters {
+    margin-top: 8px;
+  }
+}
+
+.empty-state {
+  .empty-icon {
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  p { margin: 0; color: var(--text-strong); font-weight: 500; }
+
+  .empty-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
   }
 }

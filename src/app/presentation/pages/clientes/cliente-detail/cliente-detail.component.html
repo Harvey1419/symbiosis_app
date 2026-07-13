@@ -7,7 +7,7 @@
       Volver
     </button>
     <div class="header-content">
-      <h1>{{ clienteNombre() }}</h1>
+      <h1>{{ clienteNombre() || 'Cliente' }}</h1>
       <p class="subtitle">Facturas procesadas para este cliente</p>
     </div>
   </header>
@@ -22,73 +22,210 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
-    <app-sync-banner
-      title="Sincronizar con Siigo Nube"
-      subtitle="Actualiza las facturas de este cliente en Symbiosis."
+    <!-- Compact sync banner (smaller than the full SyncBanner) -->
+    <app-sync-status-pill
+      service="Siigo Nube"
+      status="ok"
       [lastSync]="lastSync()"
-      statusMessage="Catálogos listos para clasificar"
-      [catalogs]="catalogosSiigo()"
       [loading]="syncLoading()"
       (sync)="onSync()"
     />
 
-    @if (facturas().length === 0) {
-      <div class="empty-state">
-        <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
-        </div>
-        <p>No hay facturas para este cliente</p>
-        <span class="empty-hint">Sincroniza desde DIAN para obtener facturas</span>
+    <!-- Filter row: Proveedor · Estado de carga · Tipos · Fecha · Solo revisadas -->
+    <div class="filters-bar">
+      <div class="filter-field">
+        <label class="filter-label">Proveedor</label>
+        <p-select
+          [options]="proveedores()"
+          [(ngModel)]="proveedorFilterModel"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos"
+          [showClear]="false"
+          appendTo="body"
+          styleClass="filter-select"
+        />
       </div>
-    } @else {
-      <div class="facturas-list">
-        @for (factura of facturas(); track factura.track_id) {
-          <a class="factura-card" [class]="getSemaphoreClass(factura)"
-             [routerLink]="['/clientes', nit(), 'factura', factura.id]">
-            <div class="factura-header">
-              <div class="factura-main">
-                <span class="factura-vendor">{{ factura.vendor_name || 'Sin proveedor' }}</span>
-                <span class="factura-nro">{{ factura.factura_nro || 'N/A' }}</span>
-              </div>
-              <span class="status-badge" [class]="factura.status">{{ formatStatus(factura.status) }}</span>
-            </div>
 
-            <div class="factura-meta">
-              <div class="meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                {{ factura.fecha_emision ? (factura.fecha_emision | date:'dd MMM yyyy') : 'Sin fecha' }}
-              </div>
-              <div class="meta-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="1" x2="12" y2="23"/>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-                {{ factura.total_pagar ? (factura.total_pagar | number:'1.0-0') : '0' }}
-              </div>
-              <div class="meta-item confianza" [class]="getSemaphoreClass(factura)">
-                <span class="confianza-dot"></span>
-                Confianza: {{ getConfianzaMin(factura) }}%
-              </div>
-            </div>
+      <div class="filter-field">
+        <label class="filter-label">Estado de carga</label>
+        <p-select
+          [options]="estadoOptions"
+          [(ngModel)]="estadoFilterModel"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas"
+          appendTo="body"
+          styleClass="filter-select"
+        />
+      </div>
 
-            @if (factura.filas && factura.filas.length) {
-              <div class="factura-items">
-                <span class="items-count">{{ factura.filas.length }} items</span>
-              </div>
-            }
-          </a>
-        }
+      <div class="filter-field">
+        <label class="filter-label">Tipos</label>
+        <p-select
+          [options]="tipoOptions"
+          [(ngModel)]="tipoFilterModel"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas"
+          appendTo="body"
+          styleClass="filter-select"
+        />
+      </div>
+
+      <div class="filter-field">
+        <label class="filter-label">Fecha inicial y final</label>
+        <p-datepicker
+          selectionMode="range"
+          [readonlyInput]="true"
+          [(ngModel)]="fechaRangeModel"
+          placeholder="Seleccionar un rango"
+          dateFormat="dd/mm/yy"
+          appendTo="body"
+          styleClass="filter-datepicker"
+        />
+      </div>
+
+      <div class="filter-field toggle-field">
+        <label class="filter-label">Facturas revisadas</label>
+        <div class="toggle-row">
+          <p-toggleswitch [(ngModel)]="soloRevisadasModel" inputId="solo-revisadas" />
+          <span class="toggle-label">Solo revisadas</span>
+          <p-button
+            icon="pi pi-file-export"
+            severity="success"
+            [rounded]="true"
+            size="small"
+            [disabled]="selectedFacturas().length === 0"
+            (onClick)="exportSelected()"
+            pTooltip="Exportar selección"
+            styleClass="export-btn"
+          />
+        </div>
+      </div>
+    </div>
+
+    @if (hasActiveFilters()) {
+      <div class="active-filters">
+        <span>{{ filteredFacturas().length }} de {{ facturas().length }} facturas</span>
+        <button class="clear-filters" (click)="clearFilters()">
+          <i class="pi pi-filter-slash"></i> Limpiar filtros
+        </button>
       </div>
     }
+
+    <!-- Search bar -->
+    <div class="search-bar">
+      <i class="pi pi-search search-icon"></i>
+      <input
+        pInputText
+        type="text"
+        placeholder="Busca facturas por CUFE, consecutivo o ID"
+        [(ngModel)]="searchTextModel"
+        class="search-input"
+      />
+      <div class="search-actions">
+        <p-button icon="pi pi-keyboard" [text]="true" [rounded]="true" size="small" />
+        <p-button icon="pi pi-info-circle" [text]="true" [rounded]="true" size="small" />
+      </div>
+    </div>
+
+    <!-- p-table with all the filters applied -->
+    <p-table
+      #dt
+      [value]="filteredFacturas()"
+      [(selection)]="selectedFacturasModel"
+      dataKey="id"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first}-{last} de {totalRecords}"
+      styleClass="facturas-table"
+      [scrollable]="true"
+      scrollHeight="flex"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem"><p-tableCheckbox /></th>
+          <th pSortableColumn="track_id" style="width: 140px">
+            ID factura <p-sortIcon field="track_id" />
+          </th>
+          <th pSortableColumn="fecha_emision" style="width: 120px">
+            Fecha emisión <p-sortIcon field="fecha_emision" />
+          </th>
+          <th pSortableColumn="vendor_name">
+            Proveedor <p-sortIcon field="vendor_name" />
+          </th>
+          <th pSortableColumn="status" style="width: 140px">
+            Tipo <p-sortIcon field="status" />
+          </th>
+          <th pSortableColumn="total_pagar" style="width: 140px">
+            Total <p-sortIcon field="total_pagar" />
+          </th>
+          <th style="width: 110px">Confianza</th>
+          <th style="width: 80px"></th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-f>
+        <tr class="clickable-row" (click)="goToFactura(f)">
+          <td (click)="$event.stopPropagation()">
+            <p-tableCheckbox [value]="f" />
+          </td>
+          <td class="track-cell">{{ f.track_id || '—' }}</td>
+          <td>{{ formatDate(f.fecha_emision) }}</td>
+          <td class="vendor-cell">{{ f.vendor_name || 'Sin proveedor' }}</td>
+          <td>
+            <span class="tipo-badge" [class]="'tipo-' + getTipoSlug(f)">
+              {{ getTipoFactura(f) }}
+            </span>
+          </td>
+          <td class="money-cell">${{ formatMoney(f.total_pagar) }}</td>
+          <td>
+            <span class="confianza-dot" [class]="getSemaphoreClass(f)"></span>
+            <span class="confianza-text">{{ getConfianzaMin(f) }}%</span>
+          </td>
+          <td (click)="$event.stopPropagation()">
+            <p-button
+              icon="pi pi-arrow-right"
+              [text]="true"
+              [rounded]="true"
+              size="small"
+              severity="secondary"
+              (onClick)="goToFactura(f)"
+              pTooltip="Ver detalle"
+            />
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="empty-message">
+            @if (hasActiveFilters()) {
+              <div class="empty-filtered">
+                <i class="pi pi-search-minus"></i>
+                <p>No hay facturas que coincidan con los filtros</p>
+                <button class="clear-filters" (click)="clearFilters()">Limpiar filtros</button>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </div>
+                <p>No hay facturas para este cliente</p>
+                <span class="empty-hint">Sincroniza desde DIAN para obtener facturas</span>
+              </div>
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
   }
 </div>
