@@ -113,6 +113,49 @@ export class FacturaDetailComponent implements OnInit {
     })),
   );
 
+  /** Default cuenta for crédito (cash/bank) rows. Used as placeholder
+   *  when the user hasn't assigned a specific cuenta yet. 11200501 is
+   *  the standard PUC code for "Bancos" in Colombia — the typical
+   *  contrapartida (where the money comes from) for causaciones. */
+  readonly DEFAULT_CREDITO_CUENTA = '11200501';
+
+  // ── Totales computados (estilo Cifrato) ──────────────────────
+
+  /** Suma de débitos (filas donde el dinero se gasta). */
+  readonly subtotal = computed<number>(() => {
+    const f = this.factura();
+    if (!f) return 0;
+    return f.filas.reduce((sum, fila) => sum + (fila.debito ?? 0), 0);
+  });
+
+  /** Suma de IVA + Rete estimado (heurístico: 0 si no hay % configurado
+   *  en clientes_impuestos; si hay, multiplicamos el débito por la
+   *  tasa del impuesto asignado). En MVP usamos 0 — el contador revisa
+   *  manualmente con su catálogo de Siigo. */
+  readonly totalImpuestos = computed<number>(() => {
+    const f = this.factura();
+    if (!f) return 0;
+    return f.filas.reduce((sum, fila) => {
+      const base = fila.debito ?? 0;
+      const ivaPct = this.impuestos().find((i) => i.codigo === fila.iva_code)?.percentage ?? 0;
+      const retePct = this.impuestos().find((i) => i.codigo === fila.rete_code)?.percentage ?? 0;
+      return sum + (base * ivaPct / 100) - (base * retePct / 100);
+    }, 0);
+  });
+
+  /** Total = Subtotal + Impuestos. */
+  readonly total = computed<number>(() =>
+    this.subtotal() + this.totalImpuestos(),
+  );
+
+  /** Default cuenta for a row: if it's a crédito (where the money comes
+   *  from), suggest 11200501 (Bancos) as a placeholder; otherwise null. */
+  defaultCuentaPlaceholder(fila: { debito?: number | null; credito?: number | null; cuenta?: string | null }): string {
+    if (fila.cuenta) return fila.cuenta;
+    if ((fila.credito ?? 0) > 0) return this.DEFAULT_CREDITO_CUENTA;
+    return '';
+  }
+
   ngOnInit(): void {
     const nitParam = this.route.snapshot.paramMap.get('nit');
     const idParam = this.route.snapshot.paramMap.get('id');

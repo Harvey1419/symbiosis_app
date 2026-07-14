@@ -209,7 +209,7 @@
                     filterBy="display"
                     optionLabel="display"
                     optionValue="account_code"
-                    placeholder="Seleccionar cuenta"
+                    [placeholder]="defaultCuentaPlaceholder(fila) || 'Seleccionar cuenta'"
                     appendTo="body"
                     styleClass="cuenta-select"
                     [showClear]="true"
@@ -291,6 +291,35 @@
         }
       }
     </p-card>
+
+    <!-- Totales panel (estilo Cifrato: a la derecha del bloque principal) -->
+    <div class="totales-section">
+      <div class="totales-grid">
+        <div class="totales-content">
+          <h3 class="totales-title">Resumen de la factura</h3>
+          <p class="totales-hint">
+            <i class="pi pi-info-circle"></i>
+            El Total se calcula como la suma de las filas de débito
+            (gastos). Los impuestos se calculan con el catálogo configurado
+            en Siigo para este cliente.
+          </p>
+        </div>
+        <div class="totales-panel">
+          <div class="totales-row">
+            <span class="totales-label">Subtotal</span>
+            <span class="totales-value">${{ formatMoney(subtotal()) }}</span>
+          </div>
+          <div class="totales-row">
+            <span class="totales-label">Total Impuestos</span>
+            <span class="totales-value">${{ formatMoney(totalImpuestos()) }}</span>
+          </div>
+          <div class="totales-row total-row">
+            <span class="totales-label">Total</span>
+            <span class="totales-value">${{ formatMoney(total()) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Impuestos modal -->
     @if (editingRowIdx() !== null && f.filas[editingRowIdx()!]; as row) {

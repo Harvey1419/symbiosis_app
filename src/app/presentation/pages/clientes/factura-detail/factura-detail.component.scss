@@ -367,6 +367,109 @@
   i { font-size: 0.85rem; }
 }
 
+// Totales panel (estilo Cifrato: a la derecha)
+.totales-section {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.totales-grid {
+  display: flex;
+  gap: 1.5rem;
+  align-items: stretch;
+  width: 100%;
+  max-width: 720px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
+}
+
+.totales-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--surface-border);
+
+  @media (max-width: 640px) {
+    padding-right: 0;
+    padding-bottom: 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .totales-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-strong);
+  }
+
+  .totales-hint {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+
+    i { color: var(--color-yellow); flex-shrink: 0; margin-top: 1px; }
+  }
+}
+
+.totales-panel {
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.totales-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-higher);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-base);
+
+  .totales-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .totales-value {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-strong);
+    font-weight: 600;
+  }
+
+  &.total-row {
+    background: color-mix(in srgb, var(--color-yellow) 10%, var(--surface-higher));
+    border-color: color-mix(in srgb, var(--color-yellow) 30%, var(--surface-border));
+
+    .totales-label { color: var(--color-yellow); font-weight: 700; }
+    .totales-value {
+      color: var(--color-yellow);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+  }
+}
+
 // Save bar (floating, only visible when dirty)
 .save-bar {
   display: flex;
