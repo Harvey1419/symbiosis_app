@@ -7,6 +7,39 @@
   gap: 1.25rem;
 }
 
+// Back link breadcrumb (top of page, above page-header)
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 -0.5rem -0.5rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: color 150ms ease, background 150ms ease;
+  align-self: flex-start;
+
+  i {
+    font-size: 0.85rem;
+  }
+
+  &:hover {
+    color: var(--color-yellow);
+    background: var(--surface-higher);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-yellow);
+    outline-offset: 2px;
+  }
+}
+
 // ============================================================
 // Cifrato-style info grid (icon + label + value chips)
 // ============================================================

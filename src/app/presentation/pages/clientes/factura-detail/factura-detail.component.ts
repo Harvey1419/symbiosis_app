@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, type Observable } from 'rxjs';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -97,6 +97,7 @@ export class FacturaDetailComponent implements OnInit {
   /** Impuestos dialog state. */
   readonly impuestosDialogOpen = signal(false);
   readonly editingRowIdx = signal<number | null>(null);
+  private readonly router = inject(Router);
 
   /** Items can only be edited while the factura is not yet causada/finalizada. */
   readonly canEdit = computed(() => {
@@ -167,6 +168,11 @@ export class FacturaDetailComponent implements OnInit {
     this.nit.set(Number(nitParam));
     this.facturaId.set(idParam);
     this.loadAll();
+  }
+
+  /** Navigate back to the client's factura list. */
+  goBack(): void {
+    this.router.navigate(['/clientes', this.nit()]);
   }
 
   private loadAll(): void {

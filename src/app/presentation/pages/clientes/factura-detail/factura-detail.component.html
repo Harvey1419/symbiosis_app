@@ -2,6 +2,12 @@
   <p-toast position="bottom-right" />
   <p-confirmDialog />
 
+  <!-- Back breadcrumb -->
+  <button class="back-link" (click)="goBack()">
+    <i class="pi pi-arrow-left"></i>
+    <span>Volver a las facturas</span>
+  </button>
+
   <app-page-header
     title="Detalle de Factura"
     [subtitle]="factura()?.vendor_name || factura()?.factura_nro || ''"
@@ -9,13 +15,11 @@
     <ng-template #actions>
       <p-button
         icon="pi pi-arrow-left"
+        label="Volver a facturas"
         severity="secondary"
-        [rounded]="true"
-        [text]="true"
-        size="large"
+        [outlined]="true"
+        size="small"
         [routerLink]="['/clientes', nit()]"
-        pTooltip="Volver al cliente"
-        tooltipPosition="bottom"
       />
     </ng-template>
   </app-page-header>
@@ -189,6 +193,7 @@
           <ng-template pTemplate="header">
             <tr>
               <th>Descripción</th>
+
               <th style="width: 240px">Cuenta PUC</th>
               <th style="width: 70px" class="num-col">Cantidad</th>
               <th style="width: 130px" class="num-col">Valor Total</th>
