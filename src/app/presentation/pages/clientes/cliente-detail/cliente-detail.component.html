@@ -134,8 +134,10 @@
     <p-table
       #dt
       [value]="filteredFacturas()"
-      [(selection)]="selectedFacturasModel"
       dataKey="id"
+      selectionMode="multiple"
+      [(selection)]="selectedFacturasModel"
+      [metaKeySelection]="false"
       [paginator]="true"
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50, 100]"
@@ -147,7 +149,7 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 3rem"><p-tableCheckbox /></th>
+          <th style="width: 3rem"><p-tableCheckbox [disabled]="filteredFacturas().length === 0" /></th>
           <th pSortableColumn="factura_nro" style="width: 140px">
             Nro factura <p-sortIcon field="factura_nro" />
           </th>
