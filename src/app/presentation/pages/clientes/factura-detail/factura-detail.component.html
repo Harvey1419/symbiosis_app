@@ -332,46 +332,6 @@
       }
     </p-card>
 
-    <!-- Histórico -->
-    <p-card header="Histórico de causación" styleClass="historico-card">
-      <p class="hint">Clasificaciones previas del mismo proveedor — útil para referencia al editar.</p>
-      @if (historico().length === 0) {
-        <app-empty-state
-          title="Sin histórico"
-          description="No hay causaciones previas para este proveedor"
-          iconClass="pi pi-history"
-        />
-      } @else {
-        <p-table [value]="historico()" [paginator]="historico().length > 10" [rows]="10" styleClass="historico-table">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>Fecha</th>
-              <th>Cuenta</th>
-              <th>Detalle</th>
-              <th class="num-col">Valor</th>
-              <th>IVA</th>
-              <th>Rete</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-row>
-            <tr>
-              <td>{{ formatDate(row.fecha) }}</td>
-              <td>
-                <span class="mono">{{ row.account_code }}</span>
-                @if (row.account_name) {
-                  <span class="cuenta-nombre">{{ row.account_name }}</span>
-                }
-              </td>
-              <td>{{ row.item_text || '—' }}</td>
-              <td class="num-col">{{ row.item_value ? (row.item_value | number: '1.0-0') : '0' }}</td>
-              <td><span class="mono">{{ row.iva_code || '—' }}</span></td>
-              <td><span class="mono">{{ row.rete_code || '—' }}</span></td>
-            </tr>
-          </ng-template>
-        </p-table>
-      }
-    </p-card>
-
     <!-- Impuestos modal (controlled by component state) -->
     @if (editingRowIdx() !== null && f.filas[editingRowIdx()!]; as row) {
       <app-impuestos-dialog

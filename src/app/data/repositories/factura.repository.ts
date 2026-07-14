@@ -4,24 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 import { Factura, UpdateItemBody } from '@domain/models/factura.model';
 
-export interface HistoricoRow {
-  id: string;
-  client_nit: string;
-  vendor_nit: string;
-  vendor_name: string | null;
-  fecha: string | null;
-  item_text: string | null;
-  item_value: number | null;
-  account_code: string;
-  account_name: string | null;
-  iva_code: string | null;
-  iva_pct: number | null;
-  rete_code: string | null;
-  rete_pct: number | null;
-  has_tax: boolean | null;
-  created_at: string;
-}
-
 @Injectable({ providedIn: 'root' })
 export class FacturaRepository {
   private readonly http = inject(HttpClient);
@@ -51,13 +33,8 @@ export class FacturaRepository {
     return this.http.post<Factura>(`${this.apiUrl}/facturas/${id}/finalizar`, {});
   }
 
-  /** POST /api/facturas/:id/reabir — reverts to target status. */
+  /** POST /api/facturas/:id/reabrir — reverts to target status. */
   reabrir(id: string, target: 'pendiente' | 'causada'): Observable<Factura> {
     return this.http.post<Factura>(`${this.apiUrl}/facturas/${id}/reabrir`, { target });
-  }
-
-  /** GET /api/facturas/:id/historico — vendor causacion history. */
-  getHistorico(id: string): Observable<HistoricoRow[]> {
-    return this.http.get<HistoricoRow[]>(`${this.apiUrl}/facturas/${id}/historico`);
   }
 }

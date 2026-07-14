@@ -81,7 +81,6 @@ export class FacturaDetailComponent implements OnInit {
   readonly nit = signal<number>(0);
   readonly facturaId = signal<string>('');
   readonly factura = signal<Factura | null>(null);
-  readonly historico = signal<unknown[]>([]);
   readonly cuentasPuc = signal<CuentaPuc[]>([]);
   readonly cuentasFiltradas = signal<CuentaPuc[]>([]);
   readonly impuestos = signal<readonly Impuesto[]>([]);
@@ -134,13 +133,11 @@ export class FacturaDetailComponent implements OnInit {
     this.error.set(null);
     forkJoin({
       factura: this.facturaRepo.getById(this.facturaId()),
-      historico: this.facturaRepo.getHistorico(this.facturaId()),
       puc: this.pucRepo.getCuentaPuc(this.nit()),
       impuestos: this.impuestosRepo.getImpuestosByNit(this.nit()),
     }).subscribe({
-      next: ({ factura, historico, puc, impuestos }) => {
+      next: ({ factura, puc, impuestos }) => {
         this.factura.set(factura);
-        this.historico.set(historico);
         this.cuentasPuc.set(puc);
         this.impuestos.set(impuestos.filter((i) => i.active));
         this.loading.set(false);
