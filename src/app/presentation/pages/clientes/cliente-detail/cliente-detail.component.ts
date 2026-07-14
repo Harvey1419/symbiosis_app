@@ -193,18 +193,6 @@ export class ClienteDetailComponent implements OnInit {
   }
 
   // ── Cell renderers ──
-  getConfianzaMin(factura: Factura): number {
-    if (!factura.filas?.length) return 0;
-    return Math.min(...factura.filas.map((f) => f.confianza || 0));
-  }
-
-  getSemaphoreClass(factura: Factura): string {
-    const min = this.getConfianzaMin(factura);
-    if (min >= 70) return 'green';
-    if (min >= 50) return 'yellow';
-    return 'red';
-  }
-
   /**
    * Heuristic: classify by track_id prefix. In a real integration this
    * would come from the DIAN XML metadata (factura_tipo code).

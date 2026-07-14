@@ -167,7 +167,6 @@
           <th pSortableColumn="total_pagar" style="width: 140px">
             Total <p-sortIcon field="total_pagar" />
           </th>
-          <th style="width: 110px">Confianza</th>
           <th style="width: 80px"></th>
         </tr>
       </ng-template>
@@ -186,10 +185,6 @@
             </span>
           </td>
           <td class="money-cell">${{ formatMoney(f.total_pagar) }}</td>
-          <td>
-            <span class="confianza-dot" [class]="getSemaphoreClass(f)"></span>
-            <span class="confianza-text">{{ getConfianzaMin(f) }}%</span>
-          </td>
           <td (click)="$event.stopPropagation()">
             <p-button
               icon="pi pi-arrow-right"
@@ -206,7 +201,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="empty-message">
+          <td colspan="7" class="empty-message">
             @if (hasActiveFilters()) {
               <div class="empty-filtered">
                 <i class="pi pi-search-minus"></i>
