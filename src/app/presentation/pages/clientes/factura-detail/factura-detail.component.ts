@@ -11,7 +11,6 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -36,6 +35,12 @@ import {
 
 type ReabrirTarget = 'pendiente' | 'causada';
 
+interface CuentaOption {
+  account_code: string;
+  account_name: string;
+  display: string; // "51050301 - Salario integral"
+}
+
 @Component({
   selector: 'app-factura-detail',
   standalone: true,
@@ -51,7 +56,6 @@ type ReabrirTarget = 'pendiente' | 'causada';
     CardModule,
     SelectModule,
     InputTextModule,
-    AutoCompleteModule,
     ToastModule,
     ConfirmDialogModule,
     ProgressSpinnerModule,
@@ -82,19 +86,13 @@ export class FacturaDetailComponent implements OnInit {
   readonly facturaId = signal<string>('');
   readonly factura = signal<Factura | null>(null);
   readonly cuentasPuc = signal<CuentaPuc[]>([]);
-  readonly cuentasFiltradas = signal<CuentaPuc[]>([]);
   readonly impuestos = signal<readonly Impuesto[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly actionLoading = signal(false);
 
   // ── Dirty state tracking ──
-  /** Indices of filas with unsaved local changes. */
   readonly dirtyRows = signal<Set<number>>(new Set());
-  /** Index of fila currently being edited inline. */
-  readonly editingIdx = signal<number | null>(null);
-  /** Local working copy of the row being edited. */
-  readonly draft = signal<{ cuenta: string; iva_code: string; rete_code: string } | null>(null);
 
   /** Impuestos dialog state. */
   readonly impuestosDialogOpen = signal(false);
@@ -106,14 +104,14 @@ export class FacturaDetailComponent implements OnInit {
     return s === 'pendiente' || s === 'clasificando';
   });
 
-  constructor() {
-    // When dialog opens, load current row's codes into the dialog.
-    effect(() => {
-      if (this.impuestosDialogOpen()) {
-        // No-op: dialog reads current values via input() bindings in template.
-      }
-    });
-  }
+  /** Computed: PUC options formatted as "51050301 - Salario integral". */
+  readonly cuentasOptions = computed<CuentaOption[]>(() =>
+    this.cuentasPuc().map((c) => ({
+      account_code: c.account_code,
+      account_name: c.account_name,
+      display: `${c.account_code} — ${c.account_name}`,
+    })),
+  );
 
   ngOnInit(): void {
     const nitParam = this.route.snapshot.paramMap.get('nit');
@@ -149,36 +147,78 @@ export class FacturaDetailComponent implements OnInit {
     });
   }
 
-  // ── Autocomplete for cuenta PUC ──────────────────────────────────
-
-  searchCuentas(event: AutoCompleteCompleteEvent): void {
-    const query = event.query.toLowerCase();
-    const filtered = this.cuentasPuc()
-      .filter(
-        (c) =>
-          c.account_code.toLowerCase().includes(query) ||
-          c.account_name.toLowerCase().includes(query),
-      )
-      .slice(0, 20);
-    this.cuentasFiltradas.set(filtered);
-  }
+  // ── Helpers ──────────────────────────────────────────────────
 
   getCuentaName(code: string): string {
     return this.cuentasPuc().find((c) => c.account_code === code)?.account_name ?? '';
   }
 
-  // ── Dirty state helpers ──────────────────────────────────────────
+  formatStatus(status: string): string {
+    const map: Record<string, string> = {
+      pendiente: 'Pendiente',
+      causada: 'Causada',
+      finalizada: 'Finalizada',
+      error: 'Error',
+      clasificando: 'Clasificando',
+    };
+    return map[status] || status;
+  }
+
+  formatDate(d: string | null | undefined): string {
+    if (!d) return '—';
+    try {
+      return new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch { return d; }
+  }
+
+  formatMoney(n: number | null | undefined): string {
+    if (n === null || n === undefined) return '0';
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n);
+  }
+
+  formatCufe(cufe: string | null | undefined): string {
+    if (!cufe) return '—';
+    if (cufe.length > 20) return cufe.slice(0, 14) + '…' + cufe.slice(-4);
+    return cufe;
+  }
+
+  /** Copy CUFE to clipboard. */
+  copyCufe(): void {
+    const cufe = this.factura()?.cufe;
+    if (!cufe) return;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(cufe).then(
+        () => this.message.add({ severity: 'success', summary: 'CUFE copiado', detail: cufe, life: 2000 }),
+        () => this.message.add({ severity: 'error', summary: 'No se pudo copiar el CUFE' }),
+      );
+    } else {
+      // Fallback: select + copy
+      const ta = document.createElement('textarea');
+      ta.value = cufe;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        this.message.add({ severity: 'success', summary: 'CUFE copiado', life: 2000 });
+      } catch {
+        this.message.add({ severity: 'error', summary: 'No se pudo copiar el CUFE' });
+      }
+      document.body.removeChild(ta);
+    }
+  }
+
+  // ── Dirty state ─────────────────────────────────────────────
 
   isDirty(idx: number): boolean {
     return this.dirtyRows().has(idx);
   }
 
-  /** Total number of dirty rows. */
   dirtyCount(): number {
     return this.dirtyRows().size;
   }
 
-  /** True if at least one row has unsaved changes. */
   hasDirtyRows(): boolean {
     return this.dirtyRows().size > 0;
   }
@@ -199,104 +239,24 @@ export class FacturaDetailComponent implements OnInit {
     });
   }
 
-  private clearAllDirty(): void {
-    this.dirtyRows.set(new Set());
-  }
+  // ── Cuenta PUC: p-select auto-save on change ──────────────────
 
-  /** Save all dirty rows in sequence (sequential PATCH per row). */
-  saveAll(): void {
-    const dirty = Array.from(this.dirtyRows());
-    if (dirty.length === 0) return;
-    this.actionLoading.set(true);
-    let i = 0;
-    const next = () => {
-      if (i >= dirty.length) {
-        this.actionLoading.set(false);
-        this.message.add({ severity: 'success', summary: `${dirty.length} fila(s) guardadas` });
-        return;
-      }
-      this.saveRow(dirty[i++]);
-    };
-    // Patch current saveRow to chain — simplest: call next() in a microtask after the request settles.
-    const original = this.saveRow.bind(this);
-    this.saveRow = (idx: number) => {
-      original(idx);
-      // Wait for current request to complete (subscribe already updates loading/clear)
-      // The actionLoading is reset by saveRow on success/error — we override that.
-      this.actionLoading.set(true);
-      // Schedule next attempt after a brief delay (let the PATCH complete).
-      setTimeout(next, 0);
-    };
-    next();
-    // Restore original after the queue is done.
-    setTimeout(() => { this.saveRow = original; }, dirty.length * 100);
-  }
-
-  /** Discard all local changes (reload from server). */
-  discardAll(): void {
-    if (this.dirtyRows().size === 0) return;
-    this.ngOnInit();
-  }
-
-  // ── Inline editing (cuenta only) ────────────────────────────────
-
-  /** Click on the Cuenta cell — enters edit mode for that row. */
-  onCuentaCellClick(idx: number): void {
+  /** When the user picks a cuenta from the p-select. */
+  onCuentaChanged(idx: number, value: string | null): void {
     if (!this.canEdit()) return;
-    if (this.editingIdx() === idx) return; // already editing
-    this.startEdit(idx);
-  }
-
-  /** Called when the autocomplete commits a value (onSelect or onBlur). */
-  onCuentaCommitted(): void {
-    // Persist the draft to the local factura + mark dirty, exit edit mode.
-    const idx = this.editingIdx();
-    if (idx === null) return;
-    const draft = this.draft();
-    if (!draft) return;
     const f = this.factura();
     if (!f) return;
     const updatedFilas = f.filas.map((row, i) =>
-      i === idx
-        ? {
-            ...row,
-            cuenta: draft.cuenta || null,
-            iva_code: draft.iva_code || null,
-            rete_code: draft.rete_code || null,
-          }
-        : row,
+      i === idx ? { ...row, cuenta: value || null } : row,
     );
     this.factura.set({ ...f, filas: updatedFilas });
     this.markDirty(idx);
-    this.editingIdx.set(null);
-    this.draft.set(null);
   }
 
-  startEdit(idx: number): void {
-    const fila = this.factura()?.filas[idx];
-    if (!fila) return;
-    this.editingIdx.set(idx);
-    this.draft.set({
-      cuenta: fila.cuenta ?? '',
-      iva_code: fila.iva_code ?? '',
-      rete_code: fila.rete_code ?? '',
-    });
-  }
+  // ── Impuestos: open modal on cell click ───────────────────────
 
-  cancelEdit(): void {
-    const idx = this.editingIdx();
-    if (idx !== null) this.clearDirty(idx);
-    this.editingIdx.set(null);
-    this.draft.set(null);
-  }
-
-  updateDraft(field: 'cuenta' | 'iva_code' | 'rete_code', value: string): void {
-    this.draft.update((d) => (d ? { ...d, [field]: value } : d));
-  }
-
-  // ── Impuestos dialog ─────────────────────────────────────────────
-
-  openImpuestosModal(idx: number): void {
+  onImpuestosCellClick(idx: number): void {
+    if (!this.canEdit()) return;
     this.editingRowIdx.set(idx);
     this.impuestosDialogOpen.set(true);
   }
@@ -317,7 +277,7 @@ export class FacturaDetailComponent implements OnInit {
     this.editingRowIdx.set(null);
   }
 
-  // ── Save row (PATCH) ─────────────────────────────────────────────
+  // ── Save row (PATCH) ─────────────────────────────────────────
 
   saveRow(idx: number): void {
     const f = this.factura();
@@ -345,6 +305,36 @@ export class FacturaDetailComponent implements OnInit {
         this.actionLoading.set(false);
       },
     });
+  }
+
+  saveAll(): void {
+    const dirty = Array.from(this.dirtyRows());
+    if (dirty.length === 0) return;
+    this.actionLoading.set(true);
+    // Sequential PATCH per row
+    const next = () => {
+      if (dirty.length === 0) {
+        this.actionLoading.set(false);
+        this.message.add({ severity: 'success', summary: 'Todos los cambios guardados' });
+        return;
+      }
+      const idx = dirty.shift()!;
+      this.saveRow(idx);
+    };
+    // Override actionLoading-resetting in saveRow
+    const original = this.saveRow.bind(this);
+    this.saveRow = (i: number) => {
+      original(i);
+      this.actionLoading.set(true);
+      setTimeout(next, 50);
+    };
+    setTimeout(() => { this.saveRow = original; }, dirty.length * 200);
+    next();
+  }
+
+  discardAll(): void {
+    if (this.dirtyRows().size === 0) return;
+    this.ngOnInit();
   }
 
   // ── Status actions (Causar / Finalizar / Reabrir) ─────────────
@@ -384,40 +374,6 @@ export class FacturaDetailComponent implements OnInit {
     if (!ok) return;
     this.runAction(this.facturaRepo.reabrir(this.facturaId(), target), 'Factura reabierta');
   }
-
-  // ── Status formatting ───────────────────────────────────────────
-
-  formatStatus(status: string): string {
-    const map: Record<string, string> = {
-      pendiente: 'Pendiente',
-      causada: 'Causada',
-      finalizada: 'Finalizada',
-      error: 'Error',
-      clasificando: 'Clasificando',
-    };
-    return map[status] || status;
-  }
-
-  formatDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    try {
-      return new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch { return d; }
-  }
-
-  formatMoney(n: number | null | undefined): string {
-    if (n === null || n === undefined) return '0';
-    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n);
-  }
-
-  formatCufe(cufe: string | null | undefined): string {
-    if (!cufe) return '—';
-    // DIAN CUFE is long; show first 12 + ellipsis
-    if (cufe.length > 16) return cufe.slice(0, 12) + '…' + cufe.slice(-4);
-    return cufe;
-  }
-
-  // ── Internal helpers ─────────────────────────────────────────────
 
   private runAction(obs: Observable<Factura>, successMsg: string): void {
     this.actionLoading.set(true);

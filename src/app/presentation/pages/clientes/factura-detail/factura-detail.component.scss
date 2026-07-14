@@ -195,10 +195,66 @@
 
 // Cuenta cell: click to edit, no Edit button
 .cuenta-cell-wrapper {
-  cursor: text;
+  padding: 4px 0;
+}
 
-  &:hover .cuenta-empty {
-    color: var(--color-yellow);
+:host ::ng-deep {
+  .cuenta-select {
+    width: 100%;
+
+    .p-select {
+      width: 100%;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-base);
+      min-height: 32px;
+
+      &:not(.p-disabled):hover {
+        border-color: var(--color-yellow);
+      }
+
+      &.p-focus {
+        border-color: var(--color-yellow);
+        box-shadow: var(--shadow-yellow-glow);
+      }
+
+      .p-select-label {
+        color: var(--text-strong);
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        padding: 0.25rem 0.5rem;
+      }
+
+      .p-select-placeholder {
+        color: var(--text-muted);
+      }
+
+      .p-select-trigger {
+        color: var(--text-muted);
+        width: 1.5rem;
+      }
+    }
+
+    // Dropdown panel
+    .p-select-overlay {
+      background: var(--surface-higher) !important;
+      border: 1px solid var(--surface-border) !important;
+
+      .p-select-option {
+        color: var(--text-strong) !important;
+        font-size: 0.8125rem;
+        font-family: var(--font-mono);
+
+        &:hover {
+          background: var(--surface-card-hover) !important;
+        }
+
+        &.p-select-option-selected {
+          background: color-mix(in srgb, var(--color-yellow) 18%, var(--surface-higher)) !important;
+          color: var(--color-yellow) !important;
+        }
+      }
+    }
   }
 }
 
@@ -210,11 +266,6 @@
   padding: 4px 6px;
   border-radius: var(--radius-base);
   border: 1px solid transparent;
-  transition: border-color 120ms ease;
-
-  &:hover {
-    border-color: var(--surface-border);
-  }
 }
 
 .cuenta-code {
@@ -233,27 +284,6 @@
 .cuenta-empty {
   color: var(--text-muted);
   font-size: 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-
-  i { font-size: 0.85rem; }
-}
-
-:host ::ng-deep {
-  .cuenta-ac {
-    width: 100%;
-
-    .p-autocomplete-input {
-      width: 100%;
-      background: var(--surface-card);
-      border: 1px solid var(--color-yellow);
-      color: var(--text-strong);
-      font-family: var(--font-mono);
-      font-size: 0.8125rem;
-      border-radius: var(--radius-base);
-    }
-  }
 }
 
 .valor-total {
@@ -264,9 +294,19 @@
 
 .num-col { text-align: right; }
 
-// Impuestos cell: button in this column, no Acciones column
+// Impuestos cell: whole cell clickable, no buttons
 .impuestos-cell-wrapper {
   padding: 4px 0;
+  transition: background 120ms ease;
+  border-radius: var(--radius-base);
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surface-higher);
+    }
+  }
 }
 
 .impuestos-cell {

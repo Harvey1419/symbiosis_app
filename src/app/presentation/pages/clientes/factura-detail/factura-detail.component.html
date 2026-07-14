@@ -124,19 +124,25 @@
           </div>
         </div>
 
-        <div class="info-chip">
+        <div class="info-chip cufe-chip">
           <i class="pi pi-key info-icon"></i>
           <div class="info-content">
             <span class="info-label">CUFE</span>
-            <span class="info-value mono" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
-          </div>
-        </div>
-
-        <div class="info-chip">
-          <i class="pi pi-link info-icon"></i>
-          <div class="info-content">
-            <span class="info-label">Track ID</span>
-            <span class="info-value mono" [pTooltip]="f.track_id || ''">{{ f.track_id || '—' }}</span>
+            <span class="info-value cufe-value">
+              <span class="mono cufe-text" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
+              @if (f.cufe) {
+                <p-button
+                  icon="pi pi-copy"
+                  severity="secondary"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  (onClick)="copyCufe()"
+                  pTooltip="Copiar CUFE completo"
+                  styleClass="copy-btn"
+                />
+              }
+            </span>
           </div>
         </div>
 
@@ -145,22 +151,6 @@
           <div class="info-content">
             <span class="info-label">Total a pagar</span>
             <span class="info-value mono total-pagar">${{ formatMoney(f.total_pagar) }}</span>
-          </div>
-        </div>
-
-        <div class="info-chip">
-          <i class="pi pi-dollar info-icon"></i>
-          <div class="info-content">
-            <span class="info-label">Subtotal</span>
-            <span class="info-value mono">${{ formatMoney(f.subtotal) }}</span>
-          </div>
-        </div>
-
-        <div class="info-chip">
-          <i class="pi pi-percentage info-icon"></i>
-          <div class="info-content">
-            <span class="info-label">Total IVA</span>
-            <span class="info-value mono">${{ formatMoney(f.total_iva) }}</span>
           </div>
         </div>
 
@@ -203,29 +193,26 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-fila let-i="rowIndex">
-            <tr [class.editing]="editingIdx() === i" [class.dirty]="isDirty(i)">
+            <tr [class.dirty]="isDirty(i)">
               <td>
                 <span class="fila-desc">{{ fila.descripcion || '—' }}</span>
               </td>
 
-              <!-- Cuenta PUC: click on cell to edit (no Edit button) -->
-              <td class="cuenta-cell-wrapper" (click)="onCuentaCellClick(i)">
-                @if (canEdit() && editingIdx() === i && draft(); as d) {
-                  <p-autoComplete
-                    [(ngModel)]="d.cuenta"
-                    [suggestions]="cuentasFiltradas()"
-                    (completeMethod)="searchCuentas($event)"
-                    (onSelect)="onCuentaCommitted()"
-                    (onBlur)="onCuentaCommitted()"
-                    (onKeyDown.escape)="cancelEdit()"
-                    [forceSelection]="false"
-                    [dropdown]="true"
+              <!-- Cuenta PUC: p-select with code-name format. Click on cell to open. -->
+              <td class="cuenta-cell-wrapper">
+                @if (canEdit()) {
+                  <p-select
+                    [options]="cuentasOptions()"
+                    [(ngModel)]="fila.cuenta"
+                    (onChange)="onCuentaChanged(i, $any($event).value)"
+                    [filter]="true"
+                    filterBy="display"
+                    optionLabel="display"
+                    optionValue="account_code"
+                    placeholder="Seleccionar cuenta"
                     appendTo="body"
-                    field="account_code"
-                    placeholder="Buscar cuenta..."
-                    styleClass="cuenta-ac"
-                    [inputStyle]="{ width: '100%' }"
-                    autoFocusFirstOption="true"
+                    styleClass="cuenta-select"
+                    [showClear]="true"
                   />
                 } @else {
                   <div class="cuenta-cell">
@@ -233,9 +220,7 @@
                       <span class="mono cuenta-code">{{ fila.cuenta }}</span>
                       <span class="cuenta-nombre">{{ getCuentaName(fila.cuenta) }}</span>
                     } @else {
-                      <span class="cuenta-empty">
-                        <i class="pi pi-plus-circle"></i> Asignar cuenta
-                      </span>
+                      <span class="cuenta-empty">—</span>
                     }
                   </div>
                 }
@@ -252,8 +237,8 @@
                 </span>
               </td>
 
-              <!-- Impuestos: button in this column opens the modal (no Acciones column) -->
-              <td class="impuestos-cell-wrapper" (click)="$event.stopPropagation()">
+              <!-- Impuestos: whole cell clickable, no buttons. Opens modal directly. -->
+              <td class="impuestos-cell-wrapper" (click)="onImpuestosCellClick(i)" [class.clickable]="canEdit()">
                 <div class="impuestos-cell">
                   @if (fila.iva_code || fila.rete_code) {
                     <div class="impuestos-chips">
@@ -272,17 +257,6 @@
                     <span class="imp-empty">
                       <i class="pi pi-plus-circle"></i> Asignar
                     </span>
-                  }
-                  @if (canEdit()) {
-                    <p-button
-                      icon="pi pi-pencil"
-                      severity="secondary"
-                      [text]="true"
-                      [rounded]="true"
-                      size="small"
-                      (onClick)="openImpuestosModal(i)"
-                      pTooltip="Editar impuestos"
-                    />
                   }
                 </div>
               </td>
