@@ -26,7 +26,7 @@
   }
 
   @if (factura(); as f) {
-    <!-- Status actions card -->
+    <!-- Status actions bar (only main state transitions, no per-row actions) -->
     @if (f.status === 'pendiente' || f.status === 'causada' || f.status === 'finalizada') {
       <p-card styleClass="actions-card">
         <div class="actions-bar">
@@ -81,130 +81,114 @@
       </p-card>
     }
 
-    <!-- Datos de la factura — 6 grupos -->
-    <p-card header="Datos de la factura" styleClass="meta-card">
-      <div class="meta-groups">
-        <section class="meta-group">
-          <h3 class="group-title">Identidad</h3>
-          <div class="meta-grid">
-            <div class="meta-field">
-              <span class="meta-label">Estado</span>
-              <app-status-badge [status]="f.status" />
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Nro factura</span>
-              <span class="meta-value mono">{{ f.factura_nro || '—' }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">CUFE</span>
-              <span class="meta-value mono" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Track ID</span>
-              <span class="meta-value mono">{{ f.track_id || '—' }}</span>
-            </div>
+    <!-- Datos de la factura — Cifrato-style info grid (chips con icono + label + value) -->
+    <p-card styleClass="meta-card">
+      <div class="info-grid">
+        <div class="info-chip">
+          <i class="pi pi-circle info-icon status" [class]="'status-' + f.status"></i>
+          <div class="info-content">
+            <span class="info-label">Estado</span>
+            <span class="info-value"><app-status-badge [status]="f.status" /></span>
           </div>
-        </section>
+        </div>
 
-        <section class="meta-group">
-          <h3 class="group-title">Comercial</h3>
-          <div class="meta-grid">
-            <div class="meta-field">
-              <span class="meta-label">Proveedor</span>
-              <span class="meta-value">{{ f.vendor_name || '—' }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">NIT proveedor</span>
-              <span class="meta-value mono">{{ f.vendor_nit || '—' }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Fecha emisión</span>
-              <span class="meta-value">{{ formatDate(f.fecha_emision) }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Fecha vencimiento</span>
-              <span class="meta-value">{{ formatDate(f.payment_due_date) }}</span>
-            </div>
+        <div class="info-chip">
+          <i class="pi pi-hashtag info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Nro factura</span>
+            <span class="info-value mono">{{ f.factura_nro || '—' }}</span>
           </div>
-        </section>
+        </div>
 
-        <section class="meta-group">
-          <h3 class="group-title">Montos</h3>
-          <div class="meta-grid">
-            <div class="meta-field">
-              <span class="meta-label">Subtotal</span>
-              <span class="meta-value mono">${{ formatMoney(f.subtotal) }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Total IVA</span>
-              <span class="meta-value mono">${{ formatMoney(f.total_iva) }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label highlight">Total a pagar</span>
-              <span class="meta-value mono total-pagar">${{ formatMoney(f.total_pagar) }}</span>
-            </div>
+        <div class="info-chip">
+          <i class="pi pi-calendar info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Fecha emisión</span>
+            <span class="info-value">{{ formatDate(f.fecha_emision) }}</span>
           </div>
-        </section>
+        </div>
 
-        <section class="meta-group">
-          <h3 class="group-title">Fechas sistema</h3>
-          <div class="meta-grid">
-            <div class="meta-field">
-              <span class="meta-label">Clasificado</span>
-              <span class="meta-value">{{ formatDate(f.clasificado_at) }}</span>
-            </div>
-            @if (f.causada_at) {
-              <div class="meta-field">
-                <span class="meta-label">Causado</span>
-                <span class="meta-value">{{ formatDate(f.causada_at) }}</span>
-              </div>
-            }
-            <div class="meta-field">
-              <span class="meta-label">Creado</span>
-              <span class="meta-value">{{ formatDate(f.created_at) }}</span>
-            </div>
+        <div class="info-chip">
+          <i class="pi pi-building info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Proveedor</span>
+            <span class="info-value" [title]="f.vendor_name || '—'">{{ (f.vendor_name || '—') | slice:0:22 }}{{ (f.vendor_name?.length ?? 0) > 22 ? '…' : '' }}</span>
           </div>
-        </section>
+        </div>
+
+        <div class="info-chip">
+          <i class="pi pi-id-card info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">NIT proveedor</span>
+            <span class="info-value mono">{{ f.vendor_nit || '—' }}</span>
+          </div>
+        </div>
+
+        <div class="info-chip">
+          <i class="pi pi-key info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">CUFE</span>
+            <span class="info-value mono" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
+          </div>
+        </div>
+
+        <div class="info-chip">
+          <i class="pi pi-link info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Track ID</span>
+            <span class="info-value mono" [pTooltip]="f.track_id || ''">{{ f.track_id || '—' }}</span>
+          </div>
+        </div>
+
+        <div class="info-chip highlight">
+          <i class="pi pi-money-bill info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Total a pagar</span>
+            <span class="info-value mono total-pagar">${{ formatMoney(f.total_pagar) }}</span>
+          </div>
+        </div>
+
+        <div class="info-chip">
+          <i class="pi pi-dollar info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Subtotal</span>
+            <span class="info-value mono">${{ formatMoney(f.subtotal) }}</span>
+          </div>
+        </div>
+
+        <div class="info-chip">
+          <i class="pi pi-percentage info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Total IVA</span>
+            <span class="info-value mono">${{ formatMoney(f.total_iva) }}</span>
+          </div>
+        </div>
 
         @if (f.pdf_url || f.xml_url) {
-          <section class="meta-group">
-            <h3 class="group-title">Archivos</h3>
-            <div class="file-actions">
-              @if (f.pdf_url) {
-                <p-button
-                  label="Ver PDF"
-                  icon="pi pi-file-pdf"
-                  severity="secondary"
-                  [outlined]="true"
-                  [attr.href]="f.pdf_url"
-                  target="_blank"
-                />
-              }
-              @if (f.xml_url) {
-                <p-button
-                  label="Ver XML"
-                  icon="pi pi-code"
-                  severity="secondary"
-                  [outlined]="true"
-                  [attr.href]="f.xml_url"
-                  target="_blank"
-                />
-              }
+          <div class="info-chip files-chip">
+            <i class="pi pi-paperclip info-icon"></i>
+            <div class="info-content">
+              <span class="info-label">Archivos</span>
+              <span class="info-value file-actions">
+                @if (f.pdf_url) {
+                  <a [href]="f.pdf_url" target="_blank" rel="noopener">
+                    <i class="pi pi-file-pdf"></i> PDF
+                  </a>
+                }
+                @if (f.xml_url) {
+                  <a [href]="f.xml_url" target="_blank" rel="noopener">
+                    <i class="pi pi-code"></i> XML
+                  </a>
+                }
+              </span>
             </div>
-          </section>
-        }
-
-        @if (f.notes) {
-          <section class="meta-group notes-group">
-            <h3 class="group-title">Notas</h3>
-            <p class="notes-text">{{ f.notes }}</p>
-          </section>
+          </div>
         }
       </div>
     </p-card>
 
-    <!-- Items table — 5 columns, no Confianza, no Acciones -->
-    <p-card header="Items" styleClass="items-card">
+    <!-- Items table — 5 columns, no Acciones column. Inline edit per cell. -->
+    <p-card styleClass="items-card">
       @if (f.filas.length === 0) {
         <app-empty-state title="Sin items" description="Esta factura no tiene filas" iconClass="pi pi-list" />
       } @else {
@@ -212,11 +196,10 @@
           <ng-template pTemplate="header">
             <tr>
               <th>Descripción</th>
-              <th style="width: 220px">Cuenta PUC</th>
+              <th style="width: 240px">Cuenta PUC</th>
               <th style="width: 70px" class="num-col">Cantidad</th>
               <th style="width: 130px" class="num-col">Valor Total</th>
-              <th style="width: 180px">Impuestos</th>
-              <th style="width: 120px"></th>
+              <th style="width: 200px">Impuestos</th>
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-fila let-i="rowIndex">
@@ -224,28 +207,40 @@
               <td>
                 <span class="fila-desc">{{ fila.descripcion || '—' }}</span>
               </td>
-              <td>
+
+              <!-- Cuenta PUC: click on cell to edit (no Edit button) -->
+              <td class="cuenta-cell-wrapper" (click)="onCuentaCellClick(i)">
                 @if (canEdit() && editingIdx() === i && draft(); as d) {
                   <p-autoComplete
                     [(ngModel)]="d.cuenta"
                     [suggestions]="cuentasFiltradas()"
                     (completeMethod)="searchCuentas($event)"
+                    (onSelect)="onCuentaCommitted()"
+                    (onBlur)="onCuentaCommitted()"
+                    (onKeyDown.escape)="cancelEdit()"
                     [forceSelection]="false"
                     [dropdown]="true"
                     appendTo="body"
                     field="account_code"
                     placeholder="Buscar cuenta..."
                     styleClass="cuenta-ac"
+                    [inputStyle]="{ width: '100%' }"
+                    autoFocusFirstOption="true"
                   />
                 } @else {
                   <div class="cuenta-cell">
-                    <span class="mono cuenta-code">{{ fila.cuenta || '—' }}</span>
                     @if (fila.cuenta) {
+                      <span class="mono cuenta-code">{{ fila.cuenta }}</span>
                       <span class="cuenta-nombre">{{ getCuentaName(fila.cuenta) }}</span>
+                    } @else {
+                      <span class="cuenta-empty">
+                        <i class="pi pi-plus-circle"></i> Asignar cuenta
+                      </span>
                     }
                   </div>
                 }
               </td>
+
               <td class="num-col">1</td>
               <td class="num-col">
                 <span class="valor-total">
@@ -256,7 +251,9 @@
                   }
                 </span>
               </td>
-              <td>
+
+              <!-- Impuestos: button in this column opens the modal (no Acciones column) -->
+              <td class="impuestos-cell-wrapper" (click)="$event.stopPropagation()">
                 <div class="impuestos-cell">
                   @if (fila.iva_code || fila.rete_code) {
                     <div class="impuestos-chips">
@@ -272,56 +269,19 @@
                       }
                     </div>
                   } @else {
-                    <span class="muted">—</span>
+                    <span class="imp-empty">
+                      <i class="pi pi-plus-circle"></i> Asignar
+                    </span>
                   }
-                </div>
-              </td>
-              <td>
-                <div class="row-actions" (click)="$event.stopPropagation()">
                   @if (canEdit()) {
-                    @if (editingIdx() === i) {
-                      <p-button
-                        icon="pi pi-check"
-                        severity="success"
-                        size="small"
-                        (onClick)="saveRow(i)"
-                        pTooltip="Guardar"
-                      />
-                      <p-button
-                        icon="pi pi-times"
-                        severity="secondary"
-                        [outlined]="true"
-                        size="small"
-                        (onClick)="cancelEdit()"
-                        pTooltip="Cancelar"
-                      />
-                    } @else {
-                      <p-button
-                        icon="pi pi-pencil"
-                        severity="secondary"
-                        [outlined]="true"
-                        size="small"
-                        (onClick)="startEdit(i)"
-                        pTooltip="Editar cuenta"
-                      />
-                      <p-button
-                        icon="pi pi-percentage"
-                        severity="primary"
-                        [outlined]="true"
-                        size="small"
-                        (onClick)="openImpuestosModal(i)"
-                        pTooltip="Asignar impuestos"
-                      />
-                    }
-                  }
-                  @if (isDirty(i)) {
                     <p-button
-                      label="Guardar"
-                      icon="pi pi-save"
-                      severity="warn"
+                      icon="pi pi-pencil"
+                      severity="secondary"
+                      [text]="true"
+                      [rounded]="true"
                       size="small"
-                      (onClick)="saveRow(i)"
-                      pTooltip="Guardar cambios"
+                      (onClick)="openImpuestosModal(i)"
+                      pTooltip="Editar impuestos"
                     />
                   }
                 </div>
@@ -329,10 +289,36 @@
             </tr>
           </ng-template>
         </p-table>
+
+        <!-- Floating save bar (only when at least one row is dirty) -->
+        @if (hasDirtyRows()) {
+          <div class="save-bar">
+            <span class="save-bar-info">
+              <i class="pi pi-info-circle"></i>
+              Tienes cambios sin guardar en {{ dirtyCount() }} fila(s).
+            </span>
+            <div class="save-bar-actions">
+              <p-button
+                label="Guardar todo"
+                icon="pi pi-save"
+                severity="warn"
+                (onClick)="saveAll()"
+                [disabled]="actionLoading()"
+              />
+              <p-button
+                label="Descartar"
+                icon="pi pi-times"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="discardAll()"
+              />
+            </div>
+          </div>
+        }
       }
     </p-card>
 
-    <!-- Impuestos modal (controlled by component state) -->
+    <!-- Impuestos modal -->
     @if (editingRowIdx() !== null && f.filas[editingRowIdx()!]; as row) {
       <app-impuestos-dialog
         [visible]="impuestosDialogOpen()"

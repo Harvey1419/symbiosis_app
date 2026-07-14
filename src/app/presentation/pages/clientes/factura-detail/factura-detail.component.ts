@@ -173,6 +173,16 @@ export class FacturaDetailComponent implements OnInit {
     return this.dirtyRows().has(idx);
   }
 
+  /** Total number of dirty rows. */
+  dirtyCount(): number {
+    return this.dirtyRows().size;
+  }
+
+  /** True if at least one row has unsaved changes. */
+  hasDirtyRows(): boolean {
+    return this.dirtyRows().size > 0;
+  }
+
   private markDirty(idx: number): void {
     this.dirtyRows.update((s) => {
       const next = new Set(s);
@@ -189,7 +199,78 @@ export class FacturaDetailComponent implements OnInit {
     });
   }
 
+  private clearAllDirty(): void {
+    this.dirtyRows.set(new Set());
+  }
+
+  /** Save all dirty rows in sequence (sequential PATCH per row). */
+  saveAll(): void {
+    const dirty = Array.from(this.dirtyRows());
+    if (dirty.length === 0) return;
+    this.actionLoading.set(true);
+    let i = 0;
+    const next = () => {
+      if (i >= dirty.length) {
+        this.actionLoading.set(false);
+        this.message.add({ severity: 'success', summary: `${dirty.length} fila(s) guardadas` });
+        return;
+      }
+      this.saveRow(dirty[i++]);
+    };
+    // Patch current saveRow to chain — simplest: call next() in a microtask after the request settles.
+    const original = this.saveRow.bind(this);
+    this.saveRow = (idx: number) => {
+      original(idx);
+      // Wait for current request to complete (subscribe already updates loading/clear)
+      // The actionLoading is reset by saveRow on success/error — we override that.
+      this.actionLoading.set(true);
+      // Schedule next attempt after a brief delay (let the PATCH complete).
+      setTimeout(next, 0);
+    };
+    next();
+    // Restore original after the queue is done.
+    setTimeout(() => { this.saveRow = original; }, dirty.length * 100);
+  }
+
+  /** Discard all local changes (reload from server). */
+  discardAll(): void {
+    if (this.dirtyRows().size === 0) return;
+    this.ngOnInit();
+  }
+
   // ── Inline editing (cuenta only) ────────────────────────────────
+
+  /** Click on the Cuenta cell — enters edit mode for that row. */
+  onCuentaCellClick(idx: number): void {
+    if (!this.canEdit()) return;
+    if (this.editingIdx() === idx) return; // already editing
+    this.startEdit(idx);
+  }
+
+  /** Called when the autocomplete commits a value (onSelect or onBlur). */
+  onCuentaCommitted(): void {
+    // Persist the draft to the local factura + mark dirty, exit edit mode.
+    const idx = this.editingIdx();
+    if (idx === null) return;
+    const draft = this.draft();
+    if (!draft) return;
+    const f = this.factura();
+    if (!f) return;
+    const updatedFilas = f.filas.map((row, i) =>
+      i === idx
+        ? {
+            ...row,
+            cuenta: draft.cuenta || null,
+            iva_code: draft.iva_code || null,
+            rete_code: draft.rete_code || null,
+          }
+        : row,
+    );
+    this.factura.set({ ...f, filas: updatedFilas });
+    this.markDirty(idx);
+    this.editingIdx.set(null);
+    this.draft.set(null);
+  }
 
   startEdit(idx: number): void {
     const fila = this.factura()?.filas[idx];

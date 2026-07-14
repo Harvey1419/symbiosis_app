@@ -8,83 +8,121 @@
 }
 
 // ============================================================
-// Meta card (Datos de la factura) — 6 groups
+// Cifrato-style info grid (icon + label + value chips)
 // ============================================================
 .meta-card {
   background: var(--surface-card) !important;
   border: 1px solid var(--surface-border);
 }
 
-.meta-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.meta-group {
-  .group-title {
-    margin: 0 0 0.625rem;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-yellow);
-  }
-}
-
-.meta-grid {
+.info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.875rem 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
 }
 
-.meta-field {
+.info-chip {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: var(--surface-higher);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  transition: border-color 150ms ease, background 150ms ease;
   min-width: 0;
 
-  .meta-label {
+  &:hover {
+    border-color: var(--color-yellow);
+  }
+
+  &.highlight {
+    background: color-mix(in srgb, var(--color-yellow) 8%, var(--surface-higher));
+    border-color: color-mix(in srgb, var(--color-yellow) 30%, var(--surface-border));
+
+    .info-icon { background: var(--color-yellow); color: var(--color-primary); }
+    .info-value { color: var(--color-yellow); font-weight: 700; }
+  }
+
+  .info-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-card);
+    color: var(--color-yellow);
+    border-radius: 50%;
+    font-size: 0.95rem;
+
+    &.status {
+      // Color badge by status severity (PrimeNG default)
+      &.status-pendiente    { color: var(--color-info); }
+      &.status-clasificando { color: var(--color-info); }
+      &.status-causada      { color: var(--color-success); }
+      &.status-finalizada   { color: var(--color-yellow); }
+      &.status-error        { color: var(--color-error); }
+    }
+  }
+
+  .info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .info-label {
     font-family: var(--font-mono);
     font-size: 0.65rem;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
   }
 
-  .meta-value {
+  .info-value {
     font-size: 0.875rem;
     color: var(--text-strong);
     word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     &.mono { font-family: var(--font-mono); font-size: 0.8125rem; }
-    &.highlight { font-family: var(--font-mono); font-weight: 600; color: var(--color-yellow); }
+    &.total-pagar { font-size: 1rem; font-weight: 700; }
   }
 }
 
-.file-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
+.files-chip {
+  .file-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 
-.notes-group {
-  .notes-text {
-    margin: 0;
-    padding: 0.75rem 1rem;
-    background: var(--surface-higher);
-    border: 1px solid var(--surface-border);
-    border-radius: var(--radius-md);
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    font-style: italic;
-    white-space: pre-wrap;
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-base);
+      color: var(--text-strong);
+      font-size: 0.75rem;
+      text-decoration: none;
+      transition: all 150ms ease;
+
+      &:hover {
+        border-color: var(--color-yellow);
+        color: var(--color-yellow);
+      }
+    }
   }
 }
 
 // ============================================================
-// Actions card (Causar / Finalizar / Reabrir)
+// Status actions
 // ============================================================
 .actions-card {
   background: var(--surface-card) !important;
@@ -98,13 +136,10 @@
   align-items: center;
 }
 
-.action-spinner {
-  width: 28px;
-  height: 28px;
-}
+.action-spinner { width: 28px; height: 28px; }
 
 // ============================================================
-// Items card
+// Items table — inline edit + button-per-column
 // ============================================================
 .items-card {
   background: var(--surface-card) !important;
@@ -134,7 +169,7 @@
       transition: background 150ms ease;
 
       > td {
-        padding: 0.75rem 1rem;
+        padding: 0.625rem 0.875rem;
         border: none;
         border-bottom: 1px solid var(--surface-border);
         color: var(--text-strong);
@@ -158,11 +193,28 @@
   white-space: nowrap;
 }
 
+// Cuenta cell: click to edit, no Edit button
+.cuenta-cell-wrapper {
+  cursor: text;
+
+  &:hover .cuenta-empty {
+    color: var(--color-yellow);
+  }
+}
+
 .cuenta-cell {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  padding: 4px 6px;
+  border-radius: var(--radius-base);
+  border: 1px solid transparent;
+  transition: border-color 120ms ease;
+
+  &:hover {
+    border-color: var(--surface-border);
+  }
 }
 
 .cuenta-code {
@@ -175,7 +227,33 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 220px;
+}
+
+.cuenta-empty {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  i { font-size: 0.85rem; }
+}
+
+:host ::ng-deep {
+  .cuenta-ac {
+    width: 100%;
+
+    .p-autocomplete-input {
+      width: 100%;
+      background: var(--surface-card);
+      border: 1px solid var(--color-yellow);
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      border-radius: var(--radius-base);
+    }
+  }
 }
 
 .valor-total {
@@ -186,16 +264,23 @@
 
 .num-col { text-align: right; }
 
+// Impuestos cell: button in this column, no Acciones column
+.impuestos-cell-wrapper {
+  padding: 4px 0;
+}
+
 .impuestos-cell {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  gap: 4px;
 }
 
 .impuestos-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  flex: 1;
 }
 
 .imp-chip {
@@ -222,10 +307,45 @@
   }
 }
 
-.muted { color: var(--text-muted); }
-
-.row-actions {
-  display: flex;
-  gap: 4px;
+.imp-empty {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: inline-flex;
   align-items: center;
+  gap: 4px;
+  flex: 1;
+
+  i { font-size: 0.85rem; }
+}
+
+// Save bar (floating, only visible when dirty)
+.save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: color-mix(in srgb, var(--color-warning) 12%, var(--surface-card));
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  position: sticky;
+  bottom: 1rem;
+  z-index: 5;
+
+  .save-bar-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-warning);
+    font-weight: 600;
+    font-size: 0.875rem;
+
+    i { font-size: 1rem; }
+  }
+
+  .save-bar-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
 }
