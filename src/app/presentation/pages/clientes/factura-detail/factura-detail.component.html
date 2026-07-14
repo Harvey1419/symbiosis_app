@@ -9,10 +9,13 @@
     <ng-template #actions>
       <p-button
         icon="pi pi-arrow-left"
-        label="Volver al cliente"
         severity="secondary"
-        [outlined]="true"
+        [rounded]="true"
+        [text]="true"
+        size="large"
         [routerLink]="['/clientes', nit()]"
+        pTooltip="Volver al cliente"
+        tooltipPosition="bottom"
       />
     </ng-template>
   </app-page-header>
