@@ -192,6 +192,19 @@ export class ClienteDetailComponent implements OnInit {
     console.log('[cliente-detail] export selected', ids);
   }
 
+  /**
+   * Header "select all" toggle. PrimeNG's <p-tableCheckbox> alone only
+   * toggles the current page's rows; we want to select ALL filtered
+   * rows across all pages, so we wire the change event explicitly.
+   */
+  onHeaderToggle(checked: boolean): void {
+    if (checked) {
+      this.selectedFacturas.set([...this.filteredFacturas()]);
+    } else {
+      this.selectedFacturas.set([]);
+    }
+  }
+
   // ── Cell renderers ──
   getConfianzaMin(factura: Factura): number {
     if (!factura.filas?.length) return 0;

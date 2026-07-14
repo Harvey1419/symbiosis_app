@@ -149,7 +149,12 @@
     >
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 3rem"><p-tableCheckbox [disabled]="filteredFacturas().length === 0" /></th>
+          <th style="width: 3rem">
+            <p-tableCheckbox
+              [disabled]="filteredFacturas().length === 0"
+              (onChange)="onHeaderToggle($any($event).checked)"
+            />
+          </th>
           <th pSortableColumn="factura_nro" style="width: 140px">
             Nro factura <p-sortIcon field="factura_nro" />
           </th>
