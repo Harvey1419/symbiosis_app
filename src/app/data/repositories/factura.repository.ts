@@ -2,7 +2,25 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { Factura, UpdateItemBody, HistoricoRow } from '@domain/models/factura.model';
+import { Factura, UpdateItemBody } from '@domain/models/factura.model';
+
+export interface HistoricoRow {
+  id: string;
+  client_nit: string;
+  vendor_nit: string;
+  vendor_name: string | null;
+  fecha: string | null;
+  item_text: string | null;
+  item_value: number | null;
+  account_code: string;
+  account_name: string | null;
+  iva_code: string | null;
+  iva_pct: number | null;
+  rete_code: string | null;
+  rete_pct: number | null;
+  has_tax: boolean | null;
+  created_at: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class FacturaRepository {

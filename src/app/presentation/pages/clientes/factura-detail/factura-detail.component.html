@@ -26,38 +26,7 @@
   }
 
   @if (factura(); as f) {
-    <p-card header="Datos de la factura" styleClass="meta-card">
-      <div class="meta-grid">
-        <div class="meta-field">
-          <span class="meta-label">Estado</span>
-          <app-status-badge [status]="f.status" />
-        </div>
-        <div class="meta-field">
-          <span class="meta-label">Proveedor</span>
-          <span class="meta-value">{{ f.vendor_name || 'N/A' }}</span>
-        </div>
-        <div class="meta-field">
-          <span class="meta-label">Nro</span>
-          <span class="meta-value mono">{{ f.factura_nro || 'N/A' }}</span>
-        </div>
-        <div class="meta-field">
-          <span class="meta-label">Fecha</span>
-          <span class="meta-value">{{ f.fecha_emision ? (f.fecha_emision | date: 'dd MMM yyyy') : 'N/A' }}</span>
-        </div>
-        <div class="meta-field">
-          <span class="meta-label">Total</span>
-          <span class="meta-value mono">{{ f.total_pagar ? (f.total_pagar | number: '1.0-0') : '0' }}</span>
-        </div>
-        <div class="meta-field">
-          <span class="meta-label">Confianza min</span>
-          <p-tag
-            [value]="getConfianzaMin(f) + '%'"
-            [severity]="getConfianzaSeverity(getConfianzaMin(f))"
-          />
-        </div>
-      </div>
-    </p-card>
-
+    <!-- Status actions card -->
     @if (f.status === 'pendiente' || f.status === 'causada' || f.status === 'finalizada') {
       <p-card styleClass="actions-card">
         <div class="actions-bar">
@@ -112,6 +81,129 @@
       </p-card>
     }
 
+    <!-- Datos de la factura — 6 grupos -->
+    <p-card header="Datos de la factura" styleClass="meta-card">
+      <div class="meta-groups">
+        <section class="meta-group">
+          <h3 class="group-title">Identidad</h3>
+          <div class="meta-grid">
+            <div class="meta-field">
+              <span class="meta-label">Estado</span>
+              <app-status-badge [status]="f.status" />
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Nro factura</span>
+              <span class="meta-value mono">{{ f.factura_nro || '—' }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">CUFE</span>
+              <span class="meta-value mono" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Track ID</span>
+              <span class="meta-value mono">{{ f.track_id || '—' }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="meta-group">
+          <h3 class="group-title">Comercial</h3>
+          <div class="meta-grid">
+            <div class="meta-field">
+              <span class="meta-label">Proveedor</span>
+              <span class="meta-value">{{ f.vendor_name || '—' }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">NIT proveedor</span>
+              <span class="meta-value mono">{{ f.vendor_nit || '—' }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Fecha emisión</span>
+              <span class="meta-value">{{ formatDate(f.fecha_emision) }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Fecha vencimiento</span>
+              <span class="meta-value">{{ formatDate(f.payment_due_date) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="meta-group">
+          <h3 class="group-title">Montos</h3>
+          <div class="meta-grid">
+            <div class="meta-field">
+              <span class="meta-label">Subtotal</span>
+              <span class="meta-value mono">${{ formatMoney(f.subtotal) }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Total IVA</span>
+              <span class="meta-value mono">${{ formatMoney(f.total_iva) }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label highlight">Total a pagar</span>
+              <span class="meta-value mono total-pagar">${{ formatMoney(f.total_pagar) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="meta-group">
+          <h3 class="group-title">Fechas sistema</h3>
+          <div class="meta-grid">
+            <div class="meta-field">
+              <span class="meta-label">Clasificado</span>
+              <span class="meta-value">{{ formatDate(f.clasificado_at) }}</span>
+            </div>
+            @if (f.causada_at) {
+              <div class="meta-field">
+                <span class="meta-label">Causado</span>
+                <span class="meta-value">{{ formatDate(f.causada_at) }}</span>
+              </div>
+            }
+            <div class="meta-field">
+              <span class="meta-label">Creado</span>
+              <span class="meta-value">{{ formatDate(f.created_at) }}</span>
+            </div>
+          </div>
+        </section>
+
+        @if (f.pdf_url || f.xml_url) {
+          <section class="meta-group">
+            <h3 class="group-title">Archivos</h3>
+            <div class="file-actions">
+              @if (f.pdf_url) {
+                <p-button
+                  label="Ver PDF"
+                  icon="pi pi-file-pdf"
+                  severity="secondary"
+                  [outlined]="true"
+                  [attr.href]="f.pdf_url"
+                  target="_blank"
+                />
+              }
+              @if (f.xml_url) {
+                <p-button
+                  label="Ver XML"
+                  icon="pi pi-code"
+                  severity="secondary"
+                  [outlined]="true"
+                  [attr.href]="f.xml_url"
+                  target="_blank"
+                />
+              }
+            </div>
+          </section>
+        }
+
+        @if (f.notes) {
+          <section class="meta-group notes-group">
+            <h3 class="group-title">Notas</h3>
+            <p class="notes-text">{{ f.notes }}</p>
+          </section>
+        }
+      </div>
+    </p-card>
+
+    <!-- Items table — 5 columns, no Confianza, no Acciones -->
     <p-card header="Items" styleClass="items-card">
       @if (f.filas.length === 0) {
         <app-empty-state title="Sin items" description="Esta factura no tiene filas" iconClass="pi pi-list" />
@@ -119,24 +211,21 @@
         <p-table [value]="f.filas" styleClass="items-table" [scrollable]="true" scrollHeight="500px">
           <ng-template pTemplate="header">
             <tr>
-              <th style="width: 50px">#</th>
-              <th>Cuenta PUC</th>
               <th>Descripción</th>
-              <th style="width: 100px" class="num-col">Débito</th>
-              <th style="width: 100px" class="num-col">Crédito</th>
-              <th style="width: 80px">IVA</th>
-              <th style="width: 80px">Rete</th>
-              <th style="width: 90px">Confianza</th>
-              @if (canEdit()) {
-                <th style="width: 160px">Acciones</th>
-              }
+              <th style="width: 220px">Cuenta PUC</th>
+              <th style="width: 70px" class="num-col">Cantidad</th>
+              <th style="width: 130px" class="num-col">Valor Total</th>
+              <th style="width: 180px">Impuestos</th>
+              <th style="width: 120px"></th>
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-fila let-i="rowIndex">
-            <tr [class.editing]="editingIdx() === i">
-              <td>{{ i }}</td>
+            <tr [class.editing]="editingIdx() === i" [class.dirty]="isDirty(i)">
               <td>
-                @if (editingIdx() === i && draft(); as d) {
+                <span class="fila-desc">{{ fila.descripcion || '—' }}</span>
+              </td>
+              <td>
+                @if (canEdit() && editingIdx() === i && draft(); as d) {
                   <p-autoComplete
                     [(ngModel)]="d.cuenta"
                     [suggestions]="cuentasFiltradas()"
@@ -144,64 +233,58 @@
                     [forceSelection]="false"
                     [dropdown]="true"
                     appendTo="body"
-                    optionLabel="account_code"
+                    field="account_code"
                     placeholder="Buscar cuenta..."
                     styleClass="cuenta-ac"
                   />
                 } @else {
-                  <span class="mono">{{ fila.cuenta || '—' }}</span>
-                  @if (fila.cuenta) {
-                    <span class="cuenta-nombre">{{ getCuentaName(fila.cuenta) }}</span>
+                  <div class="cuenta-cell">
+                    <span class="mono cuenta-code">{{ fila.cuenta || '—' }}</span>
+                    @if (fila.cuenta) {
+                      <span class="cuenta-nombre">{{ getCuentaName(fila.cuenta) }}</span>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="num-col">1</td>
+              <td class="num-col">
+                <span class="valor-total">
+                  @if ((fila.debito ?? 0) > 0) {
+                    ${{ formatMoney(fila.debito) }}
+                  } @else {
+                    ${{ formatMoney(fila.credito) }}
                   }
-                }
-              </td>
-              <td>{{ fila.descripcion }}</td>
-              <td class="num-col">{{ fila.debito | number: '1.0-0' }}</td>
-              <td class="num-col">{{ fila.credito | number: '1.0-0' }}</td>
-              <td>
-                @if (editingIdx() === i && draft(); as d) {
-                  <input
-                    pInputText
-                    type="text"
-                    [ngModel]="d.iva_code"
-                    (ngModelChange)="updateDraft('iva_code', $any($event))"
-                    placeholder="—"
-                    class="cell-input"
-                  />
-                } @else {
-                  <span class="mono">{{ fila.iva_code || '—' }}</span>
-                }
+                </span>
               </td>
               <td>
-                @if (editingIdx() === i && draft(); as d) {
-                  <input
-                    pInputText
-                    type="text"
-                    [ngModel]="d.rete_code"
-                    (ngModelChange)="updateDraft('rete_code', $any($event))"
-                    placeholder="—"
-                    class="cell-input"
-                  />
-                } @else {
-                  <span class="mono">{{ fila.rete_code || '—' }}</span>
-                }
+                <div class="impuestos-cell">
+                  @if (fila.iva_code || fila.rete_code) {
+                    <div class="impuestos-chips">
+                      @if (fila.iva_code) {
+                        <span class="imp-chip iva-chip">
+                          <i class="pi pi-percentage"></i> {{ fila.iva_code }}
+                        </span>
+                      }
+                      @if (fila.rete_code) {
+                        <span class="imp-chip rete-chip">
+                          <i class="pi pi-percentage"></i> {{ fila.rete_code }}
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </div>
               </td>
               <td>
-                <p-tag
-                  [value]="(fila.confianza ?? 0) + '%'"
-                  [severity]="getConfianzaSeverity(fila.confianza)"
-                />
-              </td>
-              @if (canEdit()) {
-                <td>
-                  @if (editingIdx() === i) {
-                    <div class="row-actions">
+                <div class="row-actions" (click)="$event.stopPropagation()">
+                  @if (canEdit()) {
+                    @if (editingIdx() === i) {
                       <p-button
                         icon="pi pi-check"
                         severity="success"
                         size="small"
-                        [disabled]="actionLoading()"
-                        (onClick)="saveEdit()"
+                        (onClick)="saveRow(i)"
                         pTooltip="Guardar"
                       />
                       <p-button
@@ -212,25 +295,44 @@
                         (onClick)="cancelEdit()"
                         pTooltip="Cancelar"
                       />
-                    </div>
-                  } @else {
+                    } @else {
+                      <p-button
+                        icon="pi pi-pencil"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="startEdit(i)"
+                        pTooltip="Editar cuenta"
+                      />
+                      <p-button
+                        icon="pi pi-percentage"
+                        severity="primary"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="openImpuestosModal(i)"
+                        pTooltip="Asignar impuestos"
+                      />
+                    }
+                  }
+                  @if (isDirty(i)) {
                     <p-button
-                      icon="pi pi-pencil"
-                      label="Editar"
-                      severity="secondary"
-                      [outlined]="true"
+                      label="Guardar"
+                      icon="pi pi-save"
+                      severity="warn"
                       size="small"
-                      (onClick)="startEdit(i)"
+                      (onClick)="saveRow(i)"
+                      pTooltip="Guardar cambios"
                     />
                   }
-                </td>
-              }
+                </div>
+              </td>
             </tr>
           </ng-template>
         </p-table>
       }
     </p-card>
 
+    <!-- Histórico -->
     <p-card header="Histórico de causación" styleClass="historico-card">
       <p class="hint">Clasificaciones previas del mismo proveedor — útil para referencia al editar.</p>
       @if (historico().length === 0) {
@@ -253,7 +355,7 @@
           </ng-template>
           <ng-template pTemplate="body" let-row>
             <tr>
-              <td>{{ row.fecha ? (row.fecha | date: 'dd MMM yyyy') : '—' }}</td>
+              <td>{{ formatDate(row.fecha) }}</td>
               <td>
                 <span class="mono">{{ row.account_code }}</span>
                 @if (row.account_name) {
@@ -269,5 +371,17 @@
         </p-table>
       }
     </p-card>
+
+    <!-- Impuestos modal (controlled by component state) -->
+    @if (editingRowIdx() !== null && f.filas[editingRowIdx()!]; as row) {
+      <app-impuestos-dialog
+        [visible]="impuestosDialogOpen()"
+        [currentIvaCode]="row.iva_code ?? null"
+        [currentReteCode]="row.rete_code ?? null"
+        [impuestos]="impuestos()"
+        (apply)="applyImpuestosToRow($event)"
+        (close)="impuestosDialogOpen.set(false)"
+      />
+    }
   }
 </div>

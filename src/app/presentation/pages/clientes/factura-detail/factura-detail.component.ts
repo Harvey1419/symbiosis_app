@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,8 +20,10 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { FacturaRepository } from '@data/repositories/factura.repository';
 import { PucRepository } from '@data/repositories/puc.repository';
-import { Factura, UpdateItemBody, HistoricoRow } from '@domain/models/factura.model';
+import { ImpuestosRepository } from '@data/repositories/impuestos.repository';
+import { Factura, UpdateItemBody } from '@domain/models/factura.model';
 import { CuentaPuc } from '@domain/models/puc.model';
+import { Impuesto } from '@domain/models/impuesto.model';
 import {
   PageHeaderComponent,
   LoadingStateComponent,
@@ -29,13 +31,8 @@ import {
   EmptyStateComponent,
   StatusBadgeComponent,
   ConfirmService,
+  ImpuestosDialogComponent,
 } from '@app/shared';
-
-interface ItemDraft {
-  cuenta: string;
-  iva_code: string;
-  rete_code: string;
-}
 
 type ReabrirTarget = 'pendiente' | 'causada';
 
@@ -66,6 +63,7 @@ type ReabrirTarget = 'pendiente' | 'causada';
     ErrorBannerComponent,
     EmptyStateComponent,
     StatusBadgeComponent,
+    ImpuestosDialogComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './factura-detail.component.html',
@@ -75,26 +73,48 @@ export class FacturaDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly facturaRepo = inject(FacturaRepository);
   private readonly pucRepo = inject(PucRepository);
+  private readonly impuestosRepo = inject(ImpuestosRepository);
   private readonly confirm = inject(ConfirmService);
   private readonly message = inject(MessageService);
 
+  // ── Core data ──
   readonly nit = signal<number>(0);
   readonly facturaId = signal<string>('');
   readonly factura = signal<Factura | null>(null);
-  readonly historico = signal<HistoricoRow[]>([]);
+  readonly historico = signal<unknown[]>([]);
   readonly cuentasPuc = signal<CuentaPuc[]>([]);
   readonly cuentasFiltradas = signal<CuentaPuc[]>([]);
+  readonly impuestos = signal<readonly Impuesto[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly actionLoading = signal(false);
+
+  // ── Dirty state tracking ──
+  /** Indices of filas with unsaved local changes. */
+  readonly dirtyRows = signal<Set<number>>(new Set());
+  /** Index of fila currently being edited inline. */
   readonly editingIdx = signal<number | null>(null);
-  readonly draft = signal<ItemDraft | null>(null);
+  /** Local working copy of the row being edited. */
+  readonly draft = signal<{ cuenta: string; iva_code: string; rete_code: string } | null>(null);
+
+  /** Impuestos dialog state. */
+  readonly impuestosDialogOpen = signal(false);
+  readonly editingRowIdx = signal<number | null>(null);
 
   /** Items can only be edited while the factura is not yet causada/finalizada. */
   readonly canEdit = computed(() => {
     const s = this.factura()?.status;
     return s === 'pendiente' || s === 'clasificando';
   });
+
+  constructor() {
+    // When dialog opens, load current row's codes into the dialog.
+    effect(() => {
+      if (this.impuestosDialogOpen()) {
+        // No-op: dialog reads current values via input() bindings in template.
+      }
+    });
+  }
 
   ngOnInit(): void {
     const nitParam = this.route.snapshot.paramMap.get('nit');
@@ -116,11 +136,13 @@ export class FacturaDetailComponent implements OnInit {
       factura: this.facturaRepo.getById(this.facturaId()),
       historico: this.facturaRepo.getHistorico(this.facturaId()),
       puc: this.pucRepo.getCuentaPuc(this.nit()),
+      impuestos: this.impuestosRepo.getImpuestosByNit(this.nit()),
     }).subscribe({
-      next: ({ factura, historico, puc }) => {
+      next: ({ factura, historico, puc, impuestos }) => {
         this.factura.set(factura);
         this.historico.set(historico);
         this.cuentasPuc.set(puc);
+        this.impuestos.set(impuestos.filter((i) => i.active));
         this.loading.set(false);
       },
       error: (err: { message?: string }) => {
@@ -130,9 +152,8 @@ export class FacturaDetailComponent implements OnInit {
     });
   }
 
-  // --- Autocomplete for cuenta PUC ---
+  // ── Autocomplete for cuenta PUC ──────────────────────────────────
 
-  /** PrimeNG p-autoComplete callback — assigns to signal, not returns. */
   searchCuentas(event: AutoCompleteCompleteEvent): void {
     const query = event.query.toLowerCase();
     const filtered = this.cuentasPuc()
@@ -149,7 +170,29 @@ export class FacturaDetailComponent implements OnInit {
     return this.cuentasPuc().find((c) => c.account_code === code)?.account_name ?? '';
   }
 
-  // --- Inline editing ---------------------------------------------------
+  // ── Dirty state helpers ──────────────────────────────────────────
+
+  isDirty(idx: number): boolean {
+    return this.dirtyRows().has(idx);
+  }
+
+  private markDirty(idx: number): void {
+    this.dirtyRows.update((s) => {
+      const next = new Set(s);
+      next.add(idx);
+      return next;
+    });
+  }
+
+  private clearDirty(idx: number): void {
+    this.dirtyRows.update((s) => {
+      const next = new Set(s);
+      next.delete(idx);
+      return next;
+    });
+  }
+
+  // ── Inline editing (cuenta only) ────────────────────────────────
 
   startEdit(idx: number): void {
     const fila = this.factura()?.filas[idx];
@@ -163,31 +206,57 @@ export class FacturaDetailComponent implements OnInit {
   }
 
   cancelEdit(): void {
+    const idx = this.editingIdx();
+    if (idx !== null) this.clearDirty(idx);
     this.editingIdx.set(null);
     this.draft.set(null);
   }
 
-  updateDraft(field: keyof ItemDraft, value: string): void {
+  updateDraft(field: 'cuenta' | 'iva_code' | 'rete_code', value: string): void {
     this.draft.update((d) => (d ? { ...d, [field]: value } : d));
   }
 
-  saveEdit(): void {
-    const idx = this.editingIdx();
-    const draft = this.draft();
-    if (idx === null || !draft) return;
+  // ── Impuestos dialog ─────────────────────────────────────────────
+
+  openImpuestosModal(idx: number): void {
+    this.editingRowIdx.set(idx);
+    this.impuestosDialogOpen.set(true);
+  }
+
+  applyImpuestosToRow(event: { iva_code: string | null; rete_code: string | null }): void {
+    const idx = this.editingRowIdx();
+    if (idx === null) return;
+    const f = this.factura();
+    if (!f) return;
+    const updatedFilas = f.filas.map((row, i) =>
+      i === idx
+        ? { ...row, iva_code: event.iva_code, rete_code: event.rete_code }
+        : row,
+    );
+    this.factura.set({ ...f, filas: updatedFilas });
+    this.markDirty(idx);
+    this.impuestosDialogOpen.set(false);
+    this.editingRowIdx.set(null);
+  }
+
+  // ── Save row (PATCH) ─────────────────────────────────────────────
+
+  saveRow(idx: number): void {
+    const f = this.factura();
+    const fila = f?.filas[idx];
+    if (!f || !fila) return;
 
     const body: UpdateItemBody = {
-      cuenta: draft.cuenta || undefined,
-      iva_code: draft.iva_code || null,
-      rete_code: draft.rete_code || null,
+      cuenta: fila.cuenta ?? undefined,
+      iva_code: fila.iva_code ?? null,
+      rete_code: fila.rete_code ?? null,
     };
 
     this.actionLoading.set(true);
-    this.error.set(null);
     this.facturaRepo.updateItem(this.facturaId(), idx, body).subscribe({
       next: (updated) => {
         this.factura.set(updated);
-        this.cancelEdit();
+        this.clearDirty(idx);
         this.actionLoading.set(false);
         this.message.add({ severity: 'success', summary: 'Fila guardada' });
       },
@@ -200,7 +269,7 @@ export class FacturaDetailComponent implements OnInit {
     });
   }
 
-  // --- Status actions ---------------------------------------------------
+  // ── Status actions (Causar / Finalizar / Reabrir) ─────────────
 
   async causar(): Promise<void> {
     const ok = await this.confirm.confirm({
@@ -238,18 +307,39 @@ export class FacturaDetailComponent implements OnInit {
     this.runAction(this.facturaRepo.reabrir(this.facturaId(), target), 'Factura reabierta');
   }
 
-  getConfianzaMin(f: Factura): number {
-    if (!f.filas?.length) return 0;
-    return Math.min(...f.filas.map((fila) => fila.confianza ?? 0));
+  // ── Status formatting ───────────────────────────────────────────
+
+  formatStatus(status: string): string {
+    const map: Record<string, string> = {
+      pendiente: 'Pendiente',
+      causada: 'Causada',
+      finalizada: 'Finalizada',
+      error: 'Error',
+      clasificando: 'Clasificando',
+    };
+    return map[status] || status;
   }
 
-  /** Severity for confidence badge: success/warn/danger based on value. */
-  getConfianzaSeverity(confianza: number | undefined): 'success' | 'warn' | 'danger' | 'secondary' {
-    if (confianza === undefined || confianza === null) return 'secondary';
-    if (confianza >= 80) return 'success';
-    if (confianza >= 60) return 'warn';
-    return 'danger';
+  formatDate(d: string | null | undefined): string {
+    if (!d) return '—';
+    try {
+      return new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch { return d; }
   }
+
+  formatMoney(n: number | null | undefined): string {
+    if (n === null || n === undefined) return '0';
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n);
+  }
+
+  formatCufe(cufe: string | null | undefined): string {
+    if (!cufe) return '—';
+    // DIAN CUFE is long; show first 12 + ellipsis
+    if (cufe.length > 16) return cufe.slice(0, 12) + '…' + cufe.slice(-4);
+    return cufe;
+  }
+
+  // ── Internal helpers ─────────────────────────────────────────────
 
   private runAction(obs: Observable<Factura>, successMsg: string): void {
     this.actionLoading.set(true);

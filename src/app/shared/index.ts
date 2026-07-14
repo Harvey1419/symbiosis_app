@@ -8,3 +8,4 @@ export * from './confirm-dialog/confirm.service';
 export * from './theme-toggle/theme-toggle.component';
 export * from './sync-banner/sync-banner.component';
 export * from './sync-status-pill/sync-status-pill.component';
+export * from './impuestos-dialog/impuestos-dialog.component';

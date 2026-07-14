@@ -1,94 +1,270 @@
 .factura-detail-page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// ============================================================
+// Meta card (Datos de la factura) — 6 groups
+// ============================================================
+.meta-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--surface-border);
+}
+
+.meta-groups {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
 
-  :host ::ng-deep {
-    .meta-card .p-card-body,
-    .actions-card .p-card-body,
-    .items-card .p-card-body,
-    .historico-card .p-card-body {
-      padding: 1.25rem;
-    }
+.meta-group {
+  .group-title {
+    margin: 0 0 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-yellow);
+  }
+}
 
-    .p-card {
-      background: var(--surface);
-      border: 1px solid var(--surface-muted);
-      border-radius: 12px;
-    }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.875rem 1.25rem;
+}
+
+.meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+
+  .meta-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .meta-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1.25rem;
+  .meta-value {
+    font-size: 0.875rem;
+    color: var(--text-strong);
+    word-break: break-word;
 
-    .meta-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+    &.mono { font-family: var(--font-mono); font-size: 0.8125rem; }
+    &.highlight { font-family: var(--font-mono); font-weight: 600; color: var(--color-yellow); }
+  }
+}
 
-      .meta-label {
-        font-size: 0.7rem;
-        color: var(--color-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+.file-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.notes-group {
+  .notes-text {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    background: var(--surface-higher);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-style: italic;
+    white-space: pre-wrap;
+  }
+}
+
+// ============================================================
+// Actions card (Causar / Finalizar / Reabrir)
+// ============================================================
+.actions-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--surface-border);
+}
+
+.actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.action-spinner {
+  width: 28px;
+  height: 28px;
+}
+
+// ============================================================
+// Items card
+// ============================================================
+.items-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--surface-border);
+}
+
+:host ::ng-deep {
+  .items-table {
+    background: var(--surface-card);
+
+    .p-datatable-thead > tr > th {
+      background: var(--surface-higher);
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.875rem 1rem;
+      border: none;
+      border-bottom: 1px solid var(--surface-border);
+      white-space: nowrap;
+    }
+
+    .p-datatable-tbody > tr {
+      background: var(--surface-card);
+      transition: background 150ms ease;
+
+      > td {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-bottom: 1px solid var(--surface-border);
+        color: var(--text-strong);
+        font-size: 0.8125rem;
+        vertical-align: middle;
       }
 
-      .meta-value {
-        font-size: 0.95rem;
-        color: var(--color-primary);
-
-        &.mono { font-family: ui-monospace, SFMono-Regular, monospace; }
-      }
+      &:last-child > td { border-bottom: none; }
+      &:hover > td { background: var(--surface-higher) !important; }
+      &.editing > td { background: color-mix(in srgb, var(--color-yellow) 6%, var(--surface-card)) !important; }
+      &.dirty > td { background: color-mix(in srgb, var(--color-warning) 10%, var(--surface-card)) !important; }
     }
   }
+}
 
-  .actions-bar {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    flex-wrap: wrap;
+.fila-desc {
+  display: block;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-    .action-spinner {
-      width: 28px;
-      height: 28px;
-    }
+.cuenta-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cuenta-code {
+  font-weight: 600;
+}
+
+.cuenta-nombre {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.valor-total {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-align: right;
+}
+
+.num-col { text-align: right; }
+
+.impuestos-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.impuestos-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.imp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  i { font-size: 0.65rem; }
+
+  &.iva-chip {
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
   }
 
-  .items-table,
-  .historico-table {
-    .num-col { text-align: right; }
-
-    .mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.875rem; }
-    .cuenta-nombre { display: block; color: var(--color-secondary); font-size: 0.75rem; }
-
-    tr.editing {
-      background: color-mix(in srgb, var(--color-yellow) 12%, transparent);
-    }
-
-    .row-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .cell-input {
-      width: 80px;
-      padding: 0.25rem 0.5rem;
-    }
-
-    .cuenta-ac {
-      width: 100%;
-      min-width: 240px;
-    }
+  &.rete-chip {
+    background: var(--color-info-soft);
+    color: var(--color-info);
   }
+}
+
+.muted { color: var(--text-muted); }
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+// ============================================================
+// Histórico
+// ============================================================
+.historico-card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--surface-border);
 
   .hint {
-    color: var(--color-secondary);
-    font-size: 0.875rem;
     margin: 0 0 1rem;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+}
+
+:host ::ng-deep {
+  .historico-table {
+    background: var(--surface-card);
+    .p-datatable-thead > tr > th {
+      background: var(--surface-higher);
+      color: var(--text-strong);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .p-datatable-tbody > tr > td {
+      padding: 0.625rem 1rem;
+      border: none;
+      border-bottom: 1px solid var(--surface-border);
+      color: var(--text-strong);
+      font-size: 0.8125rem;
+    }
   }
 }
