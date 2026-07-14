@@ -91,6 +91,15 @@
 
     &.mono { font-family: var(--font-mono); font-size: 0.8125rem; }
     &.total-pagar { font-size: 1rem; font-weight: 700; }
+
+    // Override for Track ID: long hash should NOT wrap (would push
+    // the card wider). Truncate with ellipsis instead.
+    &.mono.cufe-text,
+    &.cufe-text {
+      word-break: normal;
+      white-space: nowrap;
+      max-width: 100%;
+    }
   }
 }
 

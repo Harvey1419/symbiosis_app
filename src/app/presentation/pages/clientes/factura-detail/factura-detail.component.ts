@@ -176,34 +176,33 @@ export class FacturaDetailComponent implements OnInit {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n);
   }
 
-  formatCufe(cufe: string | null | undefined): string {
-    if (!cufe) return '—';
-    if (cufe.length > 20) return cufe.slice(0, 14) + '…' + cufe.slice(-4);
-    return cufe;
+  formatTrackId(trackId: string | null | undefined): string {
+    if (!trackId) return '—';
+    if (trackId.length <= 24) return trackId;
+    return trackId.slice(0, 16) + '…' + trackId.slice(-4);
   }
 
-  /** Copy CUFE to clipboard. */
-  copyCufe(): void {
-    const cufe = this.factura()?.cufe;
-    if (!cufe) return;
+  /** Copy Track ID (a.k.a. CUFE) to clipboard. */
+  copyTrackId(): void {
+    const trackId = this.factura()?.track_id;
+    if (!trackId) return;
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(cufe).then(
-        () => this.message.add({ severity: 'success', summary: 'CUFE copiado', detail: cufe, life: 2000 }),
-        () => this.message.add({ severity: 'error', summary: 'No se pudo copiar el CUFE' }),
+      navigator.clipboard.writeText(trackId).then(
+        () => this.message.add({ severity: 'success', summary: 'Track ID copiado', detail: trackId, life: 2000 }),
+        () => this.message.add({ severity: 'error', summary: 'No se pudo copiar el Track ID' }),
       );
     } else {
-      // Fallback: select + copy
       const ta = document.createElement('textarea');
-      ta.value = cufe;
+      ta.value = trackId;
       ta.style.position = 'fixed';
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
       try {
         document.execCommand('copy');
-        this.message.add({ severity: 'success', summary: 'CUFE copiado', life: 2000 });
+        this.message.add({ severity: 'success', summary: 'Track ID copiado', life: 2000 });
       } catch {
-        this.message.add({ severity: 'error', summary: 'No se pudo copiar el CUFE' });
+        this.message.add({ severity: 'error', summary: 'No se pudo copiar el Track ID' });
       }
       document.body.removeChild(ta);
     }

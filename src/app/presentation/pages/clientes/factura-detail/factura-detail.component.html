@@ -127,18 +127,18 @@
         <div class="info-chip cufe-chip">
           <i class="pi pi-key info-icon"></i>
           <div class="info-content">
-            <span class="info-label">CUFE</span>
+            <span class="info-label">Track ID / CUFE</span>
             <span class="info-value cufe-value">
-              <span class="mono cufe-text" [pTooltip]="f.cufe || ''">{{ formatCufe(f.cufe) }}</span>
-              @if (f.cufe) {
+              <span class="mono cufe-text" [pTooltip]="f.track_id || ''">{{ formatTrackId(f.track_id) }}</span>
+              @if (f.track_id) {
                 <p-button
                   icon="pi pi-copy"
                   severity="secondary"
                   [text]="true"
                   [rounded]="true"
                   size="small"
-                  (onClick)="copyCufe()"
-                  pTooltip="Copiar CUFE completo"
+                  (onClick)="copyTrackId()"
+                  pTooltip="Copiar Track ID completo"
                   styleClass="copy-btn"
                 />
               }
