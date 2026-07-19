@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
+import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
 
 @Component({
   selector: 'app-cliente-list',
@@ -14,6 +15,7 @@ import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 export class ClienteListComponent implements OnInit {
   private readonly firmaRepo = inject(FirmaRepository);
   private readonly router = inject(Router);
+  private readonly crearEmpresaDialog = inject(CrearEmpresaDialogService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -37,6 +39,10 @@ export class ClienteListComponent implements OnInit {
     } else {
       this.router.navigate(['/clientes/firma', firma.id]);
     }
+  }
+
+  onAddEmpresa(): void {
+    this.crearEmpresaDialog.open();
   }
 
   getInitials(nombre: string): string {
