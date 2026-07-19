@@ -33,15 +33,34 @@
     width: var(--sidebar-collapsed);
 
     .logo-text,
-    .nav-label,
-    .user-info {
+    .nav-label {
       opacity: 0;
       pointer-events: none;
     }
 
     .nav-item {
       justify-content: center;
-      padding: 0.75rem;
+      padding: 0.75rem 0;
+
+      svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+    }
+
+    // display:none (not opacity:0) — frees layout space, evita layout shift
+    // cuando se transiciona expanded ↔ collapsed.
+    .user-info {
+      display: none;
+    }
+
+    // Theme-toggle + logout apilados verticalmente a 72px sin overflow.
+    .sidebar-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
     }
   }
 }
