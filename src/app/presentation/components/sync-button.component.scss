@@ -12,13 +12,13 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   background: transparent;
-  color: var(--primary);
+  color: var(--color-primary);
   transition: all 0.15s ease;
 }
 
 .sync-btn:hover:not(:disabled) {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--color-primary);
+  color: var(--text-on-primary);
 }
 
 .sync-btn:disabled {
@@ -27,14 +27,14 @@
 }
 
 .sync-btn.success {
-  background: var(--success-bg);
-  color: var(--success);
+  background: var(--color-success-soft);
+  color: var(--color-success);
   border-color: transparent;
 }
 
 .sync-btn.error {
   background: rgba(255, 180, 171, 0.1);
-  color: var(--error);
+  color: var(--color-error);
   border-color: transparent;
 }
 

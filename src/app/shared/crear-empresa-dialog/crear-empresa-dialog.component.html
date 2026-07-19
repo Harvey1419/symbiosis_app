@@ -10,11 +10,14 @@
 >
   @if (error()) {
     <p-message severity="error" styleClass="mb-3 block">
-      Ocurrió un error. Verifica los datos e intenta de nuevo.
+      <div class="error-content">
+        <strong>No se pudo guardar.</strong>
+        <pre class="error-detail">{{ errorMessage() }}</pre>
+      </div>
     </p-message>
   }
 
-  @if (isEditMode()) {
+  @if (isEditMode() && editingFirma()?.nit == null) {
     <p-message
       severity="warn"
       styleClass="mb-3 block">
@@ -24,7 +27,20 @@
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="crear-empresa-form">
     <div class="form-grid">
-      <div class="field">
+      <!-- Row 1: nombre empresa (full width) -->
+      <div class="field full-width">
+        <label for="nombre">Nombre / Razón social</label>
+        <input pInputText id="nombre" formControlName="nombre" type="text" placeholder="Empresa SAC" />
+      </div>
+
+      <!-- Row 2: NIT (full width) -->
+      <div class="field full-width">
+        <label for="nit">NIT (sin dígito de verificación)</label>
+        <input pInputText id="nit" formControlName="nit" type="number" placeholder="900123456" />
+      </div>
+
+      <!-- Row 3: tipo de persona (full width) -->
+      <div class="field full-width">
         <label for="tipo_persona">Tipo de persona</label>
         <p-select
           inputId="tipo_persona"
@@ -34,19 +50,11 @@
           optionValue="value"
           placeholder="Selecciona..."
           styleClass="w-full"
+          appendTo="body"
         />
       </div>
 
-      <div class="field">
-        <label for="nombre">Nombre / Razón social</label>
-        <input pInputText id="nombre" formControlName="nombre" type="text" placeholder="Empresa SAC" />
-      </div>
-
-      <div class="field">
-        <label for="nit">NIT (sin dígito de verificación)</label>
-        <input pInputText id="nit" formControlName="nit" type="number" placeholder="900123456" />
-      </div>
-
+      <!-- Row 4: tipo id rep legal + id rep legal (misma row) -->
       <div class="field">
         <label for="tipo_id_rep_legal">Tipo ID representante legal</label>
         <p-select
@@ -57,6 +65,7 @@
           optionValue="value"
           placeholder="Selecciona..."
           styleClass="w-full"
+          appendTo="body"
         />
       </div>
 
@@ -66,8 +75,9 @@
       </div>
 
       @if (!isEditMode()) {
-        <div class="field">
-          <label for="tipo_siigo">Tipo Siigo</label>
+        <!-- Row 5 (solo create): Software Contable (full width) -->
+        <div class="field full-width">
+          <label for="tipo_siigo">Software Contable</label>
           <p-select
             inputId="tipo_siigo"
             formControlName="tipo_siigo"
@@ -76,27 +86,62 @@
             optionValue="value"
             placeholder="Selecciona..."
             styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+
+        <!-- Separador entre datos de negocio y credenciales Siigo -->
+        <div class="field full-width credentials-divider-wrap">
+          <p-divider align="left">
+            <span class="divider-label">Credenciales Siigo</span>
+          </p-divider>
+        </div>
+
+        <!-- Row final (solo create): firma_user + firma_pass (misma row) -->
+        <div class="field">
+          <label for="firma_user">Usuario (email)</label>
+          <input
+            pInputText
+            id="firma_user"
+            formControlName="firma_user"
+            type="email"
+            placeholder="usuario@empresa.com"
+            autocomplete="off"
           />
         </div>
 
         <div class="field">
-          <label for="firma_user">Usuario Siigo (email)</label>
-          <input pInputText id="firma_user" formControlName="firma_user" type="email" placeholder="usuario@empresa.com" />
-        </div>
-
-        <div class="field">
-          <label for="firma_pass">Contraseña Siigo</label>
+          <label for="firma_pass">Contraseña</label>
           <p-password
             inputId="firma_pass"
             formControlName="firma_pass"
             [feedback]="false"
             [toggleMask]="true"
             styleClass="w-full"
+            autocomplete="new-password"
           />
         </div>
       }
     </div>
   </form>
+
+  @if (isEditMode()) {
+    <div class="delete-section">
+      <div class="delete-copy">
+        <h3 class="delete-title">Eliminar empresa</h3>
+        <p class="delete-hint">No será visible en la lista de empresas.</p>
+      </div>
+      <p-button
+        label="Eliminar empresa"
+        severity="danger"
+        [outlined]="true"
+        icon="pi pi-trash"
+        [loading]="deleting()"
+        [disabled]="deleting()"
+        (onClick)="onEliminarEmpresa()"
+      />
+    </div>
+  }
 
   <ng-template pTemplate="footer">
     <p-button
@@ -110,6 +155,7 @@
       severity="primary"
       icon="pi pi-check"
       [loading]="loading()"
+      [disabled]="form.invalid || loading()"
       (onClick)="onSubmit()"
     />
   </ng-template>

@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
 import { CrearEmpresaDialogComponent } from '@app/shared';
@@ -9,7 +10,7 @@ import { CrearEmpresaDialogComponent } from '@app/shared';
 @Component({
   selector: 'app-cliente-list',
   standalone: true,
-  imports: [CommonModule, TableModule, CrearEmpresaDialogComponent],
+  imports: [CommonModule, TableModule, ToastModule, CrearEmpresaDialogComponent],
   templateUrl: './cliente-list.component.html',
   styleUrl: './cliente-list.component.scss'
 })
@@ -58,6 +59,25 @@ export class ClienteListComponent implements OnInit {
     this.crearEmpresaDialog.openForEdit(firma);
   }
 
+  /**
+   * Abre el modal de edición de empresa para la firma indicada.
+   * Usado por el icono de engranaje en la columna "Acciones" — disponible
+   * para TODAS las firmas (no solo las pendientes), porque PATCH
+   * /api/empresas/:nit acepta firmas ya registradas para actualizar sus
+   * datos de negocio.
+   */
+  onActualizarEmpresa(firma: Firma): void {
+    this.crearEmpresaDialog.openForEdit(firma);
+  }
+
+  /**
+   * Nombre a mostrar en la lista. Prioriza `nombre` (razón social) y
+   * cae al correo si la firma no tiene nombre capturado todavía.
+   */
+  getDisplayName(firma: Firma): string {
+    return firma.nombre?.trim() || firma.firma_user;
+  }
+
   onAddEmpresa(): void {
     this.crearEmpresaDialog.open();
   }
@@ -68,6 +88,11 @@ export class ClienteListComponent implements OnInit {
   }
 
   onEmpresaActualizada(): void {
+    this.crearEmpresaDialog.close();
+    this.loadFirmas();
+  }
+
+  onEmpresaEliminada(): void {
     this.crearEmpresaDialog.close();
     this.loadFirmas();
   }

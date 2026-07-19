@@ -19,7 +19,7 @@ describe('FirmaRepository', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('getFirmas() hace GET /api/firmas', () => {
+  it('getFirmas() hace GET /api/firmas y cachea el resultado', () => {
     const mockFirmas: Firma[] = [
       {
         id: 'f-1',
@@ -28,26 +28,69 @@ describe('FirmaRepository', () => {
         nit: 900123456,
         last_token: null,
       },
-      {
-        id: 'f-2',
-        firma_user: 'c@d.com',
-        tipo_siigo: 'nube',
-        nit: 800987654,
-        last_token: 'cached',
-      },
     ];
 
-    let received: Firma[] = [];
+    let callCount = 0;
     repo.getFirmas().subscribe((firmas) => {
-      received = firmas;
+      expect(firmas).toEqual(mockFirmas);
+      callCount++;
+    });
+    repo.getFirmas().subscribe((firmas) => {
+      expect(firmas).toEqual(mockFirmas);
+      callCount++;
     });
 
     const req = httpMock.expectOne('/api/firmas');
     expect(req.request.method).toBe('GET');
     req.flush(mockFirmas);
 
-    expect(received).toEqual(mockFirmas);
-    expect(received).toHaveLength(2);
+    expect(callCount).toBe(2);
+    httpMock.verify();
+  });
+
+  it('invalidar cache en create()', () => {
+    const mockFirmas: Firma[] = [
+      { id: 'f-1', firma_user: 'a@b.com', tipo_siigo: 'contador', nit: 900123456, last_token: null }
+    ];
+
+    repo.getFirmas().subscribe();
+    const req = httpMock.expectOne('/api/firmas');
+    req.flush(mockFirmas);
+
+    const mockCreated: Firma = { id: 'new', firma_user: 'new@b.com', tipo_siigo: 'contador', nit: 111, last_token: null };
+    repo.create({} as any).subscribe();
+    const reqCreate = httpMock.expectOne('/api/firmas');
+    expect(reqCreate.request.method).toBe('POST');
+    reqCreate.flush(mockCreated);
+
+    repo.getFirmas().subscribe();
+    const req2 = httpMock.expectOne('/api/firmas');
+    expect(req2.request.method).toBe('GET');
+    req2.flush(mockFirmas);
+
+    httpMock.verify();
+  });
+
+  it('invalidar cache en updateEmpresa()', () => {
+    const mockFirmas: Firma[] = [
+      { id: 'f-1', firma_user: 'a@b.com', tipo_siigo: 'contador', nit: 900123456, last_token: null }
+    ];
+
+    repo.getFirmas().subscribe();
+    const req = httpMock.expectOne('/api/firmas');
+    req.flush(mockFirmas);
+
+    const mockUpdated: Firma = { id: 'f-1', firma_user: 'a@b.com', tipo_siigo: 'contador', nit: 900123456, last_token: null };
+    repo.updateEmpresa(900123456, {} as any).subscribe();
+    const reqUpdate = httpMock.expectOne('/api/empresas/900123456');
+    expect(reqUpdate.request.method).toBe('PATCH');
+    reqUpdate.flush(mockUpdated);
+
+    repo.getFirmas().subscribe();
+    const req2 = httpMock.expectOne('/api/firmas');
+    expect(req2.request.method).toBe('GET');
+    req2.flush(mockFirmas);
+
     httpMock.verify();
   });
 

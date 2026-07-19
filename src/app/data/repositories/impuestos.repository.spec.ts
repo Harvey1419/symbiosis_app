@@ -20,14 +20,15 @@ describe('ImpuestosRepository', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('getImpuestosByNit hits /clientes-impuestos/:nit', (done) => {
+  it('getImpuestosByNit hits /clientes-impuestos/:nit', () => {
     const mock = [{ id: '1', client_nit: 123, tax_id: 1, tipo: 'IVA', codigo: '01', description: 'IVA 19%', percentage: 19, type: 'IVA', purchase_account_code: '2408', purchase_account_name: 'IVA', active: true }];
+    let result: any;
     repo.getImpuestosByNit(123).subscribe((res) => {
-      expect(res).toEqual(mock);
-      done();
+      result = res;
     });
     const req = httpMock.expectOne(`${environment.apiUrl}/clientes-impuestos/123`);
     expect(req.request.method).toBe('GET');
     req.flush(mock);
+    expect(result).toEqual(mock);
   });
 });

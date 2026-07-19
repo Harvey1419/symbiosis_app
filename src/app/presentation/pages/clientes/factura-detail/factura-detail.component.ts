@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, type Observable } from 'rxjs';
@@ -46,8 +46,6 @@ interface CuentaOption {
   standalone: true,
   imports: [
     CommonModule,
-    DatePipe,
-    DecimalPipe,
     FormsModule,
     RouterLink,
     // PrimeNG

@@ -1,0 +1,109 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="!$event && onCancel()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '560px' }"
+  [header]="dialogTitle()"
+  styleClass="cliente-config-dialog"
+>
+  @if (error()) {
+    <p-message severity="error" styleClass="mb-3 block">
+      <div class="error-content">
+        <strong>No se pudo guardar.</strong>
+        <pre class="error-detail">{{ errorMessage() }}</pre>
+      </div>
+    </p-message>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="cliente-config-form">
+    <div class="form-grid">
+      <!-- Row 1: nombre empresa (READ-ONLY — viene de Siigo) -->
+      <div class="field full-width">
+        <label for="cc-nombre">Nombre / Razón social</label>
+        <input
+          pInputText
+          id="cc-nombre"
+          formControlName="nombre"
+          type="text"
+          placeholder="Empresa SAC"
+          readonly
+        />
+      </div>
+
+      <!-- Row 2: NIT (READ-ONLY — route param + identificador de la fila) -->
+      <div class="field full-width">
+        <label for="cc-nit">NIT</label>
+        <input
+          pInputText
+          id="cc-nit"
+          formControlName="nit"
+          type="number"
+          placeholder="900123456"
+          readonly
+        />
+      </div>
+
+      <!-- Row 3: tipo de persona (editable — vive en `empresas`) -->
+      <div class="field full-width">
+        <label for="cc-tipo-persona">Tipo de persona</label>
+        <p-select
+          inputId="cc-tipo-persona"
+          formControlName="tipo_persona"
+          [options]="tipoPersonaOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona..."
+          styleClass="w-full"
+          appendTo="body"
+        />
+      </div>
+
+      <!-- Row 4: tipo id rep legal + id rep legal (editables, misma row) -->
+      <div class="field">
+        <label for="cc-tipo-id">Tipo ID representante legal</label>
+        <p-select
+          inputId="cc-tipo-id"
+          formControlName="tipo_id_rep_legal"
+          [options]="tipoIdRepLegalOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona..."
+          styleClass="w-full"
+          appendTo="body"
+        />
+      </div>
+
+      <div class="field">
+        <label for="cc-id-rep-legal">ID representante legal</label>
+        <input
+          pInputText
+          id="cc-id-rep-legal"
+          formControlName="id_rep_legal"
+          type="number"
+          placeholder="12345678"
+        />
+      </div>
+    </div>
+  </form>
+
+  <!-- SIN sección "Eliminar empresa": los clientes vienen de Siigo y no se borran localmente. -->
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+    />
+    <p-button
+      [label]="submitLabel()"
+      severity="primary"
+      icon="pi pi-check"
+      [loading]="loading()"
+      [disabled]="form.invalid || loading()"
+      (onClick)="onSubmit()"
+    />
+  </ng-template>
+</p-dialog>

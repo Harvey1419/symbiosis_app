@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import { MessageService } from 'primeng/api';
 import { ClienteListComponent } from './cliente-list.component';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
@@ -22,6 +23,23 @@ function createDialogMock(): DialogMock {
     openForEdit: vi.fn(),
     visible: signal(false),
     editingFirma: signal<Firma | null>(null),
+  };
+}
+
+/**
+ * `CrearEmpresaDialogComponent` (imported transitively via `ClienteListComponent`'s
+ * `imports: [CommonModule, TableModule, CrearEmpresaDialogComponent]`) injects
+ * `MessageService` since WU-7. The dialog is never opened in these tests
+ * (we mock `CrearEmpresaDialogService`), but Angular still has to be able to
+ * construct the dialog component's DI graph when it scans the parent's
+ * imports — hence the mock provider below. Mirrors the WU-8c pattern applied
+ * to `crear-empresa-dialog.component.spec.ts`.
+ */
+function createMessageServiceMock() {
+  return {
+    add: vi.fn(),
+    messageObserver: { subscribe: vi.fn(), next: vi.fn(), pipe: vi.fn().mockReturnValue({ subscribe: vi.fn() }) },
+    clearObserver: { subscribe: vi.fn(), next: vi.fn(), pipe: vi.fn().mockReturnValue({ subscribe: vi.fn() }) },
   };
 }
 
@@ -56,6 +74,7 @@ describe('ClienteListComponent — botón Agregar Empresa', () => {
         provideRouter([]),
         { provide: FirmaRepository, useValue: firmaMock },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
       ],
     });
 
@@ -147,6 +166,7 @@ describe('ClienteListComponent — onIngresar() routing', () => {
         provideRouter([]),
         { provide: FirmaRepository, useValue: firmaMock },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
       ],
     });
 
@@ -235,6 +255,7 @@ describe('ClienteListComponent — Terminar Registro flow', () => {
         provideRouter([]),
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
       ],
     });
 
@@ -242,6 +263,118 @@ describe('ClienteListComponent — Terminar Registro flow', () => {
     fixture.componentInstance.onTerminarRegistro(FIRMA_NUBE_PENDING);
     expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_PENDING);
     expect(dialogMock.open).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Engranaje de "Actualizar empresa" — abre el dialog de edición para
+ * cualquier firma (no solo pendientes). El modal hace PATCH
+ * /api/empresas/:nit.
+ */
+describe('ClienteListComponent — onActualizarEmpresa (engranaje)', () => {
+  let dialogMock: DialogMock;
+
+  const FIRMA_NUBE_OK: Firma = {
+    id: 'f-nube-ok',
+    firma_user: 'ok@nube.com',
+    tipo_siigo: 'nube',
+    nit: 900111222,
+    last_token: null,
+    nombre: 'Empresa Demo S.A.',
+  };
+
+  const FIRMA_CONTADOR: Firma = {
+    id: 'f-contador',
+    firma_user: 'a@b.com',
+    tipo_siigo: 'contador',
+    nit: 800111222,
+    last_token: null,
+  };
+
+  beforeEach(() => {
+    dialogMock = createDialogMock();
+  });
+
+  it('abre el dialog en modo edición con la firma nube registrada', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ClienteListComponent],
+      providers: [
+        provideRouter([]),
+        { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
+        { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
+      ],
+    });
+    const fixture = TestBed.createComponent(ClienteListComponent);
+    fixture.componentInstance.onActualizarEmpresa(FIRMA_NUBE_OK);
+    expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_OK);
+    expect(dialogMock.open).not.toHaveBeenCalled();
+  });
+
+  it('abre el dialog en modo edición con una firma contador', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ClienteListComponent],
+      providers: [
+        provideRouter([]),
+        { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
+        { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
+      ],
+    });
+    const fixture = TestBed.createComponent(ClienteListComponent);
+    fixture.componentInstance.onActualizarEmpresa(FIRMA_CONTADOR);
+    expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_CONTADOR);
+  });
+});
+
+/**
+ * getDisplayName() — devuelve `nombre` si existe, sino `firma_user`
+ * (correo). Es la fuente de verdad de la celda "Cliente".
+ */
+describe('ClienteListComponent — getDisplayName', () => {
+  const FIRMA_CON_NOMBRE: Firma = {
+    id: 'f-1',
+    firma_user: 'admin@empresa.com',
+    tipo_siigo: 'nube',
+    nit: 900123456,
+    last_token: null,
+    nombre: 'Empresa ACME S.A.S.',
+  };
+  const FIRMA_SIN_NOMBRE: Firma = {
+    id: 'f-2',
+    firma_user: 'admin@empresa.com',
+    tipo_siigo: 'nube',
+    nit: 900123456,
+    last_token: null,
+    nombre: null,
+  };
+  const FIRMA_NOMBRE_VACIO: Firma = {
+    id: 'f-3',
+    firma_user: 'admin@empresa.com',
+    tipo_siigo: 'nube',
+    nit: 900123456,
+    last_token: null,
+    nombre: '   ',
+  };
+
+  it('devuelve el nombre cuando está presente', () => {
+    expect(
+      ClienteListComponent.prototype.getDisplayName.call(null, FIRMA_CON_NOMBRE),
+    ).toBe('Empresa ACME S.A.S.');
+  });
+
+  it('cae al correo cuando nombre es null', () => {
+    expect(
+      ClienteListComponent.prototype.getDisplayName.call(null, FIRMA_SIN_NOMBRE),
+    ).toBe('admin@empresa.com');
+  });
+
+  it('cae al correo cuando nombre es solo espacios', () => {
+    expect(
+      ClienteListComponent.prototype.getDisplayName.call(null, FIRMA_NOMBRE_VACIO),
+    ).toBe('admin@empresa.com');
   });
 });
 
@@ -280,6 +413,7 @@ describe('ClienteListComponent — row click dispatch', () => {
         provideRouter([]),
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
+        { provide: MessageService, useValue: createMessageServiceMock() },
       ],
     });
 

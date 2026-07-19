@@ -23,7 +23,7 @@
   overflow-y: auto;
 }
 
-.crear-empresa-form {
+.cliente-config-form {
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -39,15 +39,14 @@
     label {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #e5e7eb;  // light gray visible sobre fondo oscuro
+      color: #e5e7eb;
       letter-spacing: 0.01em;
       margin-bottom: 0.25rem;
     }
 
-    // Inputs PrimeNG (pInputText, p-select, p-password) — forzar tema dark.
+    // Inputs PrimeNG — forzar tema dark (idéntico al dialog de firma).
     ::ng-deep .p-inputtext,
-    ::ng-deep .p-select,
-    ::ng-deep .p-password-input {
+    ::ng-deep .p-select {
       background: rgba(15, 23, 42, 0.6) !important;
       border: 1px solid rgba(148, 163, 184, 0.25) !important;
       color: #f3f4f6 !important;
@@ -71,19 +70,17 @@
         outline: none;
       }
 
-      // Estado disabled (NIT en edit mode, credenciales ocultas, etc.):
-      // se ve claramente inactivo — opacidad reducida, fondo más oscuro,
-      // cursor not-allowed y se anula el hover/focus ring.
+      // Read-only (nombre + NIT en este dialog) — se ven como bloqueados.
+      &[readonly],
       &.p-disabled,
-      &[disabled],
       &:disabled {
-        opacity: 0.55 !important;
+        opacity: 0.6 !important;
         background: rgba(15, 23, 42, 0.35) !important;
-        color: rgba(148, 163, 184, 0.85) !important;
+        color: rgba(148, 163, 184, 0.9) !important;
         border-color: rgba(148, 163, 184, 0.18) !important;
         cursor: not-allowed !important;
         box-shadow: none !important;
-        -webkit-text-fill-color: rgba(148, 163, 184, 0.85) !important;
+        -webkit-text-fill-color: rgba(148, 163, 184, 0.9) !important;
       }
     }
 
@@ -98,92 +95,17 @@
       .p-select-dropdown {
         color: #94a3b8 !important;
       }
-
-      // Select disabled: el wrapper completo se atenúa y el caret se apaga.
-      &.p-disabled,
-      &.p-disabled .p-select-label,
-      &.p-disabled .p-select-dropdown {
-        opacity: 0.55 !important;
-        background: rgba(15, 23, 42, 0.35) !important;
-        color: rgba(148, 163, 184, 0.7) !important;
-        cursor: not-allowed !important;
-      }
-    }
-
-    ::ng-deep .p-password {
-      width: 100%;
-
-      &.p-disabled,
-      &.p-disabled .p-password-input {
-        opacity: 0.55 !important;
-        background: rgba(15, 23, 42, 0.35) !important;
-        cursor: not-allowed !important;
-      }
     }
 
     &.full-width {
       grid-column: 1 / -1;
     }
   }
-
-  // Wrap del p-divider: el field full-width lo mantiene en su propia línea.
-  .credentials-divider-wrap {
-    margin-top: 0.25rem;
-    margin-bottom: 0;
-
-    ::ng-deep .p-divider {
-      margin: 0;
-    }
-
-    .divider-label {
-      font-family: var(--font-mono, ui-monospace);
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #94a3b8;
-      padding-left: 0.5rem;
-    }
-  }
 }
 
-// Delete section — separador visual + título rojo para la zona peligrosa.
-.delete-section {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(229, 192, 76, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.delete-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.delete-title {
-  margin: 0;
-  font-family: var(--font-display, system-ui);
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fca5a5;
-  letter-spacing: -0.01em;
-}
-
-.delete-hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #94a3b8;
-}
-
-// Dialog container — themed dark surface.
-:host ::ng-deep .crear-empresa-dialog {
-  background: #032425 !important;  // verde oscuro del branding
+// Dialog container — mismo tema que el crear-empresa-dialog.
+:host ::ng-deep .cliente-config-dialog {
+  background: #032425 !important;
   border: 1px solid rgba(229, 192, 76, 0.2);
   border-radius: 12px;
   overflow: hidden;
@@ -226,13 +148,11 @@
     gap: 0.75rem;
   }
 
-  // Mask oscuro.
   &.p-dialog-mask.p-component-overlay {
     background: rgba(0, 0, 0, 0.6) !important;
     backdrop-filter: blur(2px);
   }
 
-  // PrimeNG button overrides — outline lighter, primary yellow.
   ::ng-deep .p-button {
     font-weight: 600;
 
@@ -261,7 +181,6 @@
     }
   }
 
-  // Error message
   ::ng-deep .p-message.p-message-error {
     background: rgba(239, 68, 68, 0.15) !important;
     border: 1px solid rgba(239, 68, 68, 0.4) !important;

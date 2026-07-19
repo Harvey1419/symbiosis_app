@@ -41,7 +41,7 @@
   --text-vibrant: #f1ff58;
   --text-muted: #8a9f96;
   --text-on-yellow: #032425;
-  --text-on-primary: #2f3300;
+  --text-on-primary: #f1ff58;
   --text-on-error: #ffdad6;
   --text-strong: #f5f6f6;
 
@@ -122,16 +122,24 @@
 // Light mode override (when user toggles theme)
 :root.app-light {
   --background: #f5f6f6;
+  --surface-base: #f5f6f6;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-higher: #e5eae6;
   --surface-card: #ffffff;
   --surface-card-hover: #fafbf8;
   --surface-input: #ffffff;
   --text-primary: #032425;
-  --text-vibrant: #f1ff58;
+  --text-vibrant: #032425;
   --text-muted: #4f6967;
   --text-strong: #032425;
+  --text-on-primary: #ffffff;
   --border-subtle: rgba(3, 36, 37, 0.12);
   --border-strong: rgba(3, 36, 37, 0.24);
   --surface-border: #e5eae6;
+  --surface-divider: rgba(3, 36, 37, 0.08);
+  --surface-hover: rgba(3, 36, 37, 0.04);
+  --surface-active: rgba(3, 36, 37, 0.08);
   --sidebar-bg: #ffffff;
   --sidebar-bg-hover: #f5f6f6;
   --sidebar-text: #032425;

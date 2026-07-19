@@ -10,7 +10,7 @@
   </div>
 
   <div class="nav-section">
-    @for (item of navItems(); track item.route) {
+    @for (item of navItems; track item.route) {
       <a [routerLink]="item.route" routerLinkActive="active" class="nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2"/>

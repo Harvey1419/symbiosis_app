@@ -287,6 +287,13 @@
 // ============================================================
 // Action Button
 // ============================================================
+.col-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .ingresar-btn {
   display: inline-flex;
   align-items: center;
@@ -315,6 +322,45 @@
   }
 }
 
+// ============================================================
+// Gear Button — abre el modal de actualizar empresa
+// ============================================================
+.gear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: var(--surface-higher);
+    color: var(--color-yellow);
+    border-color: var(--color-yellow);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-yellow);
+    outline-offset: 2px;
+  }
+}
+
 .empty-message {
   text-align: center;
   padding: 2.5rem;
@@ -324,6 +370,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ingresar-btn,
+  .gear-btn,
   .btn-add,
   :host ::ng-deep .firmas-table .p-datatable-tbody > tr {
     transition: none;

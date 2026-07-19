@@ -96,15 +96,19 @@
     }
 
     .sidebar-top {
+      // Apilamos logo + botón verticalmente con ~16px de separación.
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
+      gap: 1rem;
       padding: 1.25rem 0.5rem;
     }
 
+    // El botón deja de flotar en el medio del sidebar: ahora vive en el
+    // flujo normal debajo del logo.
     .collapse-btn {
-      position: absolute;
-      right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
+      position: static;
+      transform: none;
     }
   }
 }

@@ -255,8 +255,55 @@
   font-size: 14px;
 }
 
+// ============================================================
+// Acciones — engranaje que abre el modal de config del cliente
+// ============================================================
+.col-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.gear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: var(--surface-container-high);
+    color: var(--primary-container);
+    border-color: var(--primary-container);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-container);
+    outline-offset: 2px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  :host ::ng-deep .clientes-table .p-datatable-tbody > tr {
+  :host ::ng-deep .clientes-table .p-datatable-tbody > tr,
+  .gear-btn {
     transition: none;
   }
 }

@@ -1,4 +1,6 @@
 <div class="page">
+  <p-toast position="bottom-right" />
+
   <header class="page-header">
     <div class="header-left">
       <h1>Listado de Clientes</h1>
@@ -37,12 +39,12 @@
           <tr (click)="onIngresar(firma)" class="clickable-row" [class.row-pending]="needsCompletion(firma)">
             <td class="col-cliente">
               <div class="cliente-cell">
-                <div class="avatar" [class]="'color-' + (getInitials(firma.firma_user).charCodeAt(0) % 4)">
-                  {{ getInitials(firma.firma_user) }}
+                <div class="avatar" [class]="'color-' + (getInitials(getDisplayName(firma)).charCodeAt(0) % 4)">
+                  {{ getInitials(getDisplayName(firma)) }}
                 </div>
                 <div class="cliente-info">
-                  <span class="cliente-nombre">{{ firma.firma_user }}</span>
-                  <span class="cliente-nit">ID: {{ firma.firma_user.substring(0, 6).toUpperCase() }}-{{ firma.id }}</span>
+                  <span class="cliente-nombre">{{ getDisplayName(firma) }}</span>
+                  <span class="cliente-nit">{{ firma.firma_user }}</span>
                 </div>
               </div>
             </td>
@@ -59,14 +61,24 @@
                 <button
                   class="ingresar-btn btn-terminar"
                   (click)="onTerminarRegistro(firma)"
-                  aria-label="Terminar registro de {{ firma.firma_user }}">
+                  aria-label="Terminar registro de {{ getDisplayName(firma) }}">
                   Terminar registro
                 </button>
               } @else {
-                <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ firma.firma_user }}">
+                <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ getDisplayName(firma) }}">
                   Ingresar
                 </button>
               }
+              <button
+                class="gear-btn"
+                (click)="onActualizarEmpresa(firma)"
+                aria-label="Actualizar empresa {{ getDisplayName(firma) }}"
+                title="Actualizar empresa">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
             </td>
           </tr>
         </ng-template>
@@ -85,4 +97,5 @@
   [editingFirma]="crearEmpresaDialog.editingFirma()"
   (closed)="crearEmpresaDialog.close()"
   (firmaCreated)="onEmpresaCreada()"
-  (firmaUpdated)="onEmpresaActualizada()" />
+  (firmaUpdated)="onEmpresaActualizada()"
+  (firmaDeleted)="onEmpresaEliminada()" />

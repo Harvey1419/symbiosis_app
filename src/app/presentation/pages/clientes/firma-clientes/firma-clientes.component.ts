@@ -2,15 +2,18 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 import { FirmaRepository } from '@data/repositories/firma.repository';
 import { Cliente } from '@domain/models/cliente.model';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
 import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
+import { ClienteConfigDialogComponent } from '@app/shared/cliente-config-dialog/cliente-config-dialog.component';
+import { ClienteConfigDialogService } from '@app/core/cliente-config-dialog.service';
 
 @Component({
   selector: 'app-firma-clientes',
   standalone: true,
-  imports: [CommonModule, TableModule, SyncStatusPillComponent],
+  imports: [CommonModule, TableModule, ToastModule, SyncStatusPillComponent, ClienteConfigDialogComponent],
   templateUrl: './firma-clientes.component.html',
   styleUrl: './firma-clientes.component.scss'
 })
@@ -19,6 +22,7 @@ export class FirmaClientesComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly firmaRepo = inject(FirmaRepository);
   private readonly clienteRepo = inject(ClienteRepository);
+  readonly clienteConfigDialog = inject(ClienteConfigDialogService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -74,6 +78,20 @@ export class FirmaClientesComponent implements OnInit {
         // Could show toast in future
       }
     });
+  }
+
+  /**
+   * Abre el modal de config del cliente pre-llenado con sus datos.
+   * Disparado por el icono de engranaje en la celda "Acciones".
+   */
+  onConfigurarCliente(cliente: Cliente): void {
+    this.clienteConfigDialog.openForEdit(cliente);
+  }
+
+  /** Refresca la lista después de un PATCH exitoso (sin esperar al sync). */
+  onClienteActualizado(): void {
+    this.clienteConfigDialog.close();
+    this.loadClientes(this.firmaId());
   }
 
   goBack(): void {
