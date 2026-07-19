@@ -4,18 +4,19 @@ import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
+import { CrearEmpresaDialogComponent } from '@app/shared';
 
 @Component({
   selector: 'app-cliente-list',
   standalone: true,
-  imports: [CommonModule, TableModule],
+  imports: [CommonModule, TableModule, CrearEmpresaDialogComponent],
   templateUrl: './cliente-list.component.html',
   styleUrl: './cliente-list.component.scss'
 })
 export class ClienteListComponent implements OnInit {
   private readonly firmaRepo = inject(FirmaRepository);
   private readonly router = inject(Router);
-  private readonly crearEmpresaDialog = inject(CrearEmpresaDialogService);
+  readonly crearEmpresaDialog = inject(CrearEmpresaDialogService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -35,7 +36,7 @@ export class ClienteListComponent implements OnInit {
 
   onIngresar(firma: Firma) {
     if (firma.tipo_siigo === 'nube') {
-      this.router.navigate(['/clientes', firma.nit]);
+      this.router.navigate(['/facturas', firma.nit]);
     } else {
       this.router.navigate(['/clientes/firma', firma.id]);
     }
@@ -43,6 +44,11 @@ export class ClienteListComponent implements OnInit {
 
   onAddEmpresa(): void {
     this.crearEmpresaDialog.open();
+  }
+
+  onEmpresaCreada(): void {
+    this.crearEmpresaDialog.close();
+    this.loadFirmas();
   }
 
   getInitials(nombre: string): string {

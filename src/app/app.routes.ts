@@ -32,6 +32,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'facturas/:nit',
+    loadComponent: () => import('./presentation/pages/clientes/cliente-detail/cliente-detail.component').then(m => m.ClienteDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'clientes/:nit',
     loadComponent: () => import('./presentation/pages/clientes/cliente-detail/cliente-detail.component').then(m => m.ClienteDetailComponent),
     canActivate: [authGuard]

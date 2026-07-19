@@ -70,3 +70,8 @@
     }
   </div>
 </div>
+
+<app-crear-empresa-dialog
+  [visible]="crearEmpresaDialog.visible()"
+  (closed)="crearEmpresaDialog.close()"
+  (firmaCreated)="onEmpresaCreada()" />

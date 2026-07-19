@@ -32,25 +32,37 @@
   &.collapsed {
     width: var(--sidebar-collapsed);
 
+    // display:none (no opacity) libera layout space y previene layout shift
+    // durante la transición expanded ↔ collapsed.
     .logo-text,
     .nav-label {
-      opacity: 0;
-      pointer-events: none;
+      display: none;
     }
 
     .nav-item {
       justify-content: center;
+      align-items: center;
       padding: 0.75rem 0;
+      gap: 0;  // sin gap: 0.75rem porque el label se ocultó
 
-      svg {
-        width: 18px;
-        height: 18px;
+      svg, i {
+        width: 20px;
+        height: 20px;
         flex-shrink: 0;
+        margin: 0 auto;
+        display: block;
       }
     }
 
-    // display:none (not opacity:0) — frees layout space, evita layout shift
-    // cuando se transiciona expanded ↔ collapsed.
+    .sidebar-logo {
+      justify-content: center;
+      gap: 0;
+
+      .logo-icon {
+        margin: 0 auto;
+      }
+    }
+
     .user-info {
       display: none;
     }
@@ -59,8 +71,40 @@
     .sidebar-actions {
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
       padding: 0.5rem 0;
+      width: 100%;
+
+      app-theme-toggle,
+      .logout-btn {
+        margin: 0;
+        width: auto;
+        max-width: 56px;
+      }
+
+      .logout-btn {
+        padding: 0.5rem;
+        justify-content: center;
+        width: 100%;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .sidebar-top {
+      justify-content: center;
+      padding: 1.25rem 0.5rem;
+    }
+
+    .collapse-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
     }
   }
 }
