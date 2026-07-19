@@ -3,7 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
 import { Cliente } from '@domain/models/cliente.model';
-import type { CrearEmpresaInput } from '@app/shared/crear-empresa-dialog/crear-empresa.schema';
+import type {
+  CrearEmpresaInput,
+  UpdateEmpresaInput,
+} from '@app/shared/crear-empresa-dialog/crear-empresa.schema';
 
 export interface Firma {
   id: string;
@@ -11,10 +14,11 @@ export interface Firma {
   tipo_siigo: 'contador' | 'nube';
   nit: number | null;
   last_token: string | null;
-  // Campos adicionales devueltos por POST /api/firmas (crear empresa).
-  // Opcionales porque GET /api/firmas no los incluye.
-  tipo_persona?: 'juridica' | 'natural';
-  nombre?: string;
+  // Campos adicionales devueltos por POST /api/firmas (crear empresa)
+  // o PATCH /api/firmas/:id (terminar registro). Opcionales porque
+  // GET /api/firmas no los incluye.
+  tipo_persona?: 'juridica' | 'natural' | null;
+  nombre?: string | null;
   activo?: boolean;
   usuario_id?: string;
   created_at?: string;
@@ -40,5 +44,15 @@ export class FirmaRepository {
    */
   create(input: CrearEmpresaInput): Observable<Firma> {
     return this.http.post<Firma>(`${this.apiUrl}/firmas`, input);
+  }
+
+  /**
+   * PATCH /api/firmas/:id — completa los datos de negocio de una firma
+   * legacy (modal "Terminar Registro"). Solo los 5 campos de negocio
+   * son aceptados; `firma_pass`, `firma_user`, `tipo_siigo` están
+   * reservados al flow de creación.
+   */
+  updateFirma(id: string, input: UpdateEmpresaInput): Observable<Firma> {
+    return this.http.patch<Firma>(`${this.apiUrl}/firmas/${id}`, input);
   }
 }

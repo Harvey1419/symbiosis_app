@@ -7,6 +7,24 @@ import { ClienteListComponent } from './cliente-list.component';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
 
+type DialogMock = {
+  open: ReturnType<typeof vi.fn>;
+  close: ReturnType<typeof vi.fn>;
+  openForEdit: ReturnType<typeof vi.fn>;
+  visible: ReturnType<typeof signal>;
+  editingFirma: ReturnType<typeof signal>;
+};
+
+function createDialogMock(): DialogMock {
+  return {
+    open: vi.fn(),
+    close: vi.fn(),
+    openForEdit: vi.fn(),
+    visible: signal(false),
+    editingFirma: signal<Firma | null>(null),
+  };
+}
+
 /**
  * Verifica la integración del botón "Agregar Empresa" del ClienteListComponent:
  *   - Al hacer click, llama `crearEmpresaDialog.open()`.
@@ -17,11 +35,7 @@ describe('ClienteListComponent — botón Agregar Empresa', () => {
   let fixture: ComponentFixture<ClienteListComponent>;
   let component: ClienteListComponent;
   let firmaMock: { getFirmas: ReturnType<typeof vi.fn> };
-  let dialogMock: {
-    open: ReturnType<typeof vi.fn>;
-    close: ReturnType<typeof vi.fn>;
-    visible: ReturnType<typeof signal>;
-  };
+  let dialogMock: DialogMock;
 
   const FIRMA_NUBE: Firma = {
     id: 'f-nube',
@@ -33,11 +47,7 @@ describe('ClienteListComponent — botón Agregar Empresa', () => {
 
   beforeEach(() => {
     firmaMock = { getFirmas: vi.fn() };
-    dialogMock = {
-      open: vi.fn(),
-      close: vi.fn(),
-      visible: signal(false),
-    };
+    dialogMock = createDialogMock();
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -90,10 +100,9 @@ describe('ClienteListComponent — botón Agregar Empresa', () => {
 
 /**
  * onIngresar() routing — onboarding-empresa AC-1:
- *   - nube firma → '/facturas/:nit' (facturas de la nube firma)
+ *   - nube firma con nit → '/facturas/:nit' (facturas de la nube firma)
+ *   - nube firma con nit=null → NO navega (botón "Terminar registro" en su lugar)
  *   - contador firma → '/clientes/firma/:id' (lista de clientes)
- *
- * Bug previo: ambas ramas redirigían mal. RED test verifica el contrato correcto.
  */
 describe('ClienteListComponent — onIngresar() routing', () => {
   let fixture: ComponentFixture<ClienteListComponent>;
@@ -101,17 +110,21 @@ describe('ClienteListComponent — onIngresar() routing', () => {
   let routerNavigateSpy: ReturnType<typeof vi.spyOn>;
   let router: Router;
   let firmaMock: { getFirmas: ReturnType<typeof vi.fn> };
-  let dialogMock: {
-    open: ReturnType<typeof vi.fn>;
-    close: ReturnType<typeof vi.fn>;
-    visible: ReturnType<typeof signal>;
-  };
+  let dialogMock: DialogMock;
 
   const FIRMA_NUBE: Firma = {
     id: 'f-nube',
     firma_user: 'nube@empresa.com',
     tipo_siigo: 'nube',
     nit: 900123456,
+    last_token: null,
+  };
+
+  const FIRMA_NUBE_PENDING: Firma = {
+    id: 'f-nube-pending',
+    firma_user: 'pending@nube.com',
+    tipo_siigo: 'nube',
+    nit: null,
     last_token: null,
   };
 
@@ -125,11 +138,7 @@ describe('ClienteListComponent — onIngresar() routing', () => {
 
   beforeEach(() => {
     firmaMock = { getFirmas: vi.fn() };
-    dialogMock = {
-      open: vi.fn(),
-      close: vi.fn(),
-      visible: signal(false),
-    };
+    dialogMock = createDialogMock();
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -156,8 +165,81 @@ describe('ClienteListComponent — onIngresar() routing', () => {
     expect(routerNavigateSpy).toHaveBeenCalledWith(['/facturas', FIRMA_NUBE.nit]);
   });
 
+  it('onIngresar() con firma nube sin NIT NO navega (legacy)', () => {
+    component.onIngresar(FIRMA_NUBE_PENDING);
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
+  });
+
   it('onIngresar() con firma contador navega a /clientes/firma/:id', () => {
     component.onIngresar(FIRMA_CONTADOR);
     expect(routerNavigateSpy).toHaveBeenCalledWith(['/clientes/firma', FIRMA_CONTADOR.id]);
+  });
+});
+
+/**
+ * Terminar Registro flow — onboarding-empresa:
+ *   - needsCompletion() detecta nube + nit=null
+ *   - onTerminarRegistro() abre el dialog con la firma precargada
+ */
+describe('ClienteListComponent — Terminar Registro flow', () => {
+  let component: ClienteListComponent;
+  let dialogMock: DialogMock;
+
+  const FIRMA_NUBE_PENDING: Firma = {
+    id: 'f-nube-pending',
+    firma_user: 'pending@nube.com',
+    tipo_siigo: 'nube',
+    nit: null,
+    last_token: null,
+  };
+
+  const FIRMA_NUBE_OK: Firma = {
+    id: 'f-nube-ok',
+    firma_user: 'ok@nube.com',
+    tipo_siigo: 'nube',
+    nit: 900111222,
+    last_token: null,
+  };
+
+  const FIRMA_CONTADOR: Firma = {
+    id: 'f-contador',
+    firma_user: 'a@b.com',
+    tipo_siigo: 'contador',
+    nit: 800111222,
+    last_token: null,
+  };
+
+  beforeEach(() => {
+    dialogMock = createDialogMock();
+  });
+
+  it('needsCompletion() retorna true para nube + nit=null', () => {
+    component = { needsCompletion: ClienteListComponent.prototype.needsCompletion.bind(null) } as any;
+    expect(component.needsCompletion(FIRMA_NUBE_PENDING)).toBe(true);
+  });
+
+  it('needsCompletion() retorna false para nube con nit', () => {
+    expect(ClienteListComponent.prototype.needsCompletion.call(null, FIRMA_NUBE_OK)).toBe(false);
+  });
+
+  it('needsCompletion() retorna false para contador', () => {
+    expect(ClienteListComponent.prototype.needsCompletion.call(null, FIRMA_CONTADOR)).toBe(false);
+  });
+
+  it('onTerminarRegistro() abre el dialog con la firma precargada', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ClienteListComponent],
+      providers: [
+        provideRouter([]),
+        { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
+        { provide: CrearEmpresaDialogService, useValue: dialogMock },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ClienteListComponent);
+    fixture.componentInstance.onTerminarRegistro(FIRMA_NUBE_PENDING);
+    expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_PENDING);
+    expect(dialogMock.open).not.toHaveBeenCalled();
   });
 });

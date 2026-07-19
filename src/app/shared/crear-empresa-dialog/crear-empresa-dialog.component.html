@@ -4,13 +4,21 @@
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '640px' }"
-  header="Crear Empresa"
+  [style]="{ width: isEditMode() ? '560px' : '640px' }"
+  [header]="dialogTitle()"
   styleClass="crear-empresa-dialog"
 >
   @if (error()) {
     <p-message severity="error" styleClass="mb-3 block">
-      Ocurrió un error al crear la empresa. Verifica los datos e intenta de nuevo.
+      Ocurrió un error. Verifica los datos e intenta de nuevo.
+    </p-message>
+  }
+
+  @if (isEditMode()) {
+    <p-message
+      severity="warn"
+      styleClass="mb-3 block">
+      Esta firma no tiene NIT configurado. Completa los datos de la empresa para activar el acceso a sus facturas.
     </p-message>
   }
 
@@ -57,34 +65,36 @@
         <input pInputText id="id_rep_legal" formControlName="id_rep_legal" type="number" placeholder="12345678" />
       </div>
 
-      <div class="field">
-        <label for="tipo_siigo">Tipo Siigo</label>
-        <p-select
-          inputId="tipo_siigo"
-          formControlName="tipo_siigo"
-          [options]="tipoSiigoOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Selecciona..."
-          styleClass="w-full"
-        />
-      </div>
+      @if (!isEditMode()) {
+        <div class="field">
+          <label for="tipo_siigo">Tipo Siigo</label>
+          <p-select
+            inputId="tipo_siigo"
+            formControlName="tipo_siigo"
+            [options]="tipoSiigoOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Selecciona..."
+            styleClass="w-full"
+          />
+        </div>
 
-      <div class="field">
-        <label for="firma_user">Usuario Siigo (email)</label>
-        <input pInputText id="firma_user" formControlName="firma_user" type="email" placeholder="usuario@empresa.com" />
-      </div>
+        <div class="field">
+          <label for="firma_user">Usuario Siigo (email)</label>
+          <input pInputText id="firma_user" formControlName="firma_user" type="email" placeholder="usuario@empresa.com" />
+        </div>
 
-      <div class="field">
-        <label for="firma_pass">Contraseña Siigo</label>
-        <p-password
-          inputId="firma_pass"
-          formControlName="firma_pass"
-          [feedback]="false"
-          [toggleMask]="true"
-          styleClass="w-full"
-        />
-      </div>
+        <div class="field">
+          <label for="firma_pass">Contraseña Siigo</label>
+          <p-password
+            inputId="firma_pass"
+            formControlName="firma_pass"
+            [feedback]="false"
+            [toggleMask]="true"
+            styleClass="w-full"
+          />
+        </div>
+      }
     </div>
   </form>
 
@@ -96,7 +106,7 @@
       (onClick)="onCancel()"
     />
     <p-button
-      label="Crear empresa"
+      [label]="submitLabel()"
       severity="primary"
       icon="pi pi-check"
       [loading]="loading()"

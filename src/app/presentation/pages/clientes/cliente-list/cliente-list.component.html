@@ -34,7 +34,7 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-firma>
-          <tr (click)="onIngresar(firma)" class="clickable-row">
+          <tr (click)="onIngresar(firma)" class="clickable-row" [class.row-pending]="needsCompletion(firma)">
             <td class="col-cliente">
               <div class="cliente-cell">
                 <div class="avatar" [class]="'color-' + (getInitials(firma.firma_user).charCodeAt(0) % 4)">
@@ -55,9 +55,18 @@
               </span>
             </td>
             <td class="col-acciones" (click)="$event.stopPropagation()">
-              <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ firma.firma_user }}">
-                Ingresar
-              </button>
+              @if (needsCompletion(firma)) {
+                <button
+                  class="ingresar-btn btn-terminar"
+                  (click)="onTerminarRegistro(firma)"
+                  aria-label="Terminar registro de {{ firma.firma_user }}">
+                  Terminar registro
+                </button>
+              } @else {
+                <button class="ingresar-btn" (click)="onIngresar(firma)" aria-label="Ingresar a {{ firma.firma_user }}">
+                  Ingresar
+                </button>
+              }
             </td>
           </tr>
         </ng-template>
@@ -73,5 +82,7 @@
 
 <app-crear-empresa-dialog
   [visible]="crearEmpresaDialog.visible()"
+  [editingFirma]="crearEmpresaDialog.editingFirma()"
   (closed)="crearEmpresaDialog.close()"
-  (firmaCreated)="onEmpresaCreada()" />
+  (firmaCreated)="onEmpresaCreada()"
+  (firmaUpdated)="onEmpresaActualizada()" />

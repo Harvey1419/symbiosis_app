@@ -36,10 +36,24 @@ export class ClienteListComponent implements OnInit {
 
   onIngresar(firma: Firma) {
     if (firma.tipo_siigo === 'nube') {
+      if (firma.nit == null) {
+        // Firma nube sin NIT (legacy). Mostrar "Terminar Registro" en vez
+        // de navegar — no podemos ir a /facturas/{null}.
+        // El handler (click) ya está conectado a onTerminarRegistro().
+        return;
+      }
       this.router.navigate(['/facturas', firma.nit]);
     } else {
       this.router.navigate(['/clientes/firma', firma.id]);
     }
+  }
+
+  /**
+   * Firma nube sin NIT → abre el dialog en modo "Terminar Registro"
+   * (PATCH) con la firma precargada.
+   */
+  onTerminarRegistro(firma: Firma): void {
+    this.crearEmpresaDialog.openForEdit(firma);
   }
 
   onAddEmpresa(): void {
@@ -47,6 +61,11 @@ export class ClienteListComponent implements OnInit {
   }
 
   onEmpresaCreada(): void {
+    this.crearEmpresaDialog.close();
+    this.loadFirmas();
+  }
+
+  onEmpresaActualizada(): void {
     this.crearEmpresaDialog.close();
     this.loadFirmas();
   }
@@ -78,8 +97,16 @@ export class ClienteListComponent implements OnInit {
   }
 
   getStatusLabel(firma: Firma): string {
-    if (firma.tipo_siigo === 'nube') return 'Nube';
+    if (firma.tipo_siigo === 'nube') return firma.nit ? 'Activo' : 'Pendiente';
     return firma.nit ? 'Activo' : 'Inactivo';
+  }
+
+  /**
+   * Firma nube sin NIT requiere completar registro (legacy data).
+   * El botón "Ingresar" se reemplaza por "Terminar Registro".
+   */
+  needsCompletion(firma: Firma): boolean {
+    return firma.tipo_siigo === 'nube' && firma.nit == null;
   }
 
   isNitMuted(nit: number | string | null | undefined): boolean {
@@ -89,7 +116,9 @@ export class ClienteListComponent implements OnInit {
   }
 
   getStatusClass(firma: Firma): string {
-    if (firma.tipo_siigo === 'nube') return 'nube';
+    if (firma.tipo_siigo === 'nube') {
+      return firma.nit ? 'active' : 'pending';
+    }
     if (firma.nit) return 'active';
     return 'inactive';
   }
