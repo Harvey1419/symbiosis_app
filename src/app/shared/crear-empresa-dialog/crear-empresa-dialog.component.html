@@ -1,0 +1,106 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="!$event && onCancel()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '640px' }"
+  header="Crear Empresa"
+  styleClass="crear-empresa-dialog"
+>
+  @if (error()) {
+    <p-message severity="error" styleClass="mb-3 block">
+      Ocurrió un error al crear la empresa. Verifica los datos e intenta de nuevo.
+    </p-message>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="crear-empresa-form">
+    <div class="form-grid">
+      <div class="field">
+        <label for="tipo_persona">Tipo de persona</label>
+        <p-select
+          inputId="tipo_persona"
+          formControlName="tipo_persona"
+          [options]="tipoPersonaOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona..."
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="nombre">Nombre / Razón social</label>
+        <input pInputText id="nombre" formControlName="nombre" type="text" placeholder="Empresa SAC" />
+      </div>
+
+      <div class="field">
+        <label for="nit">NIT (sin dígito de verificación)</label>
+        <input pInputText id="nit" formControlName="nit" type="number" placeholder="900123456" />
+      </div>
+
+      <div class="field">
+        <label for="tipo_id_rep_legal">Tipo ID representante legal</label>
+        <p-select
+          inputId="tipo_id_rep_legal"
+          formControlName="tipo_id_rep_legal"
+          [options]="tipoIdRepLegalOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona..."
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="id_rep_legal">ID representante legal</label>
+        <input pInputText id="id_rep_legal" formControlName="id_rep_legal" type="number" placeholder="12345678" />
+      </div>
+
+      <div class="field">
+        <label for="tipo_siigo">Tipo Siigo</label>
+        <p-select
+          inputId="tipo_siigo"
+          formControlName="tipo_siigo"
+          [options]="tipoSiigoOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona..."
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label for="firma_user">Usuario Siigo (email)</label>
+        <input pInputText id="firma_user" formControlName="firma_user" type="email" placeholder="usuario@empresa.com" />
+      </div>
+
+      <div class="field">
+        <label for="firma_pass">Contraseña Siigo</label>
+        <p-password
+          inputId="firma_pass"
+          formControlName="firma_pass"
+          [feedback]="false"
+          [toggleMask]="true"
+          styleClass="w-full"
+        />
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+    />
+    <p-button
+      label="Crear empresa"
+      severity="primary"
+      icon="pi pi-check"
+      [loading]="loading()"
+      (onClick)="onSubmit()"
+    />
+  </ng-template>
+</p-dialog>

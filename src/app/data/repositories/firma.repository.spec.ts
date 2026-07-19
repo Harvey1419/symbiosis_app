@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, fail } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { FirmaRepository } from './firma.repository';
 import type { Firma } from './firma.repository';
+import type { CrearEmpresaInput } from '@app/shared/crear-empresa-dialog/crear-empresa.schema';
 
 describe('FirmaRepository', () => {
   let repo: FirmaRepository;
@@ -69,5 +70,66 @@ describe('FirmaRepository', () => {
 
     expect(received).toEqual(mockClientes);
     httpMock.verify();
+  });
+
+  describe('create() — POST /api/firmas', () => {
+    const validInput: CrearEmpresaInput = {
+      tipo_persona: 'juridica',
+      nombre: 'Empresa Demo SAC',
+      nit: 900123456,
+      tipo_id_rep_legal: 'cedula',
+      id_rep_legal: 12345678,
+      tipo_siigo: 'nube',
+      firma_user: 'demo@empresa.com',
+      firma_pass: 'secreto-123',
+    };
+
+    it('hace POST /api/firmas con el body del formulario', () => {
+      const mockCreated: Firma = {
+        id: 'firma-new',
+        firma_user: 'demo@empresa.com',
+        tipo_siigo: 'nube',
+        nit: 900123456,
+        last_token: null,
+        tipo_persona: 'juridica',
+        nombre: 'Empresa Demo SAC',
+        activo: true,
+        usuario_id: 'user-1',
+        created_at: '2026-07-18T00:00:00Z',
+      };
+
+      let received: Firma | null = null;
+      repo.create(validInput).subscribe((firma) => {
+        received = firma;
+      });
+
+      const req = httpMock.expectOne('/api/firmas');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(validInput);
+      req.flush(mockCreated);
+
+      expect(received).toEqual(mockCreated);
+      // firma_pass NUNCA en la respuesta
+      expect(received?.firma_pass).toBeUndefined();
+      httpMock.verify();
+    });
+
+    it('propaga errores HTTP (ej. 400 validation)', () => {
+      let errorCaught = false;
+      repo.create(validInput).subscribe({
+        next: () => fail('se esperaba error'),
+        error: () => { errorCaught = true; },
+      });
+
+      const req = httpMock.expectOne('/api/firmas');
+      expect(req.request.method).toBe('POST');
+      req.flush(
+        { error: 'VALIDATION_FAILED', message: 'Invalid request body' },
+        { status: 400, statusText: 'Bad Request' }
+      );
+
+      expect(errorCaught).toBe(true);
+      httpMock.verify();
+    });
   });
 });

@@ -1,0 +1,35 @@
+.crear-empresa-form {
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-color, #1f2937);
+    }
+
+    &:nth-child(2),
+    &:nth-child(8) {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+:host ::ng-deep .crear-empresa-dialog {
+  .p-dialog-content {
+    padding-top: 0.5rem;
+  }
+
+  .p-password {
+    width: 100%;
+  }
+}
