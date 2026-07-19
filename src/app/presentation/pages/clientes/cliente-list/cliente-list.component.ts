@@ -37,9 +37,10 @@ export class ClienteListComponent implements OnInit {
   onIngresar(firma: Firma) {
     if (firma.tipo_siigo === 'nube') {
       if (firma.nit == null) {
-        // Firma nube sin NIT (legacy). Mostrar "Terminar Registro" en vez
-        // de navegar — no podemos ir a /facturas/{null}.
-        // El handler (click) ya está conectado a onTerminarRegistro().
+        // Firma nube sin NIT (legacy). Disparar el mismo flow que el
+        // botón "Terminar registro" — UX consistente: click en row o
+        // en el botón, ambos abren el dialog de edición.
+        this.crearEmpresaDialog.openForEdit(firma);
         return;
       }
       this.router.navigate(['/facturas', firma.nit]);
@@ -49,8 +50,9 @@ export class ClienteListComponent implements OnInit {
   }
 
   /**
-   * Firma nube sin NIT → abre el dialog en modo "Terminar Registro"
-   * (PATCH) con la firma precargada.
+   * Handler explícito del botón "Terminar registro". Delega al mismo
+   * dispatch que `onIngresar()` — mantenido separado solo para claridad
+   * semántica en el template (mismo efecto que click en la row).
    */
   onTerminarRegistro(firma: Firma): void {
     this.crearEmpresaDialog.openForEdit(firma);

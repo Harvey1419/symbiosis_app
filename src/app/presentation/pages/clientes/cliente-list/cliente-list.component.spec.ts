@@ -165,8 +165,9 @@ describe('ClienteListComponent — onIngresar() routing', () => {
     expect(routerNavigateSpy).toHaveBeenCalledWith(['/facturas', FIRMA_NUBE.nit]);
   });
 
-  it('onIngresar() con firma nube sin NIT NO navega (legacy)', () => {
+  it('onIngresar() con firma nube sin NIT abre dialog "Terminar registro" (no navega)', () => {
     component.onIngresar(FIRMA_NUBE_PENDING);
+    expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_PENDING);
     expect(routerNavigateSpy).not.toHaveBeenCalled();
   });
 
@@ -241,5 +242,61 @@ describe('ClienteListComponent — Terminar Registro flow', () => {
     fixture.componentInstance.onTerminarRegistro(FIRMA_NUBE_PENDING);
     expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_PENDING);
     expect(dialogMock.open).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Click en la row entera debe disparar el mismo handler que el botón
+ * "Terminar registro" para firmas pendientes — UX consistente.
+ */
+describe('ClienteListComponent — row click dispatch', () => {
+  let component: ClienteListComponent;
+  let routerNavigateSpy: ReturnType<typeof vi.spyOn>;
+  let dialogMock: DialogMock;
+
+  const FIRMA_NUBE_PENDING: Firma = {
+    id: 'f-nube-pending',
+    firma_user: 'pending@nube.com',
+    tipo_siigo: 'nube',
+    nit: null,
+    last_token: null,
+  };
+
+  const FIRMA_NUBE_OK: Firma = {
+    id: 'f-nube-ok',
+    firma_user: 'ok@nube.com',
+    tipo_siigo: 'nube',
+    nit: 900111222,
+    last_token: null,
+  };
+
+  beforeEach(() => {
+    dialogMock = createDialogMock();
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [ClienteListComponent],
+      providers: [
+        provideRouter([]),
+        { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
+        { provide: CrearEmpresaDialogService, useValue: dialogMock },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ClienteListComponent);
+    component = fixture.componentInstance;
+    routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+  });
+
+  it('row click en firma nube sin NIT abre dialog "Terminar registro" (no navega)', () => {
+    component.onIngresar(FIRMA_NUBE_PENDING);
+    expect(dialogMock.openForEdit).toHaveBeenCalledWith(FIRMA_NUBE_PENDING);
+    expect(routerNavigateSpy).not.toHaveBeenCalled();
+  });
+
+  it('row click en firma nube con NIT navega a /facturas/:nit (no abre dialog)', () => {
+    component.onIngresar(FIRMA_NUBE_OK);
+    expect(routerNavigateSpy).toHaveBeenCalledWith(['/facturas', FIRMA_NUBE_OK.nit]);
+    expect(dialogMock.openForEdit).not.toHaveBeenCalled();
   });
 });
