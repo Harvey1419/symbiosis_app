@@ -259,10 +259,13 @@
 // Acciones — engranaje que abre el modal de config del cliente
 // ============================================================
 .col-acciones {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+
+  .gear-btn {
+    display: inline-flex;
+    vertical-align: middle;
+  }
 }
 
 .gear-btn {

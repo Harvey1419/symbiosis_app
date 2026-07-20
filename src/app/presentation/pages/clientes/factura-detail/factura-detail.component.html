@@ -2,27 +2,21 @@
   <p-toast position="bottom-right" />
   <p-confirmDialog />
 
-  <!-- Back breadcrumb -->
-  <button class="back-link" (click)="goBack()">
-    <i class="pi pi-arrow-left"></i>
-    <span>Volver a las facturas</span>
-  </button>
+  <app-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome" />
+
+  <ng-template #backBtn>
+    <app-back-button
+      label="Volver"
+      [routerLink]="['/clientes', nit().toString()]"
+      [navigationState]="{ clienteNombre: clienteNombre(), firmaId: firmaId(), firmaNombre: firmaNombre() }"
+    />
+  </ng-template>
 
   <app-page-header
     title="Detalle de Factura"
     [subtitle]="factura()?.vendor_name || factura()?.factura_nro || ''"
-  >
-    <ng-template #actions>
-      <p-button
-        icon="pi pi-arrow-left"
-        label="Volver a facturas"
-        severity="secondary"
-        [outlined]="true"
-        size="small"
-        [routerLink]="['/clientes', nit()]"
-      />
-    </ng-template>
-  </app-page-header>
+    [backRef]="backBtn"
+  />
 
   @if (loading()) {
     <app-loading-state message="Cargando factura..." />
@@ -337,7 +331,7 @@
         [currentReteCode]="row.rete_code ?? null"
         [impuestos]="impuestos()"
         (apply)="applyImpuestosToRow($event)"
-        (close)="impuestosDialogOpen.set(false)"
+        (dismissed)="impuestosDialogOpen.set(false)"
       />
     }
   }

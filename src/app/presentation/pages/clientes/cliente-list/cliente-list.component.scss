@@ -288,10 +288,18 @@
 // Action Button
 // ============================================================
 .col-acciones {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+
+  .ingresar-btn,
+  .gear-btn {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+
+  .gear-btn {
+    margin-left: 0.5rem;
+  }
 }
 
 .ingresar-btn {
@@ -325,6 +333,9 @@
 // ============================================================
 // Gear Button — abre el modal de actualizar empresa
 // ============================================================
+// Sin border por defecto: el border de la td ya marca la separación
+// horizontal de la fila, y un border extra en el botón creaba una doble
+// línea desalineada a la derecha. El affordance aparece solo en hover.
 .gear-btn {
   display: inline-flex;
   align-items: center;
@@ -334,7 +345,7 @@
   min-width: 36px;
   padding: 0;
   background: transparent;
-  border: 1px solid var(--surface-border);
+  border: 1px solid transparent;
   color: var(--text-muted);
   cursor: pointer;
   border-radius: var(--radius-md);

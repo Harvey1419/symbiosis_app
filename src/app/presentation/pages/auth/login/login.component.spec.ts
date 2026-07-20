@@ -11,9 +11,9 @@ import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
 /**
  * Verifica el contrato del flujo post-login del LoginComponent:
  *
- *   - 0 firmas                     → navega a /dashboard + abre modal crear-empresa
+ *   - 0 firmas                     → navega a /clientes + abre modal crear-empresa
  *   - ≥1 firma nube                → navega a /facturas
- *   - solo firmas contador         → navega a /dashboard
+ *   - solo firmas contador         → navega a /clientes
  *   - mixto (nube + contador)      → navega a /facturas (nube tiene prioridad)
  *
  * La función pura `resolvePostLoginRoute` ya está cubierta en su propio
@@ -73,13 +73,7 @@ describe('LoginComponent post-login redirect', () => {
     tokenSetSpy = vi.spyOn(TestBed.inject(TokenService), 'setAuth');
   });
 
-  function submitAndWait(): Promise<void> {
-    component.credentials = { email: 'a@b.com', password: 'pw' };
-    component.onSubmit();
-    return new Promise((r) => setTimeout(r, 0));
-  }
-
-  it('login OK con 0 firmas: navega a /dashboard + abre modal crear-empresa', async () => {
+  it('login OK con 0 firmas: navega a /clientes + abre modal crear-empresa', async () => {
     authMock.login.mockReturnValue(of(AUTH_RESPONSE));
     firmaMock.getFirmas.mockReturnValue(of([]));
 
@@ -93,7 +87,7 @@ describe('LoginComponent post-login redirect', () => {
     expect(authMock.login).toHaveBeenCalledTimes(1);
     expect(firmaMock.getFirmas).toHaveBeenCalledTimes(1);
     expect(tokenSetSpy).toHaveBeenCalledWith(AUTH_RESPONSE);
-    expect(routerNavSpy).toHaveBeenCalledWith('/dashboard');
+    expect(routerNavSpy).toHaveBeenCalledWith('/clientes');
     expect(dialogMock.open).toHaveBeenCalledTimes(1);
   });
 
@@ -110,7 +104,7 @@ describe('LoginComponent post-login redirect', () => {
     expect(dialogMock.open).not.toHaveBeenCalled();
   });
 
-  it('login OK con firma contador: navega a /dashboard (no abre modal)', async () => {
+  it('login OK con firma contador: navega a /clientes (no abre modal)', async () => {
     authMock.login.mockReturnValue(of(AUTH_RESPONSE));
     firmaMock.getFirmas.mockReturnValue(of([CONTADOR_FIRMA]));
 
@@ -119,7 +113,7 @@ describe('LoginComponent post-login redirect', () => {
 
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(routerNavSpy).toHaveBeenCalledWith('/dashboard');
+    expect(routerNavSpy).toHaveBeenCalledWith('/clientes');
     expect(dialogMock.open).not.toHaveBeenCalled();
   });
 

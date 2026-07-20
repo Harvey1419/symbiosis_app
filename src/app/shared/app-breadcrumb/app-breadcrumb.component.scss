@@ -1,0 +1,69 @@
+// ============================================================
+// Override de PrimeNG `<p-breadcrumb>` — encapsulado aquí para
+// que `styles.scss` global quede solo con design tokens.
+// ============================================================
+// Aura theme aplica un background `surface-50` al `<nav.p-breadcrumb>`
+// que se ve como una barra horizontal. Para nuestro flujo lo queremos
+// "flotante" — solo texto + chevrons + ícono home, sin caja de fondo,
+// porque el contexto se infiere de la página (no necesita contenedor).
+:host ::ng-deep {
+  .p-breadcrumb {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 0 1.25rem 0 !important;
+
+    .p-breadcrumb-list {
+      padding: 0 !important;
+      margin: 0 !important;
+      gap: 0;
+    }
+
+    .p-breadcrumb-item {
+      .p-breadcrumb-item-link {
+        color: var(--text-muted) !important;
+        background: transparent !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        font-size: 0.8125rem !important;
+        font-weight: 500 !important;
+        transition: color 120ms ease;
+        text-decoration: none !important;
+
+        &:hover,
+        &:focus-visible {
+          color: var(--color-yellow) !important;
+          background: transparent !important;
+          text-decoration: none !important;
+        }
+      }
+
+      // Último item (página actual) — sin enlace, más opaco aún.
+      &:last-child > .p-breadcrumb-item-link {
+        color: var(--text-muted) !important;
+        font-weight: 400 !important;
+        cursor: default;
+      }
+    }
+
+    .p-breadcrumb-separator {
+      color: var(--text-muted) !important;
+      opacity: 0.4 !important;
+      margin: 0 0.5rem !important;
+    }
+
+    // Ícono home (🏠) al inicio — más visible que los items.
+    .p-breadcrumb-home {
+      color: var(--text-muted) !important;
+      width: auto !important;
+      height: auto !important;
+      margin-right: 0.25rem !important;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--color-yellow) !important;
+        background: transparent !important;
+      }
+    }
+  }
+}

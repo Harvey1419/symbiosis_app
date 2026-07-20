@@ -1,17 +1,21 @@
-import { Component, inject, signal, computed, OnInit, viewChild } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TableModule, Table } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
+import type { MenuItem } from 'primeng/api';
 import { FacturaRepository } from '@data/repositories/factura.repository';
 import { Factura } from '@domain/models/factura.model';
 import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
+import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
+import { PageHeaderComponent } from '@app/shared/page-header/page-header.component';
+import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 
 interface ProveedorOption {
   label: string;
@@ -25,6 +29,9 @@ interface ProveedorOption {
     CommonModule, FormsModule,
     SyncStatusPillComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
+    BackButtonComponent,
+    PageHeaderComponent,
+    AppBreadcrumbComponent,
   ],
   templateUrl: './cliente-detail.component.html',
   styleUrl: './cliente-detail.component.scss'
@@ -40,8 +47,53 @@ export class ClienteDetailComponent implements OnInit {
   readonly error = signal(false);
   readonly facturas = signal<Factura[]>([]);
   readonly clienteNombre = signal<string>('');
+  /** Firma a la que pertenece este cliente (para el breadcrumb). */
+  readonly firmaId = signal<string>('');
+  readonly firmaNombre = signal<string>('');
+  readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
   readonly syncLoading = signal(false);
   readonly lastSync = signal<Date | null>(null);
+
+  // ── Breadcrumb ──
+  /** True cuando el Resolver no encontró el cliente (NIT no existe o no
+   * pertenece a una firma del usuario). Se muestra un mensaje específico
+   * en vez de la tabla de facturas vacía. */
+  readonly notFound = signal(false);
+  readonly breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: ['/clientes'] };
+  readonly breadcrumbItems = computed<MenuItem[]>(() => {
+    const items: MenuItem[] = [
+      { label: 'Firmas', routerLink: ['/clientes'] },
+    ];
+    if (this.tipoSiigo() === 'nube') {
+      if (this.clienteNombre()) {
+        items.push({ label: this.clienteNombre() });
+      } else if (this.nit()) {
+        items.push({ label: `Cliente ${this.nit()}` });
+      }
+    } else {
+      if (this.firmaNombre()) {
+        items.push({
+          label: this.firmaNombre(),
+          routerLink: this.firmaId() ? ['/clientes/firma', this.firmaId()] : undefined,
+        });
+      }
+      if (this.clienteNombre()) {
+        items.push({ label: this.clienteNombre() });
+      } else if (this.nit()) {
+        items.push({ label: `Cliente ${this.nit()}` });
+      }
+    }
+    return items;
+  });
+
+  /**
+   * Destino del back button. Si tenemos firmaId vamos al detalle de
+   * clientes de esa firma; si NO (ej. URL directa sin state), caemos
+   * al listado general de firmas para no romper la navegación.
+   */
+  readonly backLink = computed<string[]>(() =>
+    this.firmaId() ? ['/clientes/firma', this.firmaId()] : ['/clientes'],
+  );
 
   // ── Filter signals (canonical state) ──
   readonly searchText = signal<string>('');
@@ -143,9 +195,25 @@ export class ClienteDetailComponent implements OnInit {
       const nitNum = Number(nitParam);
       this.nit.set(nitNum);
 
-      const nav = window.history.state;
-      if (nav?.clienteNombre) {
-        this.clienteNombre.set(nav.clienteNombre);
+      // El Resolver (`clienteContextResolver`) corre ANTES de que este
+      // componente se active, así que `route.snapshot.data['clienteContext']`
+      // ya está poblado para deep-links / F5. En el flujo normal, el Resolver
+      // también lee del state (fast-path), así que no hay diferencia
+      // funcional — el breadcrumb está completo desde el primer frame.
+      const ctx = this.route.snapshot.data['clienteContext'] as
+        | { nombre_empresa: string; firma_id: string; firma_nombre: string; tipo_siigo?: 'nube' | 'contador' }
+        | null;
+      if (ctx) {
+        this.clienteNombre.set(ctx.nombre_empresa);
+        this.firmaId.set(ctx.firma_id);
+        this.firmaNombre.set(ctx.firma_nombre);
+        this.tipoSiigo.set(ctx.tipo_siigo);
+      } else {
+        // Resolver retornó null → el NIT no existe o no pertenece a una
+        // firma del usuario. Mostramos mensaje específico en vez de tabla vacía.
+        this.notFound.set(true);
+        this.loading.set(false);
+        return;
       }
 
       this.facturaRepo.getFacturas(nitNum).subscribe({
@@ -182,7 +250,16 @@ export class ClienteDetailComponent implements OnInit {
 
   // ── Row click navigation ──
   goToFactura(f: Factura): void {
-    this.router.navigate(['/clientes', this.nit(), 'factura', f.id]);
+    this.router.navigate(['/clientes', this.nit(), 'factura', f.id], {
+      // Forward del state al detalle de factura para que arme su breadcrumb
+      // sin tener que re-pegar /api/firmas ni leer /api/clientes/:nit.
+      state: {
+        clienteNombre: this.clienteNombre(),
+        firmaId: this.firmaId(),
+        firmaNombre: this.firmaNombre(),
+        tipoSiigo: this.tipoSiigo(),
+      }
+    });
   }
 
   exportSelected(): void {

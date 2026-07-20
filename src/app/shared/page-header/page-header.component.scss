@@ -23,7 +23,16 @@
     background: var(--color-yellow);
   }
 
+  .header-back {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
   .header-content {
+    flex: 1;
+    min-width: 0;
+
     h1 {
       margin: 0;
       font-family: var(--font-display);

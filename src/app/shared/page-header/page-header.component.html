@@ -1,4 +1,9 @@
 <header class="page-header">
+  @if (backRef(); as ref) {
+    <div class="header-back">
+      <ng-container [ngTemplateOutlet]="ref"></ng-container>
+    </div>
+  }
   <div class="header-content">
     <h1>{{ title() }}</h1>
     @if (subtitle()) {

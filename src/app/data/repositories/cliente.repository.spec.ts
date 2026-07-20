@@ -48,4 +48,24 @@ describe('ClienteRepository', () => {
     expect(req.request.body).toEqual({ nit_cliente: 123 });
     req.flush({ success: true, registros: 0 });
   });
+
+  it('getBreadcrumbContext(nit) hace GET /api/empresas/:nit y retorna ClienteBreadcrumbContext con tipo_siigo', () => {
+    const mockContext = {
+      nit: 900123456,
+      nombre_empresa: 'Empresa Demo SAS',
+      firma_id: '11111111-1111-1111-1111-111111111111',
+      firma_nombre: 'Firma Contable',
+      tipo_siigo: 'contador' as const,
+    };
+
+    repo.getBreadcrumbContext(900123456).subscribe((res) => {
+      expect(res).toEqual(mockContext);
+      expect(res.tipo_siigo).toBe('contador');
+    });
+
+    const req = httpMock.expectOne('/api/empresas/900123456');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockContext);
+    httpMock.verify();
+  });
 });

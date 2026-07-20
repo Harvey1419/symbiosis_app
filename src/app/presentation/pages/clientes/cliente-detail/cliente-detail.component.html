@@ -1,21 +1,29 @@
 <div class="page">
-  <header class="page-header">
-    <button class="btn-back" (click)="goBack()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Volver
-    </button>
-    <div class="header-content">
-      <h1>{{ clienteNombre() || 'Cliente' }}</h1>
-      <p class="subtitle">Facturas procesadas para este cliente</p>
-    </div>
-  </header>
+  <app-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome" />
+
+  <ng-template #backBtn>
+    <app-back-button
+      label="Volver"
+      [routerLink]="backLink()"
+      [navigationState]="{ clienteNombre: clienteNombre(), firmaId: firmaId(), firmaNombre: firmaNombre() }"
+    />
+  </ng-template>
+
+  <app-page-header
+    [title]="clienteNombre() || 'Cliente'"
+    subtitle="Facturas procesadas para este cliente"
+    [backRef]="backBtn"
+  />
 
   @if (loading()) {
     <div class="loading-state">
       <span class="spinner"></span>
       <p>Cargando facturas...</p>
+    </div>
+  } @else if (notFound()) {
+    <div class="error-state">
+      <p><strong>Cliente no encontrado.</strong></p>
+      <p>El NIT {{ nit() }} no está asociado a ninguna firma o no tienes acceso a él.</p>
     </div>
   } @else if (error()) {
     <div class="error-state">
@@ -34,8 +42,9 @@
     <!-- Filter row: Proveedor · Estado de carga · Tipos · Fecha · Solo revisadas -->
     <div class="filters-bar">
       <div class="filter-field">
-        <label class="filter-label">Proveedor</label>
+        <label class="filter-label" for="filtro-proveedor">Proveedor</label>
         <p-select
+          inputId="filtro-proveedor"
           [options]="proveedores()"
           [(ngModel)]="proveedorFilterModel"
           optionLabel="label"
@@ -48,8 +57,9 @@
       </div>
 
       <div class="filter-field">
-        <label class="filter-label">Estado de carga</label>
+        <label class="filter-label" for="filtro-estado">Estado de carga</label>
         <p-select
+          inputId="filtro-estado"
           [options]="estadoOptions"
           [(ngModel)]="estadoFilterModel"
           optionLabel="label"
@@ -61,8 +71,9 @@
       </div>
 
       <div class="filter-field">
-        <label class="filter-label">Tipos</label>
+        <label class="filter-label" for="filtro-tipo">Tipos</label>
         <p-select
+          inputId="filtro-tipo"
           [options]="tipoOptions"
           [(ngModel)]="tipoFilterModel"
           optionLabel="label"
@@ -74,8 +85,9 @@
       </div>
 
       <div class="filter-field">
-        <label class="filter-label">Fecha inicial y final</label>
+        <label class="filter-label" for="filtro-fecha">Fecha inicial y final</label>
         <p-datepicker
+          inputId="filtro-fecha"
           selectionMode="range"
           [readonlyInput]="true"
           [(ngModel)]="fechaRangeModel"
@@ -87,7 +99,7 @@
       </div>
 
       <div class="filter-field toggle-field">
-        <label class="filter-label">Facturas revisadas</label>
+        <label class="filter-label" for="filtro-revisadas">Facturas revisadas</label>
         <div class="toggle-row">
           <p-toggleswitch [(ngModel)]="soloRevisadasModel" inputId="solo-revisadas" />
           <span class="toggle-label">Solo revisadas</span>

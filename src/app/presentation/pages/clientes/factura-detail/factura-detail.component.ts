@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, type Observable } from 'rxjs';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import type { MenuItem } from 'primeng/api';
 
 // PrimeNG modules
 import { TableModule } from 'primeng/table';
@@ -32,6 +33,8 @@ import {
   ConfirmService,
   ImpuestosDialogComponent,
 } from '@app/shared';
+import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
+import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 
 type ReabrirTarget = 'pendiente' | 'causada';
 
@@ -66,6 +69,8 @@ interface CuentaOption {
     EmptyStateComponent,
     StatusBadgeComponent,
     ImpuestosDialogComponent,
+    BackButtonComponent,
+    AppBreadcrumbComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './factura-detail.component.html',
@@ -88,6 +93,59 @@ export class FacturaDetailComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly actionLoading = signal(false);
+
+  // ── Breadcrumb state ──
+  /** Identificador de la firma (para el segmento clickeable del breadcrumb). */
+  readonly firmaId = signal<string>('');
+  /** Nombre de la firma (puede venir por state o resolverse vía repo). */
+  readonly firmaNombre = signal<string>('');
+  /** Nombre del cliente (del state; fallback si no llega). */
+  readonly clienteNombre = signal<string>('');
+  readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
+
+  // ── Breadcrumb items ──
+  readonly breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: ['/clientes'] };
+  readonly breadcrumbItems = computed<MenuItem[]>(() => {
+    const items: MenuItem[] = [
+      { label: 'Firmas', routerLink: ['/clientes'] },
+    ];
+    if (this.tipoSiigo() === 'nube') {
+      if (this.clienteNombre()) {
+        items.push({
+          label: this.clienteNombre(),
+          routerLink: this.nit() ? ['/clientes', this.nit()] : undefined,
+        });
+      } else if (this.nit()) {
+        items.push({
+          label: `Cliente ${this.nit()}`,
+          routerLink: ['/clientes', this.nit()],
+        });
+      }
+    } else {
+      if (this.firmaNombre()) {
+        items.push({
+          label: this.firmaNombre(),
+          routerLink: this.firmaId() ? ['/clientes/firma', this.firmaId()] : undefined,
+        });
+      }
+      if (this.clienteNombre()) {
+        items.push({
+          label: this.clienteNombre(),
+          routerLink: this.nit() ? ['/clientes', this.nit()] : undefined,
+        });
+      } else if (this.nit()) {
+        items.push({
+          label: `Cliente ${this.nit()}`,
+          routerLink: ['/clientes', this.nit()],
+        });
+      }
+    }
+    // Último segmento: la factura actual (no clickeable).
+    const last = this.factura();
+    const lastLabel = last?.factura_nro || last?.cufe?.slice(0, 12) || `Factura ${this.facturaId()}`;
+    items.push({ label: lastLabel });
+    return items;
+  });
 
   // ── Dirty state tracking ──
   readonly dirtyRows = signal<Set<number>>(new Set());
@@ -165,6 +223,22 @@ export class FacturaDetailComponent implements OnInit {
     }
     this.nit.set(Number(nitParam));
     this.facturaId.set(idParam);
+
+    // El Resolver (`clienteContextResolver`) corre ANTES de que este
+    // componente se active, así que `route.snapshot.data['clienteContext']`
+    // ya está poblado para deep-links / F5. En el flujo normal, el Resolver
+    // también lee del state (fast-path), así que no hay diferencia
+    // funcional — el breadcrumb está completo desde el primer frame.
+    const ctx = this.route.snapshot.data['clienteContext'] as
+      | { nombre_empresa: string; firma_id: string; firma_nombre: string; tipo_siigo?: 'nube' | 'contador' }
+      | null;
+    if (ctx) {
+      this.clienteNombre.set(ctx.nombre_empresa);
+      this.firmaId.set(ctx.firma_id);
+      this.firmaNombre.set(ctx.firma_nombre);
+      this.tipoSiigo.set(ctx.tipo_siigo);
+    }
+
     this.loadAll();
   }
 

@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ClienteListComponent } from './cliente-list.component';
 import { FirmaRepository, Firma } from '@data/repositories/firma.repository';
 import { CrearEmpresaDialogService } from '@core/crear-empresa-dialog.service';
@@ -43,6 +43,14 @@ function createMessageServiceMock() {
   };
 }
 
+function createConfirmationServiceMock() {
+  return {
+    confirm: vi.fn(),
+    requireConfirmation$: { subscribe: vi.fn(), next: vi.fn(), pipe: vi.fn().mockReturnValue({ subscribe: vi.fn() }) },
+    accept: { subscribe: vi.fn(), next: vi.fn(), pipe: vi.fn().mockReturnValue({ subscribe: vi.fn() }) },
+  };
+}
+
 /**
  * Verifica la integración del botón "Agregar Empresa" del ClienteListComponent:
  *   - Al hacer click, llama `crearEmpresaDialog.open()`.
@@ -75,6 +83,7 @@ describe('ClienteListComponent — botón Agregar Empresa', () => {
         { provide: FirmaRepository, useValue: firmaMock },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
 
@@ -167,6 +176,7 @@ describe('ClienteListComponent — onIngresar() routing', () => {
         { provide: FirmaRepository, useValue: firmaMock },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
 
@@ -256,6 +266,7 @@ describe('ClienteListComponent — Terminar Registro flow', () => {
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
 
@@ -304,6 +315,7 @@ describe('ClienteListComponent — onActualizarEmpresa (engranaje)', () => {
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
     const fixture = TestBed.createComponent(ClienteListComponent);
@@ -321,6 +333,7 @@ describe('ClienteListComponent — onActualizarEmpresa (engranaje)', () => {
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
     const fixture = TestBed.createComponent(ClienteListComponent);
@@ -414,6 +427,7 @@ describe('ClienteListComponent — row click dispatch', () => {
         { provide: FirmaRepository, useValue: { getFirmas: vi.fn().mockReturnValue(of([])) } },
         { provide: CrearEmpresaDialogService, useValue: dialogMock },
         { provide: MessageService, useValue: createMessageServiceMock() },
+        { provide: ConfirmationService, useValue: createConfirmationServiceMock() },
       ],
     });
 

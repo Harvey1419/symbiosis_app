@@ -21,6 +21,20 @@ export interface UpdateClienteInput {
   firmaId?: string;
 }
 
+/**
+ * Respuesta de `GET /api/empresas/:nit` para el contexto del breadcrumb.
+ * El backend hace un JOIN de `clientes_siigo` + `empresas` + `firmas`
+ * en una sola query, así que esta info está disponible incluso en
+ * deep-links / refresh (cuando `window.history.state` está vacío).
+ */
+export interface ClienteBreadcrumbContext {
+  nit: number;
+  nombre_empresa: string;
+  firma_id: string;
+  firma_nombre: string;
+  tipo_siigo?: 'nube' | 'contador';
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClienteRepository {
   private readonly http = inject(HttpClient);
@@ -60,5 +74,18 @@ export class ClienteRepository {
    */
   updateCliente(nit: number, input: UpdateClienteInput): Observable<unknown> {
     return this.http.patch(`${this.apiUrl}/empresas/${nit}`, input);
+  }
+
+  /**
+   * GET /api/empresas/:nit — devuelve el contexto de breadcrumb para un
+   * cliente: nombre de la empresa + id y nombre de la firma dueña.
+   *
+   * Usado por `cliente-context.resolver.ts` cuando el state propagation
+   * (vía `window.history.state`) está vacío — deep-links, refresh,
+   * o URLs pegadas en un chat. Una sola request al backend trae todo
+   * lo necesario para pintar el breadcrumb desde el primer frame.
+   */
+  getBreadcrumbContext(nit: number): Observable<ClienteBreadcrumbContext> {
+    return this.http.get<ClienteBreadcrumbContext>(`${this.apiUrl}/empresas/${nit}`);
   }
 }

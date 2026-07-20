@@ -1,18 +1,17 @@
 <div class="page">
   <p-toast position="bottom-right" />
 
-  <header class="page-header">
-    <button class="btn-back" (click)="goBack()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Volver
-    </button>
-    <div class="header-left">
-      <h1>Clientes de la Firma</h1>
-      <p class="subtitle">Selecciona un cliente para ver sus facturas.</p>
-    </div>
-  </header>
+  <app-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome" />
+
+  <ng-template #backBtn>
+    <app-back-button label="Volver" [routerLink]="['/clientes']" />
+  </ng-template>
+
+  <app-page-header
+    title="Clientes de la Firma"
+    subtitle="Selecciona un cliente para ver sus facturas."
+    [backRef]="backBtn"
+  />
 
   <div class="content-card">
     @if (loading()) {

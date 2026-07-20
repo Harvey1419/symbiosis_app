@@ -1,43 +1,13 @@
 .factura-detail-page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem 1.5rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-// Back link breadcrumb (top of page, above page-header)
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  border: none;
-  padding: 0.5rem 0.75rem;
-  margin: 0 0 -0.5rem -0.5rem;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: color 150ms ease, background 150ms ease;
-  align-self: flex-start;
-
-  i {
-    font-size: 0.85rem;
-  }
-
-  &:hover {
-    color: var(--color-yellow);
-    background: var(--surface-higher);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-yellow);
-    outline-offset: 2px;
-  }
+  // Block layout (NO flex + gap) — mismo patrón que `.page` en cliente-list,
+  // firma-clientes y cliente-detail. Cada sección dueña de su propio
+  // margin-bottom:
+  //   - `<app-breadcrumb>`  → margin-bottom: 1.25rem (en su SCSS)
+  //   - `<app-page-header>` → margin-bottom: 1.5rem  (en su SCSS)
+  //   - `.actions-card` / `.meta-card` / `.items-card` → margin-bottom: 1.25rem
+  // Esto evita que la página tenga que conocer a sus hijos para espaciar.
 }
 
 // ============================================================
@@ -46,6 +16,7 @@
 .meta-card {
   background: var(--surface-card) !important;
   border: 1px solid var(--surface-border);
+  margin-bottom: 1.25rem;
 }
 
 .info-grid {
@@ -169,6 +140,7 @@
 .actions-card {
   background: var(--surface-card) !important;
   border: 1px solid var(--surface-border);
+  margin-bottom: 1.25rem;
 }
 
 .actions-bar {
@@ -186,6 +158,7 @@
 .items-card {
   background: var(--surface-card) !important;
   border: 1px solid var(--surface-border);
+  margin-bottom: 1.25rem;
 }
 
 :host ::ng-deep {

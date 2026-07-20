@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { clienteContextResolver } from './core/cliente-context.resolver';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'clientes', pathMatch: 'full' },
   {
     path: 'auth/login',
     loadComponent: () => import('./presentation/pages/auth/login/login.component').then(m => m.LoginComponent)
@@ -10,11 +11,6 @@ export const routes: Routes = [
   {
     path: 'auth/register',
     loadComponent: () => import('./presentation/pages/auth/register/register.component').then(m => m.RegisterComponent)
-  },
-  {
-    path: 'dashboard',
-    loadComponent: () => import('./presentation/pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [authGuard]
   },
   {
     path: 'clientes',
@@ -29,17 +25,20 @@ export const routes: Routes = [
   {
     path: 'clientes/:nit/factura/:id',
     loadComponent: () => import('./presentation/pages/clientes/factura-detail/factura-detail.component').then(m => m.FacturaDetailComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    resolve: { clienteContext: clienteContextResolver }
   },
   {
     path: 'facturas/:nit',
     loadComponent: () => import('./presentation/pages/clientes/cliente-detail/cliente-detail.component').then(m => m.ClienteDetailComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    resolve: { clienteContext: clienteContextResolver }
   },
   {
     path: 'clientes/:nit',
     loadComponent: () => import('./presentation/pages/clientes/cliente-detail/cliente-detail.component').then(m => m.ClienteDetailComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    resolve: { clienteContext: clienteContextResolver }
   },
   {
     path: 'cuenta',
@@ -51,5 +50,5 @@ export const routes: Routes = [
     loadComponent: () => import('./presentation/pages/jobs/job-detail/job-detail.component').then(m => m.JobDetailComponent),
     canActivate: [authGuard]
   },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: 'clientes' }
 ];

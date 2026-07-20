@@ -6,10 +6,10 @@ import type { Firma } from '@data/repositories/firma.repository';
  * resolvePostLoginRoute es una función PURA — sin DI, sin Router, sin
  * TestBed. Recibe las firmas del usuario y devuelve la ruta post-login.
  *
- * Contrato (per spec `onboarding-redirect`):
+ * Contrato:
  *   - 0 firmas (primera vez)     -> { modal: 'crear-empresa' }
  *   - ≥1 firma tipo_siigo='nube' -> '/facturas'  (prioriza nube sobre contador)
- *   - solo firmas 'contador'     -> '/dashboard'
+ *   - solo firmas 'contador'     -> '/clientes'
  *
  * El orden del array no importa — se evalúa por `some()` y `every()`.
  */
@@ -35,9 +35,9 @@ describe('resolvePostLoginRoute (pure function)', () => {
     expect(route).toBe('/facturas');
   });
 
-  it('una firma contador → "/dashboard"', () => {
+  it('una firma contador → "/clientes"', () => {
     const route = resolvePostLoginRoute([makeFirma('contador')]);
-    expect(route).toBe('/dashboard');
+    expect(route).toBe('/clientes');
   });
 
   it('mixto nube + contador → "/facturas" (nube tiene prioridad)', () => {
@@ -56,13 +56,13 @@ describe('resolvePostLoginRoute (pure function)', () => {
     expect(route).toBe('/facturas');
   });
 
-  it('múltiples firmas contador → "/dashboard"', () => {
+  it('múltiples firmas contador → "/clientes"', () => {
     const route = resolvePostLoginRoute([
       makeFirma('contador', 111),
       makeFirma('contador', 222),
       makeFirma('contador', 333),
     ]);
-    expect(route).toBe('/dashboard');
+    expect(route).toBe('/clientes');
   });
 
   it('múltiples firmas nube → "/facturas"', () => {

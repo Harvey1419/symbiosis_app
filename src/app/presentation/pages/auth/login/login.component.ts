@@ -34,21 +34,21 @@ export class LoginComponent {
         this.tokenService.setAuth({ token: res.token, usuario: res.usuario });
         // Cargar firmas post-login y decidir ruta via resolvePostLoginRoute.
         // Si el usuario no tiene firmas (primera vez), abrir el modal
-        // "Crear Empresa" además de navegar a /dashboard.
+        // "Crear Empresa" además de navegar a /clientes.
         this.firmaRepo.getFirmas().subscribe({
           next: (firmas) => {
             const route = resolvePostLoginRoute(firmas);
             if (typeof route === 'string') {
               this.router.navigateByUrl(route);
             } else {
-              this.router.navigateByUrl('/dashboard');
+              this.router.navigateByUrl('/clientes');
               this.crearEmpresaDialog.open();
             }
           },
           error: () => {
-            // Si falla el GET firmas, caer al comportamiento legacy
-            // (siempre /dashboard) en vez de dejar al usuario atascado.
-            this.router.navigateByUrl('/dashboard');
+            // Si falla el GET firmas, caer a /clientes en vez de dejar
+            // al usuario atascado.
+            this.router.navigateByUrl('/clientes');
           },
         });
       },

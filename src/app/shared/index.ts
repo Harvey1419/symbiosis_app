@@ -10,3 +10,4 @@ export * from './sync-banner/sync-banner.component';
 export * from './sync-status-pill/sync-status-pill.component';
 export * from './impuestos-dialog/impuestos-dialog.component';
 export * from './crear-empresa-dialog/crear-empresa-dialog.component';
+export * from './app-breadcrumb/app-breadcrumb.component';
