@@ -316,7 +316,6 @@ for (const field of ['nit'] as const) {
           ? JSON.stringify(httpErr.error)
           : (httpErr.message ?? '');
     const msg = `Error al ${action} (${status} ${statusText})${body ? ': ' + body : ''}`;
-    // eslint-disable-next-line no-console
     console.error('[CrearEmpresaDialog]', msg, err);
     // WU-7: feedback global via PrimeNG toast. NO reemplaza el `error` signal —
     // el `<p-message>` inline sigue siendo el fallback accesible dentro del modal.

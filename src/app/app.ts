@@ -14,8 +14,9 @@ import { SidebarService } from '@core/sidebar.service';
 export class App {
   showSidebar = false;
   readonly sidebarService = inject(SidebarService);
+  private readonly router = inject(Router);
 
-  constructor(private router: Router) {
+  constructor() {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         const authRoutes = ['/auth/login', '/auth/register'];

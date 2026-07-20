@@ -157,7 +157,6 @@ describe('CrearEmpresaDialogComponent', () => {
       valid: c.valid,
     }));
     if (component.form.invalid) {
-      // eslint-disable-next-line no-console
       console.error('Form still invalid. Controls:', controlErrors);
     }
 
@@ -493,32 +492,33 @@ describe('CrearEmpresaDialogComponent — toast (WU-7)', () => {
     fixture.componentRef.setInput('editingFirma', editingFirma);
     fixture.detectChanges();
 
-    // Campos de negocio bloqueados
-    expect(component.form.get('tipo_persona')?.disabled).toBe(true);
+    // Campos de credenciales + nit bloqueados
     expect(component.form.get('nit')?.disabled).toBe(true);
-    expect(component.form.get('tipo_id_rep_legal')?.disabled).toBe(true);
-    expect(component.form.get('id_rep_legal')?.disabled).toBe(true);
+    expect(component.form.get('tipo_siigo')?.disabled).toBe(true);
+    expect(component.form.get('firma_user')?.disabled).toBe(true);
 
-    // Único campo editable
+    // Campos de negocio habilitados
     expect(component.form.get('nombre')?.disabled).toBe(false);
+    expect(component.form.get('tipo_persona')?.disabled).toBe(false);
+    expect(component.form.get('tipo_id_rep_legal')?.disabled).toBe(false);
+    expect(component.form.get('id_rep_legal')?.disabled).toBe(false);
     expect(component.form.get('nombre')?.value).toBe('Empresa Original');
   });
 
-  it('modo edición: el form sigue siendo válido aunque los 4 campos bloqueados estén "vacíos" (no cuentan en validación)', () => {
+  it('modo edición: requiere los 4 campos de negocio validos según UpdateEmpresaSchema', () => {
     const editingFirma: Firma = {
       ...CREATED_FIRMA,
-      nit: null, // firma legacy
-      tipo_persona: null,
+      nit: 900123456,
+      tipo_persona: 'juridica',
       nombre: 'Empresa Legacy',
-      tipo_id_rep_legal: null,
-      id_rep_legal: null,
+      tipo_id_rep_legal: 'cedula',
+      id_rep_legal: 12345678,
     };
 
     fixture.componentRef.setInput('visible', true);
     fixture.componentRef.setInput('editingFirma', editingFirma);
     fixture.detectChanges();
 
-    // Como están disabled, el form puede ser válido solo con `nombre` lleno.
     expect(component.form.get('nombre')?.value).toBe('Empresa Legacy');
     expect(component.form.valid).toBe(true);
   });
@@ -759,8 +759,9 @@ describe('CrearEmpresaDialogComponent — onEliminarEmpresa (soft-delete)', () =
     expect(repoMock.deleteEmpresa).not.toHaveBeenCalled();
   });
 
-  it('no hace nada si la firma en edición NO tiene NIT (legacy sin terminar)', async () => {
-    fixture.componentRef.setInput('editingFirma', { ...EDITING_FIRMA, nit: null });
+  it('no hace nada si NO hay firma en edición', async () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.componentRef.setInput('editingFirma', null);
     fixture.detectChanges();
 
     await component.onEliminarEmpresa();

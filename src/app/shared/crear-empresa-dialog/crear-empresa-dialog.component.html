@@ -17,7 +17,7 @@
     </p-message>
   }
 
-  @if (isEditMode() && editingFirma()?.nit == null) {
+  @if (isEditMode() && editingFirma()?.nit === null) {
     <p-message
       severity="warn"
       styleClass="mb-3 block">

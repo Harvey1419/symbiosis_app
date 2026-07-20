@@ -136,7 +136,7 @@ export class ImpuestosDialogComponent {
   /** Emitted on Aplicar with the selected codes. */
   readonly apply = output<ImpuestosApplyEvent>();
   /** Emitted on close (X or Cancelar) — no payload. */
-  readonly close = output<void>();
+  readonly dismissed = output<void>();
 
   /** Selected codes (signal-based for PrimeNG ngModel binding). */
   readonly selectedIva = signal<string | null>(null);
@@ -164,7 +164,7 @@ export class ImpuestosDialogComponent {
   }
 
   onVisibleChange(visible: boolean): void {
-    if (!visible) this.close.emit();
+    if (!visible) this.dismissed.emit();
   }
 
   onApply(): void {
@@ -175,6 +175,6 @@ export class ImpuestosDialogComponent {
   }
 
   onCancel(): void {
-    this.close.emit();
+    this.dismissed.emit();
   }
 }
