@@ -1,4 +1,5 @@
 <div class="page">
+  <p-toast position="bottom-right" />
   <app-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome" />
 
   <ng-template #backBtn>
@@ -106,11 +107,13 @@
           <p-button
             icon="pi pi-file-export"
             severity="success"
-            [rounded]="true"
-            size="small"
-            [disabled]="selectedFacturas().length === 0"
-            (onClick)="exportSelected()"
-            pTooltip="Exportar selección"
+             [rounded]="true"
+             size="small"
+             [disabled]="selectedFacturas().length === 0 || isExporting()"
+             [loading]="isExporting()"
+             (onClick)="exportSelected()"
+             pTooltip="Exportar selección"
+
             styleClass="export-btn"
           />
         </div>
@@ -150,6 +153,7 @@
       selectionMode="multiple"
       [(selection)]="selectedFacturasModel"
       [metaKeySelection]="false"
+      [rowSelectable]="isRowExportable"
       [paginator]="true"
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50, 100]"
@@ -174,8 +178,9 @@
             Proveedor <p-sortIcon field="vendor_name" />
           </th>
           <th pSortableColumn="status" style="width: 140px">
-            Tipo <p-sortIcon field="status" />
+            Estado <p-sortIcon field="status" />
           </th>
+          <th style="width: 140px">Tipo</th>
           <th pSortableColumn="total_pagar" style="width: 140px">
             Total <p-sortIcon field="total_pagar" />
           </th>
@@ -186,11 +191,23 @@
       <ng-template pTemplate="body" let-f>
         <tr class="clickable-row" (click)="goToFactura(f)">
           <td (click)="$event.stopPropagation()">
-            <p-tableCheckbox [value]="f" />
+            <!-- Checkbox deshabilitado para status no exportables (pendiente,
+                 clasificando, causada, finalizada, error). Solo `lista_para_subir`
+                 queda habilitado. PrimeNG pinta el atributo [disabled]
+                 en el <input> interno; click sobre el wrapper se ignora
+                 porque TableCheckbox.onClick también valida `!disabled()`. -->
+            <p-tableCheckbox [value]="f" [disabled]="!isExportable(f)" />
           </td>
           <td class="track-cell">{{ f.factura_nro || f.track_id || '—' }}</td>
           <td>{{ formatDate(f.fecha_emision) }}</td>
           <td class="vendor-cell">{{ f.vendor_name || 'Sin proveedor' }}</td>
+          <td [attr.data-factura-id]="f.id">
+            <!-- Badge de status que sigue el patrón visual de `tipo-badge`:
+                 una clase por estado + variantes de color en SCSS. -->
+            <span class="status-badge" [class]="'status-' + getStatusSlug(f)">
+              {{ getStatusLabel(f) }}
+            </span>
+          </td>
           <td>
             <span class="tipo-badge" [class]="'tipo-' + getTipoSlug(f)">
               {{ getTipoFactura(f) }}
@@ -213,7 +230,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="empty-message">
+          <td colspan="8" class="empty-message">
             @if (hasActiveFilters()) {
               <div class="empty-filtered">
                 <i class="pi pi-search-minus"></i>

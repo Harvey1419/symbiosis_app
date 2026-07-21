@@ -443,6 +443,65 @@
   }
 }
 
+// ============================================================
+// Status badge (WU-3B) — sigue el patrón visual de `tipo-badge`:
+// pill inline-flex con color estable por estado. Las clases se
+// generan a partir de `getStatusSlug(f)` (sin prefijos, para que
+// el CSS las lea directamente). Los seis estados del dominio
+// cubren el 100% del shape de `Factura.status`; cualquier valor
+// fuera de ese set cae a `.status-unknown` (neutral fallback).
+// ============================================================
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: capitalize;
+
+  &.status-pendiente {
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
+  }
+
+  &.status-clasificando {
+    background: var(--color-info-soft);
+    color: var(--color-info);
+  }
+
+  &.status-lista-para-subir {
+    background: color-mix(in srgb, var(--color-success) 18%, transparent);
+    color: var(--color-success);
+    font-weight: 700;
+  }
+
+  &.status-causada {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+  }
+
+  &.status-finalizada {
+    background: color-mix(in srgb, var(--color-yellow) 18%, transparent);
+    color: var(--color-yellow);
+  }
+
+  &.status-error {
+    background: var(--color-error-soft);
+    color: var(--color-error);
+  }
+
+  // Fallback neutro legible para status fuera del shape conocido.
+  // Mantiene la misma silueta que las demás variantes; solo cambia
+  // el color para evitar un badge "fantasma" en blanco.
+  &.status-unknown {
+    background: var(--surface-card-hover);
+    color: var(--text-muted);
+  }
+}
+
 .confianza-dot {
   display: inline-block;
   width: 8px;

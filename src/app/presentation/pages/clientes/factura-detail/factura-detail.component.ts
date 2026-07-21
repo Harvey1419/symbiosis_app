@@ -399,10 +399,20 @@ export class FacturaDetailComponent implements OnInit {
 
   // ── Save row (PATCH) ─────────────────────────────────────────
 
-  saveRow(idx: number): void {
+  /**
+   * PATCH one fila. NO emite toast — el feedback visual de "guardado" es la
+   * propia fila saliendo de `dirty`. saveAll orquesta el conteo y emite
+   * un único toast al final con el resumen.
+   *
+   * `onResult` permite a `saveAll` acumular éxitos/errores por fila.
+   */
+  saveRow(idx: number, onResult?: (ok: boolean, err?: { error?: { message?: string }; message?: string }) => void): void {
     const f = this.factura();
     const fila = f?.filas[idx];
-    if (!f || !fila) return;
+    if (!f || !fila) {
+      onResult?.(false);
+      return;
+    }
 
     const body: UpdateItemBody = {
       cuenta: fila.cuenta ?? undefined,
@@ -416,13 +426,13 @@ export class FacturaDetailComponent implements OnInit {
         this.factura.set(updated);
         this.clearDirty(idx);
         this.actionLoading.set(false);
-        this.message.add({ severity: 'success', summary: 'Fila guardada' });
+        onResult?.(true);
       },
       error: (err: { error?: { message?: string }; message?: string }) => {
         const msg = err?.error?.message ?? err?.message ?? 'Error al guardar el item';
         this.error.set(msg);
-        this.message.add({ severity: 'error', summary: 'Error', detail: msg });
         this.actionLoading.set(false);
+        onResult?.(false, err);
       },
     });
   }
@@ -431,24 +441,53 @@ export class FacturaDetailComponent implements OnInit {
     const dirty = Array.from(this.dirtyRows());
     if (dirty.length === 0) return;
     this.actionLoading.set(true);
-    // Sequential PATCH per row
+
+    let successCount = 0;
+    let failureCount = 0;
+    let firstErrorMsg: string | undefined;
+    const total = dirty.length;
+
     const next = () => {
       if (dirty.length === 0) {
         this.actionLoading.set(false);
-        this.message.add({ severity: 'success', summary: 'Todos los cambios guardados' });
+        if (failureCount === 0) {
+          this.message.add({
+            severity: 'success',
+            summary: total === 1 ? 'Fila guardada' : `${successCount} filas guardadas`,
+            life: 3500,
+          });
+        } else if (successCount === 0) {
+          this.message.add({
+            severity: 'error',
+            summary: total === 1 ? 'No se pudo guardar la fila' : `No se pudo guardar ninguna fila (${failureCount})`,
+            detail: firstErrorMsg,
+          });
+        } else {
+          this.message.add({
+            severity: 'warn',
+            summary: `${successCount} guardadas, ${failureCount} con error`,
+            detail: firstErrorMsg,
+            life: 5000,
+          });
+        }
         return;
       }
       const idx = dirty.shift()!;
-      this.saveRow(idx);
+      this.saveRow(idx, (ok, err) => {
+        if (ok) {
+          successCount += 1;
+        } else {
+          failureCount += 1;
+          if (!firstErrorMsg) {
+            firstErrorMsg = err?.error?.message ?? err?.message ?? 'Error al guardar el item';
+          }
+        }
+      });
+      // Yield to the previous PATCH before chaining the next one. Without this
+      // each saveRow would set `actionLoading` to false on its own completion
+      // and clobber the spinner state for the still-pending rows.
+      setTimeout(next, 0);
     };
-    // Override actionLoading-resetting in saveRow
-    const original = this.saveRow.bind(this);
-    this.saveRow = (i: number) => {
-      original(i);
-      this.actionLoading.set(true);
-      setTimeout(next, 50);
-    };
-    setTimeout(() => { this.saveRow = original; }, dirty.length * 200);
     next();
   }
 

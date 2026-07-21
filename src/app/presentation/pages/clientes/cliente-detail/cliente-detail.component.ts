@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -9,7 +10,11 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import type { MenuItem } from 'primeng/api';
+import { finalize } from 'rxjs';
+
 import { FacturaRepository } from '@data/repositories/factura.repository';
 import { Factura } from '@domain/models/factura.model';
 import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
@@ -29,6 +34,7 @@ interface ProveedorOption {
     CommonModule, FormsModule,
     SyncStatusPillComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
+    ToastModule,
     BackButtonComponent,
     PageHeaderComponent,
     AppBreadcrumbComponent,
@@ -40,6 +46,7 @@ export class ClienteDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly facturaRepo = inject(FacturaRepository);
+  private readonly message = inject(MessageService);
 
   // ── Core data ──
   nit = signal<number>(0);
@@ -52,6 +59,7 @@ export class ClienteDetailComponent implements OnInit {
   readonly firmaNombre = signal<string>('');
   readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
   readonly syncLoading = signal(false);
+  readonly isExporting = signal(false);
   readonly lastSync = signal<Date | null>(null);
 
   // ── Breadcrumb ──
@@ -178,6 +186,7 @@ export class ClienteDetailComponent implements OnInit {
     { label: 'Todas', value: null },
     { label: 'Pendiente', value: 'pendiente' },
     { label: 'Clasificando', value: 'clasificando' },
+    { label: 'Lista Para Subir', value: 'lista_para_subir' },
     { label: 'Causada', value: 'causada' },
     { label: 'Finalizada', value: 'finalizada' },
     { label: 'Error', value: 'error' },
@@ -263,10 +272,160 @@ export class ClienteDetailComponent implements OnInit {
   }
 
   exportSelected(): void {
-    // TODO: wire to backend export endpoint. For now: just log.
-    const ids = this.selectedFacturas().map((f) => f.id);
-    // eslint-disable-next-line no-console
-    console.log('[cliente-detail] export selected', ids);
+    const selectedIds = this.selectedFacturas().map((factura) => factura.id);
+    if (selectedIds.length === 0 || this.isExporting()) return;
+
+    // Si la firma es contador, el nit del cliente no coincide con el nit
+    // propio de la firma (la factura pertenece a la firma dueña del cliente,
+    // no a una firma nube). Enviamos `undefined` para que el backend resuelva
+    // la propiedad únicamente por `firmas.usuario_id`. Para firmas nube el
+    // nit sí es necesario y lo enviamos como siempre.
+    const nitForExport = this.tipoSiigo() === 'contador'
+      ? undefined
+      : this.nit();
+
+    this.isExporting.set(true);
+    try {
+      this.facturaRepo.exportSelection(nitForExport, selectedIds)
+        .pipe(finalize(() => this.isExporting.set(false)))
+        .subscribe({
+          next: (response) => {
+            try {
+              if (response.status !== 200 || !response.body) {
+                this.showGenericExportError();
+                return;
+              }
+              const counts = this.parseExportHeaders(response);
+              this.downloadBlob(response, counts.causables);
+              this.showExportSummary(counts.causables, counts.skipped);
+            } catch {
+              this.showGenericExportError();
+            }
+          },
+          error: (error: unknown) => { void this.handleExportError(error); },
+        });
+    } catch {
+      this.isExporting.set(false);
+      this.showGenericExportError();
+    }
+  }
+
+  private parseExportHeaders(response: HttpResponse<Blob>): { causables: number; skipped: number } {
+    return {
+      causables: this.parseExportCount(response.headers.get('X-Export-Causables')),
+      skipped: this.parseExportCount(response.headers.get('X-Export-Skipped')),
+    };
+  }
+
+  private parseExportCount(value: string | null): number {
+    const count = Number(value);
+    return Number.isFinite(count) && count >= 0 ? count : 0;
+  }
+
+  /**
+   * Un solo toast consolidado para el export. La descarga del archivo ya
+   * confirma visualmente el éxito; este toast aporta el desglose causables /
+   * omitidas en una sola línea.
+   */
+  private showExportSummary(causables: number, skipped: number): void {
+    let detail: string;
+    if (causables > 0 && skipped > 0) {
+      detail = `Causadas: ${causables} · Omitidas: ${skipped}`;
+    } else if (causables > 0) {
+      detail = `Causadas: ${causables}`;
+    } else if (skipped > 0) {
+      detail = `Omitidas: ${skipped}`;
+    } else {
+      detail = 'Documento generado';
+    }
+    this.message.add({
+      severity: 'success',
+      summary: 'Exportación generada',
+      detail,
+      life: 4000,
+    });
+  }
+
+  private downloadBlob(response: HttpResponse<Blob>, causables: number): void {
+    const blob = response.body;
+    if (!blob) throw new Error('Missing export Blob');
+
+    const objectUrl = URL.createObjectURL(blob);
+    let anchor: HTMLAnchorElement | null = null;
+    try {
+      anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = this.getDownloadFilename(response, causables);
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+      anchor.click();
+    } finally {
+      anchor?.remove();
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  private getDownloadFilename(response: HttpResponse<Blob>, causables: number): string {
+    const disposition = response.headers.get('Content-Disposition');
+    const encodedFilename = disposition?.match(/filename\*\s*=\s*UTF-8''([^;]+)/i)?.[1];
+    const plainFilename = disposition?.match(/filename\s*=\s*"?([^";]+)"?/i)?.[1];
+    const filename = encodedFilename ?? plainFilename;
+    if (filename) {
+      try {
+        return decodeURIComponent(filename).replace(/[\\/:*?"<>|]/g, '_');
+      } catch {
+        return filename.replace(/[\\/:*?"<>|]/g, '_');
+      }
+    }
+
+    const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
+    return `seleccion-${this.nit()}-${causables}-facturas-${timestamp}.xlsx`;
+  }
+
+  private async handleExportError(error: unknown): Promise<void> {
+    const status = error instanceof HttpErrorResponse ? error.status : 0;
+    if (error instanceof HttpErrorResponse && status >= 400 && status < 500) {
+      this.message.add({
+        severity: 'error',
+        summary: 'Error de validación',
+        detail: await this.readValidationError(error),
+      });
+      return;
+    }
+    this.showGenericExportError();
+  }
+
+  private async readValidationError(error: HttpErrorResponse): Promise<string> {
+    const fallback = 'No se pudo validar la selección para exportar.';
+    if (!(error.error instanceof Blob)) return fallback;
+
+    try {
+      const payload = JSON.parse(await error.error.text()) as Record<string, unknown>;
+      const envelopeError = payload['error'];
+      const nested = envelopeError && typeof envelopeError === 'object'
+        ? envelopeError as Record<string, unknown>
+        : undefined;
+      const code = this.readErrorText(payload['code']) ?? this.readErrorText(nested?.['code']);
+      const message = this.readErrorText(payload['message'])
+        ?? this.readErrorText(nested?.['message'])
+        ?? (typeof envelopeError === 'string' ? envelopeError : undefined);
+      if (code && message) return `${code}: ${message}`;
+      return message ?? code ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private readErrorText(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  }
+
+  private showGenericExportError(): void {
+    this.message.add({
+      severity: 'error',
+      summary: 'Error de exportación',
+      detail: 'No se pudo exportar la selección. Intenta de nuevo.',
+    });
   }
 
   // ── Cell renderers ──
@@ -284,6 +443,59 @@ export class ClienteDetailComponent implements OnInit {
     const tipo = this.getTipoFactura(factura);
     return tipo.toLowerCase().replace(/\s+/g, '-');
   }
+
+  /**
+   * ¿La factura está en un estado exportable a Excel? Solo `lista_para_subir`
+   * (puerta explícita después de revisar todas las filas) pasa al export.
+   * El resto son estados terminales (`causada`, `finalizada`) o intermedios
+   * (`pendiente`, `clasificando`) o inválidos (`error`).
+   *
+   * Mantenido como función pura para que las pruebas unitarias puedan
+   * ejercitar TODAS las ramas sin tener que renderizar la tabla completa.
+   */
+  isExportable(factura: Factura): boolean {
+    const status = (factura as unknown as { status: string }).status;
+    return status === 'lista_para_subir';
+  }
+
+  /**
+   * Slug estable para la clase CSS del badge de status. Refleja el patrón
+   * `tipo-badge` existente: una clase por estado con su variante de color.
+   * Estados no conocidos caen a `status-unknown` (fallback neutro).
+   */
+  getStatusSlug(factura: Factura): string {
+    const status = (factura as unknown as { status: string }).status;
+    if (status === 'pendiente') return 'pendiente';
+    if (status === 'clasificando') return 'clasificando';
+    if (status === 'lista_para_subir') return 'lista-para-subir';
+    if (status === 'causada') return 'causada';
+    if (status === 'finalizada') return 'finalizada';
+    if (status === 'error') return 'error';
+    return 'unknown';
+  }
+
+  /**
+   * Etiqueta legible para el badge de status. `lista_para_subir` se mapea
+   * explícitamente a "Lista Para Subir"; los demás estados capitalizan el
+   * slug. Estados desconocidos muestran el slug crudo para no perder info.
+   */
+  getStatusLabel(factura: Factura): string {
+    const status = (factura as unknown as { status: string }).status;
+    if (status === 'lista_para_subir') return 'Lista Para Subir';
+    const slug = this.getStatusSlug(factura);
+    if (slug === 'unknown') return status || '—';
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
+  }
+
+  /**
+   * Adapter a la firma que espera `[rowSelectable]` de PrimeNG
+   * (`({ data, index }) => boolean`). Cuando el usuario pulsa el header
+   * checkbox, PrimeNG filtra la selección con este predicado — así, las
+   * filas no exportables NUNCA entran al `selectedFacturas` vía "seleccionar
+   * todo", independientemente del checkbox deshabilitado por fila.
+   */
+  isRowExportable = ({ data }: { data: Factura; index: number }): boolean =>
+    this.isExportable(data);
 
   formatDate(d: string | null | undefined): string {
     if (!d) return '—';
