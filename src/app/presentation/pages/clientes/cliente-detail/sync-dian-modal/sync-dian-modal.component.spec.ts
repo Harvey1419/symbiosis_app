@@ -27,7 +27,7 @@ describe('SyncDianModalComponent', () => {
   });
 
   function setValidRange(): void {
-    component.form.get('fechaRange')?.setValue({ desde, hasta });
+    component.form.get('dateRange')?.setValue([desde, hasta]);
   }
 
   function buttonByLabel(label: string): HTMLButtonElement | null {
@@ -43,15 +43,23 @@ describe('SyncDianModalComponent', () => {
     expect(buttonByLabel('Iniciar sync')?.disabled).toBe(true);
   });
 
-  it('disables submit and shows a date-range message when desde is after hasta', async () => {
+  it('disables submit when dateRange is empty', async () => {
+    component.form.get('tokenDian')?.setValue(validToken);
+    component.form.get('dateRange')?.setValue(null);
+    await fixture.whenStable();
+
+    expect(buttonByLabel('Iniciar sync')?.disabled).toBe(true);
+  });
+
+  it('disables submit and shows a date-range message when start is after end', async () => {
     component.form.setValue({
       tokenDian: validToken,
-      fechaRange: { desde: new Date(2026, 1, 2), hasta: new Date(2026, 1, 1) },
+      dateRange: [new Date(2026, 1, 2), new Date(2026, 1, 1)],
     });
     await fixture.whenStable();
 
     expect(buttonByLabel('Iniciar sync')?.disabled).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('"Desde" debe ser anterior o igual a "Hasta"');
+    expect(fixture.nativeElement.textContent).toContain('La fecha inicial debe ser anterior o igual a la fecha final');
   });
 
   it('emits a valid submission without closing the modal', () => {
@@ -59,7 +67,7 @@ describe('SyncDianModalComponent', () => {
     const visibleChanged = vi.fn();
     component.submitted.subscribe(submitted);
     component.visibleChange.subscribe(visibleChanged);
-    component.form.setValue({ tokenDian: validToken, fechaRange: { desde, hasta } });
+    component.form.setValue({ tokenDian: validToken, dateRange: [desde, hasta] });
 
     component.onSubmit();
 

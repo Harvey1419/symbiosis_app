@@ -24,19 +24,23 @@
       }
     </div>
 
-    <div formGroupName="fechaRange" class="date-range">
-      <div class="field">
-        <label for="desde">Desde</label>
-        <p-datepicker inputId="desde" formControlName="desde" dateFormat="yy-mm-dd" appendTo="body" />
-      </div>
-      <div class="field">
-        <label for="hasta">Hasta</label>
-        <p-datepicker inputId="hasta" formControlName="hasta" dateFormat="yy-mm-dd" appendTo="body" />
-      </div>
+    <div class="field">
+      <label for="dateRange">Fecha inicial y fecha final</label>
+      <p-datepicker
+        inputId="dateRange"
+        formControlName="dateRange"
+        selectionMode="range"
+        [readonlyInput]="true"
+        dateFormat="dd MMM yy"
+        appendTo="body"
+        [showIcon]="true"
+        [showButtonBar]="true"
+      />
+      <small class="hint">Selecciona el rango de fechas para la sincronización.</small>
+      @if (form.get('dateRange')?.errors?.['dateRange']) {
+        <small class="error">La fecha inicial debe ser anterior o igual a la fecha final.</small>
+      }
     </div>
-    @if (form.get('fechaRange')?.errors?.['dateRange']) {
-      <small class="error">"Desde" debe ser anterior o igual a "Hasta".</small>
-    }
 
     @if (submitting()) {
       <div class="counters">

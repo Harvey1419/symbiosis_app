@@ -53,15 +53,20 @@ export class SyncDianModalComponent {
 
   private readonly fb = inject(FormBuilder);
 
+  private readonly rangeValidator = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const value = control.value as [Date | null, Date | null] | null;
+    if (!value || !value[0] || !value[1]) return null;
+    return value[0].getTime() <= value[1].getTime() ? null : { dateRange: true };
+  };
+
   readonly form = this.fb.group({
     tokenDian: ['', [Validators.required, Validators.minLength(20)]],
-    fechaRange: this.fb.group(
-      {
-        desde: [null as Date | null, Validators.required],
-        hasta: [null as Date | null, Validators.required],
-      },
-      { validators: [this.dateRangeValidator] },
-    ),
+    dateRange: this.fb.control<[Date | null, Date | null] | null>(null, [
+      Validators.required,
+      this.rangeValidator,
+    ]),
   });
 
   readonly retryTokenControl = this.fb.control('', [
@@ -76,36 +81,34 @@ export class SyncDianModalComponent {
   onSubmit(): void {
     if (this.form.invalid) return;
 
-    const { tokenDian, fechaRange } = this.form.getRawValue();
+    const { tokenDian, dateRange } = this.form.getRawValue() as {
+      tokenDian: string;
+      dateRange: [Date | null, Date | null] | null;
+    };
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
+
     this.submitted.emit({
       tokenDian: tokenDian ?? '',
-      desde: fechaRange.desde as Date,
-      hasta: fechaRange.hasta as Date,
+      desde: dateRange[0],
+      hasta: dateRange[1],
     });
   }
 
   onRetry(): void {
     if (this.retryTokenControl.invalid) return;
 
-    const fechaRange = this.form.controls.fechaRange.getRawValue();
-    if (!fechaRange.desde || !fechaRange.hasta) return;
+    const dateRange = this.form.controls.dateRange.getRawValue();
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
 
     this.retryRequested.emit({
       tokenDian: this.retryTokenControl.value ?? '',
-      desde: fechaRange.desde,
-      hasta: fechaRange.hasta,
+      desde: dateRange[0],
+      hasta: dateRange[1],
     });
   }
 
   onClose(): void {
     this.visibleChange.emit(false);
     this.closed.emit();
-  }
-
-  private dateRangeValidator(group: AbstractControl): ValidationErrors | null {
-    const desde = group.get('desde')?.value as Date | null;
-    const hasta = group.get('hasta')?.value as Date | null;
-    if (!desde || !hasta) return null;
-    return desde.getTime() <= hasta.getTime() ? null : { dateRange: true };
   }
 }
