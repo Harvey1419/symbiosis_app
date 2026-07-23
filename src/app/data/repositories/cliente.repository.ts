@@ -53,6 +53,50 @@ export class ClienteRepository {
   }
 
   /**
+   * Sync Siigo: proveedores del cliente (terceros en Siigo).
+   * Forma parte del "sync completo" disparado por `SyncSiigoCompletoButtonComponent`.
+   */
+  sincronizarProveedores(nit: number): Observable<{ success: boolean; registros: number }> {
+    return this.http.post<{ success: boolean; registros: number }>(
+      `${this.apiUrl}/sync/siigo/proveedores`,
+      { nit_cliente: nit }
+    );
+  }
+
+  /**
+   * Sync Siigo: empresas del cliente (multi-empresa en Siigo).
+   * Forma parte del "sync completo" disparado por `SyncSiigoCompletoButtonComponent`.
+   */
+  sincronizarEmpresas(nit: number): Observable<{ success: boolean; registros: number }> {
+    return this.http.post<{ success: boolean; registros: number }>(
+      `${this.apiUrl}/sync/siigo/empresas`,
+      { nit_cliente: nit }
+    );
+  }
+
+  /**
+   * Sync Siigo: PUC (Plan Único de Cuentas) del cliente.
+   * Forma parte del "sync completo" disparado por `SyncSiigoCompletoButtonComponent`.
+   */
+  sincronizarPuc(nit: number): Observable<{ success: boolean; registros: number }> {
+    return this.http.post<{ success: boolean; registros: number }>(
+      `${this.apiUrl}/sync/siigo/puc`,
+      { nit_cliente: nit }
+    );
+  }
+
+  /**
+   * Sync Siigo: taxes (impuestos) del cliente.
+   * Forma parte del "sync completo" disparado por `SyncSiigoCompletoButtonComponent`.
+   */
+  sincronizarTaxes(nit: number): Observable<{ success: boolean; registros: number }> {
+    return this.http.post<{ success: boolean; registros: number }>(
+      `${this.apiUrl}/sync/siigo/taxes`,
+      { nit_cliente: nit }
+    );
+  }
+
+  /**
    * PATCH /api/empresas/:nit — actualiza los datos de negocio de una
    * empresa cliente.
    *
