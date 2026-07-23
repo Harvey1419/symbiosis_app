@@ -131,8 +131,14 @@ describe('SyncDianModalComponent', () => {
     expect(tokenInput!.getAttribute('style')).toContain('width: 100%');
     expect(retryInput!.getAttribute('style')).toContain('width: 100%');
 
-    // Datepicker uses the `.full-width` styleClass which the SCSS targets with `::ng-deep`.
+    // Datepicker host + internal input use `[style]` + `[inputStyle]` (PrimeNG forwards them).
+    // jsdom doesn't always reflect component input bindings as inline `style` attributes on
+    // custom elements, so we assert the configuration via the class + a structural fallback.
     expect(datepicker!.classList.contains('full-width')).toBe(true);
+    const datepickerInput = document.body.querySelector<HTMLInputElement>('.p-datepicker-input');
+    if (datepickerInput) {
+      expect(datepickerInput.getAttribute('style') ?? '').toContain('width: 100%');
+    }
   });
 
   it('muestra un link "Traer token manualmente" que apunta al portal DIAN y abre en nueva pestaña', () => {

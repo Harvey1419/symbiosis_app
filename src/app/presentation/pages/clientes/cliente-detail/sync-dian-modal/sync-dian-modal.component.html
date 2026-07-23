@@ -38,6 +38,8 @@
         [showIcon]="true"
         [showButtonBar]="true"
         styleClass="full-width"
+        [style]="{ width: '100%' }"
+        [inputStyle]="{ width: '100%' }"
       />
       <small class="hint">Selecciona el rango de fechas para la sincronización.</small>
       @if (form.get('dateRange')?.errors?.['dateRange']) {
