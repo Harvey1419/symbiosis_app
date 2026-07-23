@@ -100,6 +100,16 @@ describe('SyncDianModalComponent', () => {
     expect(buttonByLabel('Reintentar errores')).not.toBeNull();
   });
 
+  it('muestra un link "Traer token manualmente" que apunta al portal DIAN y abre en nueva pestaña', () => {
+    const link = document.body.querySelector<HTMLAnchorElement>('a.token-link');
+
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('https://catalogo-vpfe.dian.gov.co/User/companylogin');
+    expect(link!.getAttribute('target')).toBe('_blank');
+    expect(link!.getAttribute('rel')).toContain('noopener');
+    expect(link!.textContent?.trim()).toBe('Traer token manualmente');
+  });
+
   it('disables retry for an empty token and emits the retry payload for a valid token', async () => {
     const retryRequested = vi.fn();
     component.retryRequested.subscribe(retryRequested);

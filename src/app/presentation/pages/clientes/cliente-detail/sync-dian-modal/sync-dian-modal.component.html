@@ -19,6 +19,9 @@
       <label for="tokenDian">Token de la DIAN (URL Token)</label>
       <input pInputText id="tokenDian" formControlName="tokenDian" autocomplete="off" />
       <small class="hint">Copia la URL "GetDocumentsPageToken" del portal DIAN (mín. 20 caracteres).</small>
+      <a class="token-link" href="https://catalogo-vpfe.dian.gov.co/User/companylogin" target="_blank" rel="noopener noreferrer">
+        Traer token manualmente
+      </a>
       @if (form.get('tokenDian')?.invalid && form.get('tokenDian')?.touched) {
         <small class="error">Token requerido (mínimo 20 caracteres).</small>
       }
