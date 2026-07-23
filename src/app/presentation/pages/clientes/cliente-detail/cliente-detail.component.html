@@ -31,6 +31,18 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
+    <!-- Sync Siigo completo: proveedores + empresas + PUC + taxes + trazabilidad.
+         Se dispara ARRIBA del pill DIAN — los datos Siigo son prerequisito
+         para que DIAN clasifique correctamente. -->
+    <div class="siigo-sync-row">
+      <span class="row-label">Siigo:</span>
+      <app-sync-siigo-completo-button
+        [nit]="nit()"
+        (synced)="onSiigoSynced($event)"
+        (partialSuccess)="onSiigoPartialSuccess($event)"
+      />
+    </div>
+
     <!-- Compact DIAN sync banner (smaller than the full SyncBanner) -->
     <app-sync-status-pill
       service="DIAN"

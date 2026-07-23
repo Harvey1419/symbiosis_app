@@ -1,0 +1,32 @@
+<button
+  pButton
+  type="button"
+  [label]="label()"
+  [icon]="icon()"
+  [loading]="loading()"
+  [disabled]="loading()"
+  severity="primary"
+  size="small"
+  [text]="true"
+  (click)="sync()"
+  [pTooltip]="tooltip()"
+  tooltipPosition="bottom"
+  class="siigo-completo-btn"
+></button>
+
+@if (justSynced()) {
+  <span class="sync-result success">
+    <i class="pi pi-check-circle"></i>
+    Sincronizado ({{ results().length }} fuentes)
+  </span>
+} @else if (partialFailed()) {
+  <span class="sync-result partial">
+    <i class="pi pi-exclamation-triangle"></i>
+    Sincronización parcial
+  </span>
+} @else if (hasError()) {
+  <span class="sync-result error">
+    <i class="pi pi-times-circle"></i>
+    Error al sincronizar
+  </span>
+}

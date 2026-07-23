@@ -21,6 +21,8 @@ import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-statu
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { PageHeaderComponent } from '@app/shared/page-header/page-header.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
+import { SyncSiigoCompletoButtonComponent } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
+import type { SiigoSyncResult } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
 
 interface ProveedorOption {
   label: string;
@@ -33,6 +35,7 @@ interface ProveedorOption {
   imports: [
     CommonModule, FormsModule,
     SyncStatusPillComponent,
+    SyncSiigoCompletoButtonComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
     ToastModule,
     BackButtonComponent,
@@ -255,6 +258,33 @@ export class ClienteDetailComponent implements OnInit {
       },
       error: () => { this.error.set(true); this.syncLoading.set(false); }
     });
+  }
+
+  // ── Sync Siigo completo: cuando los 5 endpoints Siigo terminan bien,
+  // refrescamos facturas porque pueden haber cambiado los proveedores
+  // / filtros. El pill de Siigo (SyncSiigoCompletoButton) emite este
+  // evento desde su `synced` output. ──
+  onSiigoSynced(_results: SiigoSyncResult[]): void {
+    this.facturaRepo.getFacturas(this.nit()).subscribe({
+      next: (data: Factura[]) => { this.facturas.set(data); },
+      error: () => { /* swallow — la UI del button ya marcó el resultado */ },
+    });
+  }
+
+  /**
+   * Sync Siigo parcial: AL MENOS un endpoint falló. Mostramos un toast
+   * warn con la lista de fuentes fallidas y aun así refrescamos
+   * facturas — las fuentes que SÍ sincronizaron pueden haber cambiado
+   * los datos visibles (p.ej. PUC nuevo → clasificación diferente).
+   */
+  onSiigoPartialSuccess(results: SiigoSyncResult[]): void {
+    const failed = results.filter((r) => !r.success).map((r) => r.source).join(', ');
+    this.message.add({
+      severity: 'warn',
+      summary: 'Sincronización parcial',
+      detail: `Falló: ${failed}. Las facturas existentes siguen disponibles.`,
+    });
+    this.onSiigoSynced(results);
   }
 
   // ── Row click navigation ──

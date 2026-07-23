@@ -560,3 +560,21 @@
     color: var(--text-muted);
   }
 }
+
+// ── Sync Siigo row ──
+// Pill compacto ARRIBA del DIAN pill. Mantiene el mismo padding
+// vertical que el pill DIAN para que se lean como un bloque unificado.
+.siigo-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+
+  .row-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+}
