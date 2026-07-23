@@ -100,6 +100,41 @@ describe('SyncDianModalComponent', () => {
     expect(buttonByLabel('Reintentar errores')).not.toBeNull();
   });
 
+  it('muestra el NIT pero NO el firmaId en el meta-row', async () => {
+    await fixture.whenStable();
+    const metaText = fixture.nativeElement.querySelector('.meta-row')?.textContent ?? '';
+
+    expect(metaText).toContain('NIT:');
+    expect(metaText).toContain('900123456');
+    expect(metaText).not.toContain('Firma:');
+    expect(metaText).not.toContain('firma-1');
+  });
+
+  it('los inputs del formulario (tokenDian, dateRange, retryToken) ocupan el ancho completo', async () => {
+    fixture.componentRef.setInput('estado', 'failed');
+    fixture.componentRef.setInput('errors', 1);
+    fixture.componentRef.setInput('hasExhaustedItems', true);
+    setValidRange();
+    component.form.get('tokenDian')?.setValue(validToken);
+    component.retryTokenControl.setValue(validToken);
+    await fixture.whenStable();
+
+    const tokenInput = document.body.querySelector<HTMLInputElement>('input#tokenDian');
+    const retryInput = document.body.querySelector<HTMLInputElement>('input#retryToken');
+    const datepicker = document.body.querySelector<HTMLElement>('p-datepicker.full-width');
+
+    expect(tokenInput).not.toBeNull();
+    expect(retryInput).not.toBeNull();
+    expect(datepicker).not.toBeNull();
+
+    // Token + retry inputs use inline `style="width: 100%"`.
+    expect(tokenInput!.getAttribute('style')).toContain('width: 100%');
+    expect(retryInput!.getAttribute('style')).toContain('width: 100%');
+
+    // Datepicker uses the `.full-width` styleClass which the SCSS targets with `::ng-deep`.
+    expect(datepicker!.classList.contains('full-width')).toBe(true);
+  });
+
   it('muestra un link "Traer token manualmente" que apunta al portal DIAN y abre en nueva pestaña', () => {
     const link = document.body.querySelector<HTMLAnchorElement>('a.token-link');
 

@@ -12,12 +12,11 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="meta-row">
       <span><strong>NIT:</strong> {{ nit() }}</span>
-      <span><strong>Firma:</strong> {{ firmaId() }}</span>
     </div>
 
     <div class="field">
       <label for="tokenDian">Token de la DIAN (URL Token)</label>
-      <input pInputText id="tokenDian" formControlName="tokenDian" autocomplete="off" />
+      <input pInputText id="tokenDian" formControlName="tokenDian" autocomplete="off" style="width: 100%" />
       <small class="hint">Copia la URL "GetDocumentsPageToken" del portal DIAN (mín. 20 caracteres).</small>
       <a class="token-link" href="https://catalogo-vpfe.dian.gov.co/User/companylogin" target="_blank" rel="noopener noreferrer">
         Traer token manualmente
@@ -38,6 +37,7 @@
         appendTo="body"
         [showIcon]="true"
         [showButtonBar]="true"
+        styleClass="full-width"
       />
       <small class="hint">Selecciona el rango de fechas para la sincronización.</small>
       @if (form.get('dateRange')?.errors?.['dateRange']) {
@@ -59,7 +59,7 @@
         <p>Algunas facturas fallaron tras 3 intentos. Ingresa un nuevo token para reintentar solo esas:</p>
         <div class="field">
           <label for="retryToken">Token fresco</label>
-          <input pInputText id="retryToken" [formControl]="retryTokenControl" autocomplete="off" />
+          <input pInputText id="retryToken" [formControl]="retryTokenControl" autocomplete="off" style="width: 100%" />
         </div>
         <p-button
           label="Reintentar errores"

@@ -81,4 +81,11 @@
       border-radius: 2px;
     }
   }
+
+  :host ::ng-deep .full-width,
+  :host ::ng-deep .full-width > .p-datepicker,
+  :host ::ng-deep .full-width > .p-datepicker > .p-datepicker-input,
+  :host ::ng-deep .full-width .p-datepicker {
+    width: 100%;
+  }
 }
