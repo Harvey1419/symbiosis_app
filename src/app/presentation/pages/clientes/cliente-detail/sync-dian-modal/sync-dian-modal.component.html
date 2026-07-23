@@ -1,0 +1,78 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [closable]="!submitting()"
+  [draggable]="false"
+  [resizable]="false"
+  header="Sincronizar DIAN"
+  styleClass="sync-dian-dialog"
+  [style]="{ width: '480px' }"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="meta-row">
+      <span><strong>NIT:</strong> {{ nit() }}</span>
+      <span><strong>Firma:</strong> {{ firmaId() }}</span>
+    </div>
+
+    <div class="field">
+      <label for="tokenDian">Token de la DIAN (URL Token)</label>
+      <input pInputText id="tokenDian" formControlName="tokenDian" autocomplete="off" />
+      <small class="hint">Copia la URL "GetDocumentsPageToken" del portal DIAN (mín. 20 caracteres).</small>
+      @if (form.get('tokenDian')?.invalid && form.get('tokenDian')?.touched) {
+        <small class="error">Token requerido (mínimo 20 caracteres).</small>
+      }
+    </div>
+
+    <div formGroupName="fechaRange" class="date-range">
+      <div class="field">
+        <label for="desde">Desde</label>
+        <p-datepicker inputId="desde" formControlName="desde" dateFormat="yy-mm-dd" appendTo="body" />
+      </div>
+      <div class="field">
+        <label for="hasta">Hasta</label>
+        <p-datepicker inputId="hasta" formControlName="hasta" dateFormat="yy-mm-dd" appendTo="body" />
+      </div>
+    </div>
+    @if (form.get('fechaRange')?.errors?.['dateRange']) {
+      <small class="error">"Desde" debe ser anterior o igual a "Hasta".</small>
+    }
+
+    @if (submitting()) {
+      <div class="counters">
+        <div>Procesadas: <strong>{{ procesadas() }}</strong> / {{ total() }}</div>
+        <div>Errores: <strong>{{ errors() }}</strong></div>
+        <div>Estado: <strong>{{ estado() }}</strong></div>
+      </div>
+    }
+
+    @if (terminal() && errors() > 0 && hasExhaustedItems()) {
+      <div class="retry-section">
+        <h4>Reintentar errores</h4>
+        <p>Algunas facturas fallaron tras 3 intentos. Ingresa un nuevo token para reintentar solo esas:</p>
+        <div class="field">
+          <label for="retryToken">Token fresco</label>
+          <input pInputText id="retryToken" [formControl]="retryTokenControl" autocomplete="off" />
+        </div>
+        <p-button
+          label="Reintentar errores"
+          icon="pi pi-refresh"
+          [disabled]="retryTokenControl.invalid"
+          (onClick)="onRetry()"
+        />
+      </div>
+    }
+
+    <div class="actions">
+      <p-button label="Cancelar" severity="secondary" (onClick)="onClose()" [disabled]="submitting()" />
+      @if (!terminal()) {
+        <p-button
+          label="Iniciar sync"
+          icon="pi pi-cloud-download"
+          [disabled]="form.invalid || submitting()"
+          (onClick)="onSubmit()"
+        />
+      }
+    </div>
+  </form>
+</p-dialog>

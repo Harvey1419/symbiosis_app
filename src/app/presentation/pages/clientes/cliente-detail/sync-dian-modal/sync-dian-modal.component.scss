@@ -1,0 +1,74 @@
+:host {
+  display: contents;
+}
+
+:host ::ng-deep .sync-dian-dialog {
+  background: #032425;
+  border: 1px solid rgba(229, 192, 76, 0.2);
+  border-radius: 12px;
+  color: #f3f4f6;
+
+  .meta-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-color-secondary);
+  }
+
+  .field {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+
+    .hint,
+    .error {
+      display: block;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .hint {
+      color: var(--text-color-secondary);
+    }
+  }
+
+  .error {
+    display: block;
+    color: var(--red-500);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .date-range {
+    display: flex;
+    gap: 1rem;
+
+    .field {
+      flex: 1;
+    }
+  }
+
+  .counters {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: var(--surface-100);
+    border-radius: 4px;
+  }
+
+  .retry-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--surface-border);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+}

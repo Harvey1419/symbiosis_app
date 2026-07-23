@@ -31,9 +31,9 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
-    <!-- Compact sync banner (smaller than the full SyncBanner) -->
+    <!-- Compact DIAN sync banner (smaller than the full SyncBanner) -->
     <app-sync-status-pill
-      service="Siigo Nube"
+      service="DIAN"
       status="ok"
       [lastSync]="lastSync()"
       [loading]="syncLoading()"
