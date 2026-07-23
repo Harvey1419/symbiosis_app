@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { JobRepository } from './job.repository';
+import { AppError, JobRepository } from './job.repository';
 import { environment } from '@environments/environment';
 
 describe('JobRepository', () => {
@@ -123,6 +123,113 @@ describe('JobRepository', () => {
     req.flush(mock);
 
     expect(received).toEqual([]);
+    httpMock.verify();
+  });
+
+  it('createSyncJob(req) POSTs the DIAN sync request and returns the created job', () => {
+    const request = {
+      firma_id: 'firma-1',
+      nit_cliente: '900123456',
+      desde: '2026-07-01',
+      hasta: '2026-07-23',
+      token_dian: 'dian-token-value',
+    };
+    let received: { jobId: string; total: number } | undefined;
+
+    repo.createSyncJob(request).subscribe((response) => {
+      received = response;
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/jobs/sync-dian`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    req.flush({ jobId: 'job-new', total: 12 });
+
+    expect(received).toEqual({ jobId: 'job-new', total: 12 });
+    httpMock.verify();
+  });
+
+  it('getJobStatus(jobId) GETs the authoritative job snapshot', () => {
+    const snapshot = {
+      estado: 'processing',
+      total: 10,
+      procesadas: 7,
+      errors: 1,
+      progress: 80,
+    };
+    let received: typeof snapshot | undefined;
+
+    repo.getJobStatus('job-7').subscribe((response) => {
+      received = response;
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/jobs/job-7`);
+    expect(req.request.method).toBe('GET');
+    req.flush(snapshot);
+
+    expect(received).toEqual(snapshot);
+    httpMock.verify();
+  });
+
+  it('retryErrors(jobId, req) POSTs fresh DIAN credentials and returns the retry job', () => {
+    const request = {
+      token_dian: 'fresh-dian-token',
+      desde: '2026-07-01',
+      hasta: '2026-07-23',
+    };
+    let received: { jobId: string; total: number } | undefined;
+
+    repo.retryErrors('source-job', request).subscribe((response) => {
+      received = response;
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/jobs/source-job/retry-errors`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    req.flush({ jobId: 'retry-job', total: 2 });
+
+    expect(received).toEqual({ jobId: 'retry-job', total: 2 });
+    httpMock.verify();
+  });
+
+  it('maps backend 4xx/5xx envelopes to AppError with their code and message', () => {
+    let receivedError: unknown;
+
+    repo.createSyncJob({
+      firma_id: 'firma-1',
+      nit_cliente: '900123456',
+      desde: '2026-07-23',
+      hasta: '2026-07-01',
+      token_dian: 'dian-token-value',
+    }).subscribe({ error: (error: unknown) => { receivedError = error; } });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/jobs/sync-dian`);
+    req.flush(
+      { error: { code: 'INVALID_DATE_RANGE', message: 'desde must be before hasta' } },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    expect(receivedError).toBeInstanceOf(AppError);
+    expect(receivedError).toMatchObject({
+      code: 'INVALID_DATE_RANGE',
+      message: 'desde must be before hasta',
+      statusCode: 422,
+    });
+
+    receivedError = undefined;
+    repo.getJobStatus('job-500').subscribe({ error: (error: unknown) => { receivedError = error; } });
+    const serverReq = httpMock.expectOne(`${environment.apiUrl}/jobs/job-500`);
+    serverReq.flush(
+      { code: 'SYNC_SERVICE_UNAVAILABLE', message: 'DIAN is temporarily unavailable' },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+
+    expect(receivedError).toBeInstanceOf(AppError);
+    expect(receivedError).toMatchObject({
+      code: 'SYNC_SERVICE_UNAVAILABLE',
+      message: 'DIAN is temporarily unavailable',
+      statusCode: 503,
+    });
     httpMock.verify();
   });
 });
