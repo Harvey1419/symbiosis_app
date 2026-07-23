@@ -24,7 +24,7 @@ import {
 } from '@data/repositories/job.repository';
 import { TokenService } from '@core/token.service';
 import { RealtimeFacturasService } from '@core/realtime/realtime-facturas.service';
-import { InvoiceSummary, SyncEvent } from '@core/realtime/sync-event';
+import { InvoiceSummary, SyncEvent, SyncEventFacturaInserted, SyncEventProcessing, SyncEventTerminal } from '@core/realtime/sync-event';
 import { Factura } from '@domain/models/factura.model';
 import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
@@ -42,7 +42,13 @@ interface ProveedorOption {
   value: string | null;
 }
 
-type SyncJobState = SyncEvent['estado'];
+/**
+ * Estado del job en cualquier punto del ciclo. `SyncEvent` es una unión
+ * discriminada y `reconnected` (transporte) no tiene `estado`; usamos solo
+ * los tres subtipos con `estado` para que la indexación compile.
+ */
+type SyncEventWithEstado = SyncEventProcessing | SyncEventFacturaInserted | SyncEventTerminal;
+type SyncJobState = SyncEventWithEstado['estado'];
 type ReconciledInvoice = InvoiceSummary | JobInvoice;
 
 function toIsoDate(date: Date): string {
@@ -436,6 +442,15 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
 
   private handleSyncEvent(event: SyncEvent): void {
     if (event.jobId !== this.activeJobId() || event.nit !== String(this.nit())) return;
+
+    // `reconnected` es una señal de transporte (viene del SSE client, no
+    // del backend) que indica que el stream sobrevivió a un error y reabrió
+    // el EventSource. No trae counters — saltar directo a la reconciliación
+    // para re-pegar el estado autoritativo vía getJobStatus + getJobInvoices.
+    if (event.type === 'reconnected') {
+      this.reconcileAfterTerminal();
+      return;
+    }
 
     this.procesadasCount.set(event.procesadas);
     this.errorsCount.set(event.errors);

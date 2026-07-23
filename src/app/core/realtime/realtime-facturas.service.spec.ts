@@ -7,7 +7,7 @@ import {
   EventSourceLike,
 } from './event-source.token';
 import { RealtimeFacturasService } from './realtime-facturas.service';
-import { SyncEvent } from './sync-event';
+import { SyncEvent, SyncEventReconnected } from './sync-event';
 import { environment } from '@environments/environment';
 
 class FakeEventSource implements EventSourceLike {
@@ -170,5 +170,63 @@ describe('RealtimeFacturasService', () => {
     expect(complete).toHaveBeenCalledOnce();
     expect(sources).toHaveLength(1);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('does NOT emit reconnected on the initial open', () => {
+    const received: SyncEvent[] = [];
+    service.subscribe('900123456', 'job-1', 'jwt').subscribe((event) => {
+      received.push(event);
+    });
+
+    sources[0].simulateMessage(processingEvent);
+
+    expect(received.some((e) => e.type === 'reconnected')).toBe(false);
+  });
+
+  it('emits a reconnected event after a successful backoff-and-reopen cycle', () => {
+    vi.useFakeTimers();
+    const received: SyncEvent[] = [];
+    service.subscribe('900123456', 'job-1', 'jwt').subscribe((event) => {
+      received.push(event);
+    });
+
+    // Initial processing on the first source.
+    sources[0].simulateMessage(processingEvent);
+    expect(received.filter((e) => e.type === 'reconnected')).toHaveLength(0);
+
+    // First reconnect: error → wait 1000ms → new EventSource opens.
+    sources[0].simulateError();
+    vi.advanceTimersByTime(1000);
+    expect(sources).toHaveLength(2);
+
+    // The new source should fire a reconnected event when the subscriber
+    // receives any message after the reopen.
+    sources[1].simulateMessage(processingEvent);
+    const reconnected = received.find((e) => e.type === 'reconnected');
+    expect(reconnected).toBeDefined();
+    const rc = reconnected as SyncEventReconnected;
+    expect(rc.jobId).toBe('job-1');
+    expect(rc.nit).toBe('900123456');
+    expect(typeof rc.at).toBe('string');
+    expect(() => new Date(rc.at).toISOString()).not.toThrow();
+  });
+
+  it('emits a reconnected event for every subsequent reconnect, not just the first', () => {
+    vi.useFakeTimers();
+    const received: SyncEvent[] = [];
+    service.subscribe('900123456', 'job-1', 'jwt').subscribe((event) => {
+      received.push(event);
+    });
+
+    // Trigger two consecutive reconnects.
+    sources[0].simulateError();
+    vi.advanceTimersByTime(1000);
+    sources[1].simulateMessage(processingEvent);
+    sources[1].simulateError();
+    vi.advanceTimersByTime(2000);
+    sources[2].simulateMessage(processingEvent);
+
+    const reconnected = received.filter((e) => e.type === 'reconnected');
+    expect(reconnected).toHaveLength(2);
   });
 });

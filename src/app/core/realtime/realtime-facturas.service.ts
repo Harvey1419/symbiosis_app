@@ -21,6 +21,11 @@ export class RealtimeFacturasService {
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       let closedIntentionally = false;
       let attempt = 0;
+      // Emit `reconnected` only AFTER the first successful open — the initial
+      // open is not a reconnect. Each subsequent open() flips this to true,
+      // so a `reconnected` event fires whenever a fresh EventSource comes up
+      // after a backoff cycle.
+      let isFirstOpen = true;
 
       const clearReconnectTimer = (): void => {
         if (reconnectTimer === null) return;
@@ -46,6 +51,19 @@ export class RealtimeFacturasService {
         const url = `${this.apiUrl}/jobs/${nit}/events?token=${encodeURIComponent(token)}`;
         const source = this.factory.create(url);
         eventSource = source;
+
+        // Fire the transport-layer reconnect signal BEFORE processing backend
+        // messages, so subscribers can call `reconcileAfter*` immediately
+        // instead of waiting for the next backend event to arrive.
+        if (!isFirstOpen) {
+          subscriber.next({
+            type: 'reconnected',
+            jobId,
+            nit,
+            at: new Date().toISOString(),
+          });
+        }
+        isFirstOpen = false;
 
         source.onmessage = (message: MessageEvent) => {
           try {

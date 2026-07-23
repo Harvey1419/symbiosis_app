@@ -26,6 +26,7 @@ describe('FirmaClientesComponent', () => {
   };
   let clienteMock: {
     sincronizarTrazabilidad: ReturnType<typeof vi.fn>;
+    sincronizarEmpresas: ReturnType<typeof vi.fn>;
     updateCliente: ReturnType<typeof vi.fn>;
   };
   let dialogMock: DialogMock;
@@ -61,6 +62,7 @@ describe('FirmaClientesComponent', () => {
     };
     clienteMock = {
       sincronizarTrazabilidad: vi.fn().mockReturnValue(of(undefined)),
+      sincronizarEmpresas: vi.fn().mockReturnValue(of({ success: true, registros: 1 })),
       updateCliente: vi.fn().mockReturnValue(of(undefined)),
     };
     dialogMock = {
@@ -162,5 +164,63 @@ describe('FirmaClientesComponent', () => {
     component.onConfigurarCliente(clientes[0]);
 
     expect(dialogMock.openForEdit).toHaveBeenCalledWith(clientes[0]);
+  });
+
+  describe('onSync (Siigo empresa sync per UI level)', () => {
+    it('ngOnInit loads the firma so its NIT is available to onSync', () => {
+      firmaMock.getFirmas.mockReturnValue(of([firma]));
+
+      component.ngOnInit();
+
+      expect(component.firma()).toEqual(firma);
+      expect(component.firma()?.nit).toBe(900123456);
+    });
+
+    it('onSync calls clienteRepo.sincronizarEmpresas with the firma NIT (NOT trazabilidad)', () => {
+      firmaMock.getFirmas.mockReturnValue(of([firma]));
+      component.ngOnInit();
+
+      component.onSync();
+
+      expect(clienteMock.sincronizarEmpresas).toHaveBeenCalledOnce();
+      expect(clienteMock.sincronizarEmpresas).toHaveBeenCalledWith(900123456);
+      expect(clienteMock.sincronizarTrazabilidad).not.toHaveBeenCalled();
+    });
+
+    it('onSync sets syncLoading false and lastSync after a successful empresa sync, then reloads the clientes', () => {
+      firmaMock.getFirmas.mockReturnValue(of([firma]));
+      firmaMock.getFirmaClientes.mockReturnValue(of(clientes));
+      component.ngOnInit();
+
+      component.onSync();
+
+      expect(component.syncLoading()).toBe(false);
+      expect(component.lastSync()).toBeInstanceOf(Date);
+      expect(firmaMock.getFirmaClientes).toHaveBeenCalledTimes(2); // ngOnInit + post-sync reload
+    });
+
+    it('onSync bails without calling the repository when the firma has no NIT', () => {
+      const firmaSinNit: Firma = { ...firma, nit: null };
+      firmaMock.getFirmas.mockReturnValue(of([firmaSinNit]));
+      component.ngOnInit();
+
+      component.onSync();
+
+      expect(clienteMock.sincronizarEmpresas).not.toHaveBeenCalled();
+      expect(clienteMock.sincronizarTrazabilidad).not.toHaveBeenCalled();
+      expect(component.syncLoading()).toBe(false);
+      expect(component.lastSync()).toBeNull();
+    });
+
+    it('onSync clears syncLoading when the repository fails', () => {
+      firmaMock.getFirmas.mockReturnValue(of([firma]));
+      clienteMock.sincronizarEmpresas.mockReturnValue(throwError(() => new Error('boom')));
+      component.ngOnInit();
+
+      component.onSync();
+
+      expect(component.syncLoading()).toBe(false);
+      expect(component.lastSync()).toBeNull();
+    });
   });
 });

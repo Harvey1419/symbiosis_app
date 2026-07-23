@@ -15,21 +15,27 @@ import { ClienteRepository } from '@data/repositories/cliente.repository';
 
 /**
  * Resultado normalizado de UNA fuente del sync Siigo completo. La
- * fuente `source` identifica el endpoint (proveedores, empresas, puc,
- * taxes, trazabilidad) para que el padre pueda decidir qué mostrar
- * en toast/refresh.
+ * fuente `source` identifica el endpoint (proveedores, puc, taxes,
+ * trazabilidad) para que el padre pueda decidir qué mostrar en
+ * toast/refresh.
+ *
+ * IMPORTANTE: `empresas` NO aparece en este union. El sync de empresas
+ * es per-firma, no per-cliente — se dispara desde `firma-clientes` vía
+ * `clienteRepo.sincronizarEmpresas` directamente. Mezclarlo en este
+ * botón causaría un re-sync innecesario de la lista de empresas cada
+ * vez que el usuario entra a un cliente.
  */
 export interface SiigoSyncResult {
-  source: 'proveedores' | 'empresas' | 'puc' | 'taxes' | 'trazabilidad';
+  source: 'proveedores' | 'puc' | 'taxes' | 'trazabilidad';
   success: boolean;
   registros?: number;
   error?: string;
 }
 
 /**
- * Botón que dispara los 5 endpoints Siigo en paralelo (proveedores,
- * empresas, puc, taxes, trazabilidad) usando `forkJoin`. Pensado para
- * la cabecera de `cliente-detail.component.html`, ARRIBA del pill DIAN.
+ * Botón que dispara los 4 endpoints Siigo en paralelo (proveedores,
+ * puc, taxes, trazabilidad) usando `forkJoin`. Pensado para la cabecera
+ * de `cliente-detail.component.html`, ARRIBA del pill DIAN.
  *
  * Tres caminos de salida:
  *  - **Todos OK**      → emite `(synced)` → el padre recarga facturas.
@@ -50,7 +56,7 @@ export interface SiigoSyncResult {
 export class SyncSiigoCompletoButtonComponent {
   readonly nit = input.required<number>();
 
-  /** Emits cuando TODOS los 5 sync succeed — el padre debe refrescar facturas. */
+  /** Emits cuando TODOS los 4 sync succeed — el padre debe refrescar facturas. */
   readonly synced = output<SiigoSyncResult[]>();
 
   /** Emits cuando AL MENOS 1 succeed pero no todos — partial refresh + toast warn. */
@@ -86,7 +92,7 @@ export class SyncSiigoCompletoButtonComponent {
       .map((r) => r.source)
       .join(', ');
     if (failed.length > 0) return `Falló: ${failed}`;
-    return 'Trae proveedores, empresas, PUC, taxes y trazabilidad desde Siigo';
+    return 'Trae proveedores, PUC, taxes y trazabilidad desde Siigo (las empresas se sincronizan desde la firma)';
   });
 
   sync(): void {
@@ -98,11 +104,6 @@ export class SyncSiigoCompletoButtonComponent {
 
     const calls = {
       proveedores: this.clienteRepo.sincronizarProveedores(this.nit()).pipe(
-        catchError((err: unknown) =>
-          of({ success: false, error: this.toMessage(err) }),
-        ),
-      ),
-      empresas: this.clienteRepo.sincronizarEmpresas(this.nit()).pipe(
         catchError((err: unknown) =>
           of({ success: false, error: this.toMessage(err) }),
         ),
@@ -161,7 +162,7 @@ export class SyncSiigoCompletoButtonComponent {
       },
       error: () => {
         // forkJoin sólo emite `error` si la fuente completa falla antes
-        // de que se conecten las 5 — improbable con catchError local.
+        // de que se conecten las 4 — improbable con catchError local.
         this.loading.set(false);
         this.hasError.set(true);
         setTimeout(() => this.hasError.set(false), 4000);

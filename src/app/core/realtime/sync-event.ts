@@ -1,4 +1,4 @@
-export type SyncEventType = 'processing' | 'factura_inserted' | 'terminal';
+export type SyncEventType = 'processing' | 'factura_inserted' | 'terminal' | 'reconnected';
 
 export interface SyncEventBase {
   type: SyncEventType;
@@ -26,7 +26,26 @@ export interface SyncEventTerminal extends SyncEventBase {
   terminalReason: 'completed' | 'failed' | 'partial';
 }
 
-export type SyncEvent = SyncEventProcessing | SyncEventFacturaInserted | SyncEventTerminal;
+/**
+ * Emitted by `RealtimeFacturasService` after a successful backoff-and-reopen
+ * cycle. Distinct from the backend-published `processing`/`factura_inserted`/
+ * `terminal` events: this is a transport-layer signal indicating that the SSE
+ * connection dropped, the client reconnected, and the stream resumed — so the
+ * UI can call `getJobStatus` + `getJobInvoices` to reconcile any events that
+ * were missed during the disconnect window.
+ *
+ * Carries `jobId` + `nit` so subscribers can guard on the active job, and
+ * `at` (ISO 8601) so log-driven reconciliations can show "reconectado a las
+ * HH:mm".
+ */
+export interface SyncEventReconnected {
+  type: 'reconnected';
+  jobId: string;
+  nit: string;
+  at: string;
+}
+
+export type SyncEvent = SyncEventProcessing | SyncEventFacturaInserted | SyncEventTerminal | SyncEventReconnected;
 
 export interface InvoiceSummary {
   id: string;

@@ -761,4 +761,36 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
     expect(component.activeJobId()).toBeNull();
     expect(component.syncModalOpen()).toBe(false);
   });
+
+  it('reconciles status and invoices when a reconnected event arrives mid-stream', () => {
+    submitSync();
+    jobRepo.getJobStatus.mockClear();
+    jobRepo.getJobInvoices.mockClear();
+
+    stream.next({
+      type: 'reconnected',
+      jobId: 'job-1',
+      nit: '900123456',
+      at: '2026-07-23T12:30:00.000Z',
+    });
+
+    expect(jobRepo.getJobStatus).toHaveBeenCalledWith('job-1');
+    expect(jobRepo.getJobInvoices).toHaveBeenCalledWith('job-1', 1, 100);
+  });
+
+  it('ignores reconnected events for a different job', () => {
+    submitSync();
+    jobRepo.getJobStatus.mockClear();
+    jobRepo.getJobInvoices.mockClear();
+
+    stream.next({
+      type: 'reconnected',
+      jobId: 'different-job',
+      nit: '900123456',
+      at: '2026-07-23T12:30:00.000Z',
+    });
+
+    expect(jobRepo.getJobStatus).not.toHaveBeenCalled();
+    expect(jobRepo.getJobInvoices).not.toHaveBeenCalled();
+  });
 });

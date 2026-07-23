@@ -41,13 +41,12 @@ describe('SyncSiigoCompletoButtonComponent', () => {
 
   function allSucceed(): void {
     mockRepo.sincronizarProveedores.mockReturnValue(of({ success: true, registros: 5 }));
-    mockRepo.sincronizarEmpresas.mockReturnValue(of({ success: true, registros: 1 }));
     mockRepo.sincronizarPuc.mockReturnValue(of({ success: true, registros: 220 }));
     mockRepo.sincronizarTaxes.mockReturnValue(of({ success: true, registros: 7 }));
     mockRepo.sincronizarTrazabilidad.mockReturnValue(of({ success: true, registros: 42 }));
   }
 
-  it('al hacer click llama los 5 métodos del repository con el nit del input', () => {
+  it('al hacer click llama los 4 métodos del repository con el nit del input (NO incluye empresas)', () => {
     allSucceed();
     const synced = vi.fn();
     component.synced.subscribe(synced);
@@ -55,13 +54,20 @@ describe('SyncSiigoCompletoButtonComponent', () => {
     component.sync();
 
     expect(mockRepo.sincronizarProveedores).toHaveBeenCalledWith(900123456);
-    expect(mockRepo.sincronizarEmpresas).toHaveBeenCalledWith(900123456);
     expect(mockRepo.sincronizarPuc).toHaveBeenCalledWith(900123456);
     expect(mockRepo.sincronizarTaxes).toHaveBeenCalledWith(900123456);
     expect(mockRepo.sincronizarTrazabilidad).toHaveBeenCalledWith(900123456);
   });
 
-  it('cuando TODOS los 5 sync succeed → synced.emit(results) fires AND justSynced signal becomes true', () => {
+  it('NO llama sincronizarEmpresas — el sync de empresas es per-firma, no per-cliente', () => {
+    allSucceed();
+
+    component.sync();
+
+    expect(mockRepo.sincronizarEmpresas).not.toHaveBeenCalled();
+  });
+
+  it('cuando TODOS los 4 sync succeed → synced.emit(results) fires AND justSynced signal becomes true', () => {
     allSucceed();
     const synced = vi.fn();
     const partialSuccess = vi.fn();
@@ -74,7 +80,8 @@ describe('SyncSiigoCompletoButtonComponent', () => {
     expect(synced).toHaveBeenCalledTimes(1);
     expect(partialSuccess).not.toHaveBeenCalled();
     const results = synced.mock.calls[0][0] as SiigoSyncResult[];
-    expect(results).toHaveLength(5);
+    expect(results).toHaveLength(4);
+    expect(results.map((r) => r.source).sort()).toEqual(['proveedores', 'puc', 'taxes', 'trazabilidad']);
     expect(results.every((r) => r.success)).toBe(true);
     expect(component.justSynced()).toBe(true);
     expect(component.partialFailed()).toBe(false);
@@ -83,7 +90,6 @@ describe('SyncSiigoCompletoButtonComponent', () => {
 
   it('cuando ALGUNOS succeed y ALGUNOS fallan → partialSuccess.emit(results) fires AND partialFailed signal becomes true', () => {
     mockRepo.sincronizarProveedores.mockReturnValue(of({ success: true, registros: 5 }));
-    mockRepo.sincronizarEmpresas.mockReturnValue(of({ success: true, registros: 1 }));
     mockRepo.sincronizarPuc.mockReturnValue(throwError(() => new Error('puc failed')));
     mockRepo.sincronizarTaxes.mockReturnValue(of({ success: true, registros: 7 }));
     mockRepo.sincronizarTrazabilidad.mockReturnValue(throwError(() => new Error('trazabilidad failed')));
@@ -98,17 +104,20 @@ describe('SyncSiigoCompletoButtonComponent', () => {
 
     expect(partialSuccess).toHaveBeenCalledTimes(1);
     expect(synced).not.toHaveBeenCalled();
+    const results = partialSuccess.mock.calls[0][0] as SiigoSyncResult[];
+    expect(results).toHaveLength(4);
+    expect(results.find((r) => r.source === 'proveedores')?.success).toBe(true);
+    expect(results.find((r) => r.source === 'puc')?.success).toBe(false);
     expect(component.partialFailed()).toBe(true);
     expect(component.justSynced()).toBe(false);
     expect(component.hasError()).toBe(false);
   });
 
-  it('cuando TODOS los 5 fallan → ni synced ni partialSuccess emiten AND hasError signal becomes true', () => {
+  it('cuando TODOS los 4 fallan → ni synced ni partialSuccess emiten AND hasError signal becomes true', () => {
     mockRepo.sincronizarProveedores.mockReturnValue(throwError(() => new Error('fail 1')));
-    mockRepo.sincronizarEmpresas.mockReturnValue(throwError(() => new Error('fail 2')));
-    mockRepo.sincronizarPuc.mockReturnValue(throwError(() => new Error('fail 3')));
-    mockRepo.sincronizarTaxes.mockReturnValue(throwError(() => new Error('fail 4')));
-    mockRepo.sincronizarTrazabilidad.mockReturnValue(throwError(() => new Error('fail 5')));
+    mockRepo.sincronizarPuc.mockReturnValue(throwError(() => new Error('fail 2')));
+    mockRepo.sincronizarTaxes.mockReturnValue(throwError(() => new Error('fail 3')));
+    mockRepo.sincronizarTrazabilidad.mockReturnValue(throwError(() => new Error('fail 4')));
 
     const synced = vi.fn();
     const partialSuccess = vi.fn();
@@ -128,7 +137,6 @@ describe('SyncSiigoCompletoButtonComponent', () => {
   it('mientras loading() es true, el button tiene el atributo [disabled]', () => {
     // NEVER no emite ni completa → forkJoin espera indefinidamente → loading queda true.
     mockRepo.sincronizarProveedores.mockReturnValue(NEVER);
-    mockRepo.sincronizarEmpresas.mockReturnValue(NEVER);
     mockRepo.sincronizarPuc.mockReturnValue(NEVER);
     mockRepo.sincronizarTaxes.mockReturnValue(NEVER);
     mockRepo.sincronizarTrazabilidad.mockReturnValue(NEVER);
