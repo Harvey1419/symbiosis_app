@@ -224,3 +224,117 @@ describe('FirmaClientesComponent', () => {
     });
   });
 });
+
+describe('FirmaClientesComponent - Sync Card (descriptive UI)', () => {
+  let component: FirmaClientesComponent;
+  let fixture: import('@angular/core/testing').ComponentFixture<FirmaClientesComponent>;
+  let firmaMock: { getFirmas: ReturnType<typeof vi.fn>; getFirmaClientes: ReturnType<typeof vi.fn> };
+  let clienteMock: {
+    sincronizarTrazabilidad: ReturnType<typeof vi.fn>;
+    sincronizarEmpresas: ReturnType<typeof vi.fn>;
+    updateCliente: ReturnType<typeof vi.fn>;
+  };
+  let dialogMock: DialogMock;
+
+  const firma: Firma = {
+    id: 'firma-123',
+    firma_user: 'firma@example.com',
+    tipo_siigo: 'contador',
+    nit: 900123456,
+    last_token: null,
+    nombre: 'Firma Alpha',
+  };
+
+  beforeEach(async () => {
+    firmaMock = {
+      getFirmas: vi.fn().mockReturnValue(of([firma])),
+      getFirmaClientes: vi.fn().mockReturnValue(of([])),
+    };
+    clienteMock = {
+      sincronizarTrazabilidad: vi.fn().mockReturnValue(of(undefined)),
+      sincronizarEmpresas: vi.fn().mockReturnValue(of({ success: true, registros: 1 })),
+      updateCliente: vi.fn().mockReturnValue(of(undefined)),
+    };
+    dialogMock = {
+      openForEdit: vi.fn(),
+      close: vi.fn(),
+      visible: signal(false),
+      editingCliente: signal<Cliente | null>(null),
+    };
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [FirmaClientesComponent],
+      providers: [
+        provideAnimations(),
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: (key: string) => (key === 'id' ? 'firma-123' : null) } },
+          },
+        },
+        { provide: FirmaRepository, useValue: firmaMock },
+        { provide: ClienteRepository, useValue: clienteMock },
+        { provide: ClienteConfigDialogService, useValue: dialogMock },
+        { provide: Router, useValue: { navigate: vi.fn(), events: of() } },
+        MessageService,
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FirmaClientesComponent);
+    component = fixture.componentInstance;
+    component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('renders a sync card with the Siigo variant, NOT the compact pill', () => {
+    const card = fixture.nativeElement.querySelector('.sync-card.sync-card-siigo') as HTMLElement | null;
+    expect(card).not.toBeNull();
+
+    const pillEl = fixture.nativeElement.querySelector('app-sync-status-pill');
+    expect(pillEl).toBeNull();
+  });
+
+  it('does NOT render SyncStatusPillComponent at all (replaced by the card)', () => {
+    // Real assertion: there should be no <app-sync-status-pill> in the DOM.
+    expect(fixture.nativeElement.querySelector('app-sync-status-pill')).toBeNull();
+  });
+
+  it('sync card includes the title and description that explain what it does', () => {
+    const card = fixture.nativeElement.querySelector('.sync-card.sync-card-siigo') as HTMLElement;
+    const title = card.querySelector('.card-title')?.textContent ?? '';
+    const description = card.querySelector('.card-description')?.textContent ?? '';
+
+    expect(title).toContain('Siigo');
+    expect(description.toLowerCase()).toContain('empresas');
+  });
+
+  it('sync card has a button labeled "Sincronizar" that is enabled when not loading', () => {
+    const button = fixture.nativeElement.querySelector('.sync-card button') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    expect(button?.textContent ?? '').toContain('Sincronizar');
+    expect(button?.disabled).toBe(false);
+  });
+
+  it('sync card button is disabled while loading', () => {
+    // Drive the loading state directly via the public signal — we test the
+    // template binding, not the internal subscribe lifecycle.
+    component.syncLoading.set(true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.sync-card button') as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    expect(button?.disabled).toBe(true);
+  });
+
+  it('shows the last-sync timestamp after a successful sync', () => {
+    component.lastSync.set(new Date('2026-07-23T10:00:00Z'));
+    fixture.detectChanges();
+
+    const lastSync = fixture.nativeElement.querySelector('.last-sync') as HTMLElement | null;
+    expect(lastSync).not.toBeNull();
+    expect(lastSync?.textContent ?? '').toMatch(/Última sincronización/);
+  });
+});

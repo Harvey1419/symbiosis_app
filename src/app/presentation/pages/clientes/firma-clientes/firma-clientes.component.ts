@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
+import { ButtonModule } from 'primeng/button';
 import type { MenuItem } from 'primeng/api';
 import { Firma, FirmaRepository } from '@data/repositories/firma.repository';
 import { Cliente } from '@domain/models/cliente.model';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
-import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
 import { ClienteConfigDialogComponent } from '@app/shared/cliente-config-dialog/cliente-config-dialog.component';
 import { ClienteConfigDialogService } from '@app/core/cliente-config-dialog.service';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
@@ -17,7 +17,7 @@ import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrum
 @Component({
   selector: 'app-firma-clientes',
   standalone: true,
-  imports: [CommonModule, TableModule, ToastModule, SyncStatusPillComponent, ClienteConfigDialogComponent, BackButtonComponent, PageHeaderComponent, AppBreadcrumbComponent],
+  imports: [CommonModule, TableModule, ToastModule, ButtonModule, ClienteConfigDialogComponent, BackButtonComponent, PageHeaderComponent, AppBreadcrumbComponent],
   templateUrl: './firma-clientes.component.html',
   styleUrl: './firma-clientes.component.scss'
 })
