@@ -49,7 +49,23 @@
       status="ok"
       [lastSync]="lastSync()"
       [loading]="syncLoading()"
-      (sync)="onSync()"
+      (sync)="openSyncModal()"
+    />
+
+    <app-sync-dian-modal
+      [visible]="syncModalOpen()"
+      (visibleChange)="syncModalOpen.set($event)"
+      [nit]="nit().toString()"
+      [firmaId]="firmaId()"
+      [procesadas]="procesadasCount()"
+      [errors]="errorsCount()"
+      [total]="totalCount()"
+      [estado]="syncStatus()"
+      [hasExhaustedItems]="errorsCount() > 0"
+      [submitting]="syncLoading() && !activeJobId()"
+      (submitted)="onSyncModalSubmitted($event)"
+      (closed)="onSyncModalClosed()"
+      (retryRequested)="onSyncModalRetry($event)"
     />
 
     <!-- Filter row: Proveedor · Estado de carga · Tipos · Fecha · Solo revisadas -->

@@ -1,12 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders, HttpResponse, provideHttpClient } from '@angular/common/http';
 import { of, Subject, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ClienteDetailComponent } from './cliente-detail.component';
 import { Factura, FilaFactura } from '@domain/models/factura.model';
 import { FacturaRepository } from '@data/repositories/factura.repository';
+import { JobRepository } from '@data/repositories/job.repository';
+import { TokenService } from '@core/token.service';
+import { RealtimeFacturasService } from '@core/realtime/realtime-facturas.service';
+import {
+  SyncEventFacturaInserted,
+  SyncEventProcessing,
+  SyncEventTerminal,
+} from '@core/realtime/sync-event';
+import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
+import {
+  SyncDianModalComponent,
+  SyncDianSubmitPayload,
+} from './sync-dian-modal/sync-dian-modal.component';
 
 /** Helper: build a fully-typed `Factura` for table-rendering tests. */
 function buildFactura(overrides: Partial<Factura> & Pick<Factura, 'id' | 'status'>): Factura {
@@ -65,6 +79,7 @@ describe('ClienteDetailComponent - Dual Hierarchy Breadcrumb', () => {
       imports: [ClienteDetailComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: FacturaRepository, useValue: mockFacturaRepo },
         { provide: MessageService, useClass: MessageService },
@@ -152,6 +167,7 @@ describe('ClienteDetailComponent - WU-3B status badge + checkbox guard', () => {
       imports: [ClienteDetailComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: FacturaRepository, useValue: mockFacturaRepo },
         { provide: MessageService, useClass: MessageService },
@@ -356,6 +372,7 @@ describe('ClienteDetailComponent - WU-3C export download and feedback', () => {
       imports: [ClienteDetailComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         {
           provide: ActivatedRoute,
           useValue: {
@@ -539,5 +556,209 @@ describe('ClienteDetailComponent - WU-3C export download and feedback', () => {
     expect(messageMock.add).toHaveBeenCalledOnce();
     expect(messageMock.add.mock.calls[0][0].severity).toBe('error');
     expect(component.isExporting()).toBe(false);
+  });
+});
+
+describe('ClienteDetailComponent - DIAN realtime integration', () => {
+  let fixture: ComponentFixture<ClienteDetailComponent>;
+  let component: ClienteDetailComponent;
+  let stream: Subject<SyncEventProcessing | SyncEventFacturaInserted | SyncEventTerminal>;
+  let jobRepo: {
+    createSyncJob: ReturnType<typeof vi.fn>;
+    getJobStatus: ReturnType<typeof vi.fn>;
+    getJobInvoices: ReturnType<typeof vi.fn>;
+    retryErrors: ReturnType<typeof vi.fn>;
+  };
+  let realtime: {
+    subscribe: ReturnType<typeof vi.fn>;
+    unsubscribe: ReturnType<typeof vi.fn>;
+  };
+
+  const submitPayload: SyncDianSubmitPayload = {
+    tokenDian: 'dian-token-at-least-20-characters',
+    desde: new Date(2026, 6, 1),
+    hasta: new Date(2026, 6, 23),
+  };
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    stream = new Subject();
+    jobRepo = {
+      createSyncJob: vi.fn().mockReturnValue(of({ jobId: 'job-1', total: 10 })),
+      getJobStatus: vi.fn().mockReturnValue(of({
+        estado: 'completed', total: 10, procesadas: 10, errors: 0, progress: 100,
+      })),
+      getJobInvoices: vi.fn().mockReturnValue(of({
+        invoices: [], meta: { page: 1, limit: 100, total: 0, pages: 0 },
+      })),
+      retryErrors: vi.fn().mockReturnValue(of({ jobId: 'retry-job', total: 1 })),
+    };
+    realtime = {
+      subscribe: vi.fn().mockReturnValue(stream.asObservable()),
+      unsubscribe: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [ClienteDetailComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: (key: string) => (key === 'nit' ? '900123456' : null) },
+              data: {
+                clienteContext: {
+                  nombre_empresa: 'Cliente Test',
+                  firma_id: 'firma-1',
+                  firma_nombre: 'Firma Uno',
+                  tipo_siigo: 'contador',
+                },
+              },
+            },
+          },
+        },
+        { provide: FacturaRepository, useValue: { getFacturas: vi.fn().mockReturnValue(of([])) } },
+        { provide: JobRepository, useValue: jobRepo },
+        { provide: RealtimeFacturasService, useValue: realtime },
+        { provide: TokenService, useValue: { token: vi.fn().mockReturnValue('auth-jwt') } },
+        { provide: MessageService, useClass: MessageService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ClienteDetailComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  function modal(): SyncDianModalComponent {
+    return fixture.debugElement.query(By.directive(SyncDianModalComponent)).componentInstance;
+  }
+
+  function submitSync(): void {
+    modal().submitted.emit(submitPayload);
+  }
+
+  it('opens the DIAN modal when app-sync-status-pill emits sync', async () => {
+    const pill = fixture.debugElement.query(By.directive(SyncStatusPillComponent))
+      .componentInstance as SyncStatusPillComponent;
+
+    pill.sync.emit();
+    await fixture.whenStable();
+
+    expect(component.syncModalOpen()).toBe(true);
+    expect(modal().visible()).toBe(true);
+  });
+
+  it('handles modal submitted by creating the job before subscribing to realtime events', () => {
+    submitSync();
+
+    expect(jobRepo.createSyncJob).toHaveBeenCalledWith({
+      firma_id: 'firma-1',
+      nit_cliente: '900123456',
+      desde: '2026-07-01',
+      hasta: '2026-07-23',
+      token_dian: submitPayload.tokenDian,
+    });
+    expect(realtime.subscribe).toHaveBeenCalledWith('900123456', 'job-1', 'auth-jwt');
+    expect(jobRepo.createSyncJob.mock.invocationCallOrder[0])
+      .toBeLessThan(realtime.subscribe.mock.invocationCallOrder[0]);
+  });
+
+  it('prepends factura_inserted invoices and keeps stable invoice IDs idempotent', () => {
+    component.facturas.set([
+      buildFactura({ id: 'duplicate', status: 'pendiente' }),
+      buildFactura({ id: 'existing', status: 'causada' }),
+    ]);
+    submitSync();
+
+    stream.next({
+      type: 'factura_inserted',
+      jobId: 'job-1',
+      firmaId: 'firma-1',
+      nit: '900123456',
+      procesadas: 2,
+      errors: 0,
+      total: 10,
+      estado: 'processing',
+      emittedAt: '2026-07-23T12:00:00.000Z',
+      invoices: [
+        {
+          id: 'new-invoice', track_id: 'track-new', client_nit: 900123456,
+          vendor_nit: '901', vendor_name: 'Proveedor nuevo', status: 'pendiente',
+          total_pagar: 2500, created_at: '2026-07-23T12:00:00.000Z',
+        },
+        {
+          id: 'duplicate', track_id: 'track-duplicate', client_nit: 900123456,
+          vendor_nit: '902', vendor_name: 'Proveedor repetido', status: 'pendiente',
+          total_pagar: 1000, created_at: '2026-07-23T11:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(component.facturas().map((factura) => factura.id))
+      .toEqual(['new-invoice', 'duplicate', 'existing']);
+    expect(component.facturas().filter((factura) => factura.id === 'duplicate')).toHaveLength(1);
+  });
+
+  it('replaces modal counters with each processing event snapshot instead of incrementing', () => {
+    submitSync();
+    component.procesadasCount.set(40);
+    component.errorsCount.set(30);
+    component.totalCount.set(50);
+
+    stream.next({
+      type: 'processing',
+      jobId: 'job-1',
+      firmaId: 'firma-1',
+      nit: '900123456',
+      procesadas: 7,
+      errors: 2,
+      total: 10,
+      estado: 'processing',
+      emittedAt: '2026-07-23T12:00:00.000Z',
+    });
+
+    expect(component.procesadasCount()).toBe(7);
+    expect(component.errorsCount()).toBe(2);
+    expect(component.totalCount()).toBe(10);
+  });
+
+  it('reconciles status and invoices once on terminal while keeping the modal open', () => {
+    component.openSyncModal();
+    submitSync();
+
+    stream.next({
+      type: 'terminal',
+      jobId: 'job-1',
+      firmaId: 'firma-1',
+      nit: '900123456',
+      procesadas: 9,
+      errors: 1,
+      total: 10,
+      estado: 'partial',
+      emittedAt: '2026-07-23T12:00:00.000Z',
+      terminalReason: 'partial',
+    });
+
+    expect(jobRepo.getJobStatus).toHaveBeenCalledOnce();
+    expect(jobRepo.getJobStatus).toHaveBeenCalledWith('job-1');
+    expect(jobRepo.getJobInvoices).toHaveBeenCalledOnce();
+    expect(jobRepo.getJobInvoices).toHaveBeenCalledWith('job-1', 1, 100);
+    expect(component.syncModalOpen()).toBe(true);
+  });
+
+  it('handles modal closed by unsubscribing realtime and clearing the active job', () => {
+    component.openSyncModal();
+    submitSync();
+    expect(component.activeJobId()).toBe('job-1');
+
+    modal().closed.emit();
+
+    expect(realtime.unsubscribe).toHaveBeenCalledOnce();
+    expect(component.activeJobId()).toBeNull();
+    expect(component.syncModalOpen()).toBe(false);
   });
 });

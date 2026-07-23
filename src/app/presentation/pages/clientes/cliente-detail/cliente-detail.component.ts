@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,9 +13,18 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import type { MenuItem } from 'primeng/api';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin, Subscription } from 'rxjs';
 
 import { FacturaRepository } from '@data/repositories/factura.repository';
+import {
+  CreateSyncJobRequest,
+  JobInvoice,
+  JobRepository,
+  RetryErrorsRequest,
+} from '@data/repositories/job.repository';
+import { TokenService } from '@core/token.service';
+import { RealtimeFacturasService } from '@core/realtime/realtime-facturas.service';
+import { InvoiceSummary, SyncEvent } from '@core/realtime/sync-event';
 import { Factura } from '@domain/models/factura.model';
 import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
@@ -23,10 +32,76 @@ import { PageHeaderComponent } from '@app/shared/page-header/page-header.compone
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 import { SyncSiigoCompletoButtonComponent } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
 import type { SiigoSyncResult } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
+import {
+  SyncDianModalComponent,
+  SyncDianSubmitPayload,
+} from './sync-dian-modal/sync-dian-modal.component';
 
 interface ProveedorOption {
   label: string;
   value: string | null;
+}
+
+type SyncJobState = SyncEvent['estado'];
+type ReconciledInvoice = InvoiceSummary | JobInvoice;
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function toFactura(
+  invoice: ReconciledInvoice,
+  firmaId: string,
+  jobId: string,
+): Factura {
+  return {
+    id: invoice.id,
+    client_nit: invoice.client_nit,
+    track_id: invoice.track_id,
+    cufe: null,
+    factura_nro: null,
+    vendor_nit: invoice.vendor_nit,
+    vendor_name: invoice.vendor_name,
+    fecha_emision: null,
+    payment_due_date: null,
+    notes: null,
+    pdf_url: null,
+    xml_url: null,
+    pdf_base64: null,
+    error_message: null,
+    subtotal: null,
+    total_iva: null,
+    total_pagar: invoice.total_pagar,
+    status: invoice.status as Factura['status'],
+    filas: [],
+    clasificado_at: null,
+    causada_at: null,
+    causada_by: null,
+    created_at: invoice.created_at,
+    firma_id: firmaId,
+    job_id: 'job_id' in invoice ? invoice.job_id : jobId,
+  };
+}
+
+function mergeInvoicesById(
+  current: Factura[],
+  incoming: ReconciledInvoice[],
+  firmaId: string,
+  jobId: string,
+): Factura[] {
+  const seen = new Set(current.map((invoice) => invoice.id));
+  const prepended: Factura[] = [];
+
+  for (const invoice of incoming) {
+    if (seen.has(invoice.id)) continue;
+    seen.add(invoice.id);
+    prepended.push(toFactura(invoice, firmaId, jobId));
+  }
+
+  return [...prepended, ...current];
 }
 
 @Component({
@@ -36,6 +111,7 @@ interface ProveedorOption {
     CommonModule, FormsModule,
     SyncStatusPillComponent,
     SyncSiigoCompletoButtonComponent,
+    SyncDianModalComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
     ToastModule,
     BackButtonComponent,
@@ -45,11 +121,14 @@ interface ProveedorOption {
   templateUrl: './cliente-detail.component.html',
   styleUrl: './cliente-detail.component.scss'
 })
-export class ClienteDetailComponent implements OnInit {
+export class ClienteDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly facturaRepo = inject(FacturaRepository);
   private readonly message = inject(MessageService);
+  readonly realtime = inject(RealtimeFacturasService);
+  readonly jobRepo = inject(JobRepository);
+  readonly tokenService = inject(TokenService);
 
   // ── Core data ──
   nit = signal<number>(0);
@@ -64,6 +143,13 @@ export class ClienteDetailComponent implements OnInit {
   readonly syncLoading = signal(false);
   readonly isExporting = signal(false);
   readonly lastSync = signal<Date | null>(null);
+  readonly syncModalOpen = signal(false);
+  readonly activeJobId = signal<string | null>(null);
+  readonly procesadasCount = signal(0);
+  readonly errorsCount = signal(0);
+  readonly totalCount = signal(0);
+  readonly syncStatus = signal<SyncJobState>('pending');
+  private streamSubscription: Subscription | null = null;
 
   // ── Breadcrumb ──
   /** True cuando el Resolver no encontró el cliente (NIT no existe o no
@@ -245,19 +331,172 @@ export class ClienteDetailComponent implements OnInit {
     this.soloRevisadas.set(false);
   }
 
-  // ── Sync action: simple trigger that fetches latest. The real DIAN
-  // sync requires a DIAN token; for now we just re-fetch. The
-  // SyncStatusPill UI stays accurate. ──
-  onSync(): void {
+  // ── DIAN sync modal + realtime stream ──
+  openSyncModal(): void {
+    this.syncModalOpen.set(true);
+  }
+
+  onSyncModalSubmitted(payload: SyncDianSubmitPayload): void {
+    const request: CreateSyncJobRequest = {
+      firma_id: this.firmaId(),
+      nit_cliente: String(this.nit()),
+      desde: toIsoDate(payload.desde),
+      hasta: toIsoDate(payload.hasta),
+      token_dian: payload.tokenDian,
+    };
+
     this.syncLoading.set(true);
-    this.facturaRepo.getFacturas(this.nit()).subscribe({
-      next: (data: Factura[]) => {
-        this.facturas.set(data);
-        this.lastSync.set(new Date());
-        this.syncLoading.set(false);
+    this.jobRepo.createSyncJob(request).subscribe({
+      next: ({ jobId, total }) => {
+        this.activeJobId.set(jobId);
+        this.procesadasCount.set(0);
+        this.errorsCount.set(0);
+        this.totalCount.set(total);
+        this.syncStatus.set('pending');
+        this.startStreaming(jobId);
       },
-      error: () => { this.error.set(true); this.syncLoading.set(false); }
+      error: (error: unknown) => {
+        this.syncLoading.set(false);
+        this.message.add({
+          severity: 'error',
+          summary: 'Error al iniciar sync',
+          detail: this.readSyncError(error),
+        });
+      },
     });
+  }
+
+  onSyncModalRetry(payload: SyncDianSubmitPayload): void {
+    const sourceJobId = this.activeJobId();
+    if (!sourceJobId) return;
+
+    const request: RetryErrorsRequest = {
+      token_dian: payload.tokenDian,
+      desde: toIsoDate(payload.desde),
+      hasta: toIsoDate(payload.hasta),
+    };
+
+    this.syncLoading.set(true);
+    this.jobRepo.retryErrors(sourceJobId, request).subscribe({
+      next: ({ jobId, total }) => {
+        this.activeJobId.set(jobId);
+        this.procesadasCount.set(0);
+        this.errorsCount.set(0);
+        this.totalCount.set(total);
+        this.syncStatus.set('pending');
+        this.message.add({
+          severity: 'success',
+          summary: 'Reintento iniciado',
+          detail: `${total} factura${total === 1 ? '' : 's'} en proceso.`,
+        });
+        this.startStreaming(jobId);
+      },
+      error: (error: unknown) => {
+        this.syncLoading.set(false);
+        this.message.add({
+          severity: 'error',
+          summary: 'Error al reintentar',
+          detail: this.readSyncError(error),
+        });
+      },
+    });
+  }
+
+  onSyncModalClosed(): void {
+    this.syncModalOpen.set(false);
+    this.syncLoading.set(false);
+    this.streamSubscription?.unsubscribe();
+    this.streamSubscription = null;
+    this.realtime.unsubscribe();
+    this.activeJobId.set(null);
+  }
+
+  private startStreaming(jobId: string): void {
+    const jwt = this.tokenService.token();
+    if (!jwt) {
+      this.syncLoading.set(false);
+      this.message.add({ severity: 'error', summary: 'Sin token de autenticación' });
+      return;
+    }
+
+    this.streamSubscription?.unsubscribe();
+    this.streamSubscription = this.realtime
+      .subscribe(String(this.nit()), jobId, jwt)
+      .subscribe({
+        next: (event) => this.handleSyncEvent(event),
+        error: () => {
+          this.message.add({
+            severity: 'warn',
+            summary: 'Conexión SSE perdida',
+            detail: 'Reintentando…',
+          });
+        },
+      });
+  }
+
+  private handleSyncEvent(event: SyncEvent): void {
+    if (event.jobId !== this.activeJobId() || event.nit !== String(this.nit())) return;
+
+    this.procesadasCount.set(event.procesadas);
+    this.errorsCount.set(event.errors);
+    this.totalCount.set(event.total);
+    this.syncStatus.set(event.estado);
+
+    switch (event.type) {
+      case 'factura_inserted':
+        this.facturas.update((current) => mergeInvoicesById(
+          current,
+          event.invoices,
+          event.firmaId,
+          event.jobId,
+        ));
+        this.lastSync.set(new Date(event.emittedAt));
+        break;
+      case 'processing':
+        break;
+      case 'terminal':
+        this.syncLoading.set(false);
+        this.reconcileAfterTerminal();
+        break;
+    }
+  }
+
+  private reconcileAfterTerminal(): void {
+    const jobId = this.activeJobId();
+    if (!jobId) return;
+
+    forkJoin({
+      status: this.jobRepo.getJobStatus(jobId),
+      invoices: this.jobRepo.getJobInvoices(jobId, 1, 100),
+    }).subscribe({
+      next: ({ status, invoices }) => {
+        this.procesadasCount.set(status.procesadas);
+        this.errorsCount.set(status.errors);
+        this.totalCount.set(status.total);
+        this.syncStatus.set(status.estado as SyncJobState);
+        this.facturas.update((current) => mergeInvoicesById(
+          current,
+          invoices.invoices,
+          this.firmaId(),
+          jobId,
+        ));
+      },
+      error: () => {
+        // Keep the last authoritative event snapshot; a later sync can reconcile again.
+      },
+    });
+  }
+
+  private readSyncError(error: unknown): string {
+    return error instanceof Error && error.message.trim()
+      ? error.message
+      : 'No se pudo iniciar la sincronización. Intenta de nuevo.';
+  }
+
+  ngOnDestroy(): void {
+    this.streamSubscription?.unsubscribe();
+    this.streamSubscription = null;
+    this.realtime.unsubscribe();
   }
 
   // ── Sync Siigo completo: cuando los 5 endpoints Siigo terminan bien,
