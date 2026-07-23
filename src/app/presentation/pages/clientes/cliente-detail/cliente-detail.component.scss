@@ -561,20 +561,93 @@
   }
 }
 
-// ── Sync Siigo row ──
-// Pill compacto ARRIBA del DIAN pill. Mantiene el mismo padding
-// vertical que el pill DIAN para que se lean como un bloque unificado.
-.siigo-sync-row {
+// ============================================================
+// Sync cards — local copy of the firma-clientes visual pattern
+// ============================================================
+.sync-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sync-card {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  margin-bottom: 0.75rem;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
 
-  .row-label {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    font-family: var(--font-display);
-    letter-spacing: 0.01em;
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: var(--primary-color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .card-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-title {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-strong);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .card-description {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  &.sync-card-siigo .card-icon {
+    background: #10b981;
+  }
+
+  &.sync-card-dian .card-icon {
+    background: #3b82f6;
+  }
+}
+
+@media (max-width: 720px) {
+  .sync-cards-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sync-card {
+    flex-wrap: wrap;
+
+    .card-actions {
+      width: 100%;
+      align-items: flex-start;
+      padding-left: calc(48px + 1.25rem);
+    }
   }
 }

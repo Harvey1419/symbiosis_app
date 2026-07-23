@@ -26,7 +26,6 @@ import { TokenService } from '@core/token.service';
 import { RealtimeFacturasService } from '@core/realtime/realtime-facturas.service';
 import { InvoiceSummary, SyncEvent, SyncEventFacturaInserted, SyncEventProcessing, SyncEventTerminal } from '@core/realtime/sync-event';
 import { Factura } from '@domain/models/factura.model';
-import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { PageHeaderComponent } from '@app/shared/page-header/page-header.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
@@ -115,7 +114,6 @@ function mergeInvoicesById(
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    SyncStatusPillComponent,
     SyncSiigoCompletoButtonComponent,
     SyncDianModalComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
@@ -514,10 +512,10 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
     this.realtime.unsubscribe();
   }
 
-  // ── Sync Siigo completo: cuando los 5 endpoints Siigo terminan bien,
+  // ── Sync Siigo completo: cuando los 4 endpoints Siigo terminan bien,
   // refrescamos facturas porque pueden haber cambiado los proveedores
-  // / filtros. El pill de Siigo (SyncSiigoCompletoButton) emite este
-  // evento desde su `synced` output. ──
+  // / filtros. El botón dentro de la tarjeta Siigo emite este evento
+  // desde su `synced` output. ──
   onSiigoSynced(_results: SiigoSyncResult[]): void {
     this.facturaRepo.getFacturas(this.nit()).subscribe({
       next: (data: Factura[]) => { this.facturas.set(data); },

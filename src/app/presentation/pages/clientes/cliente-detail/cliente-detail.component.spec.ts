@@ -16,7 +16,7 @@ import {
   SyncEventProcessing,
   SyncEventTerminal,
 } from '@core/realtime/sync-event';
-import { SyncStatusPillComponent } from '@app/shared/sync-status-pill/sync-status-pill.component';
+import { SyncSiigoCompletoButtonComponent } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
 import {
   SyncDianModalComponent,
   SyncDianSubmitPayload,
@@ -641,15 +641,59 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
     modal().submitted.emit(submitPayload);
   }
 
-  it('opens the DIAN modal when app-sync-status-pill emits sync', async () => {
-    const pill = fixture.debugElement.query(By.directive(SyncStatusPillComponent))
-      .componentInstance as SyncStatusPillComponent;
+  it('renderiza una región con las dos opciones de sincronización', () => {
+    const region = fixture.nativeElement.querySelector(
+      'section.sync-cards-row[aria-label="Opciones de sincronización"]',
+    ) as HTMLElement | null;
 
-    pill.sync.emit();
+    expect(region).not.toBeNull();
+    expect(region?.querySelectorAll('article.sync-card')).toHaveLength(2);
+  });
+
+  it('renderiza la tarjeta DIAN con título y descripción del flujo', () => {
+    const card = fixture.nativeElement.querySelector('.sync-card-dian') as HTMLElement | null;
+
+    expect(card).not.toBeNull();
+    expect(card?.querySelector('.card-title')?.textContent?.trim())
+      .toBe('Sincronizar facturas DIAN');
+    expect(card?.querySelector('.card-description')?.textContent)
+      .toContain('requiere token y rango de fechas');
+  });
+
+  it('renderiza la tarjeta Siigo con los cuatro catálogos del nivel cliente', () => {
+    const card = fixture.nativeElement.querySelector('.sync-card-siigo') as HTMLElement | null;
+
+    expect(card).not.toBeNull();
+    expect(card?.querySelector('.card-title')?.textContent?.trim())
+      .toBe('Sincronizar datos Siigo');
+    expect(card?.querySelector('.card-description')?.textContent)
+      .toContain('proveedores, PUC, taxes y trazabilidad');
+  });
+
+  it('abre el modal DIAN al pulsar "Sincronizar ahora" en su tarjeta', async () => {
+    const button = fixture.nativeElement.querySelector(
+      '.sync-card-dian button',
+    ) as HTMLButtonElement | null;
+
+    expect(button).not.toBeNull();
+    button?.click();
     await fixture.whenStable();
 
     expect(component.syncModalOpen()).toBe(true);
     expect(modal().visible()).toBe(true);
+  });
+
+  it('renderiza SyncSiigoCompletoButtonComponent dentro de la tarjeta Siigo', () => {
+    const siigoCard = fixture.debugElement.query(By.css('.sync-card-siigo'));
+    const syncButton = siigoCard?.query(By.directive(SyncSiigoCompletoButtonComponent));
+
+    expect(syncButton).not.toBeNull();
+    expect((syncButton?.componentInstance as SyncSiigoCompletoButtonComponent).nit())
+      .toBe(900123456);
+  });
+
+  it('elimina el pill de sincronización legado', () => {
+    expect(fixture.nativeElement.querySelector('app-sync-status-pill')).toBeNull();
   });
 
   it('handles modal submitted by creating the job before subscribing to realtime events', () => {

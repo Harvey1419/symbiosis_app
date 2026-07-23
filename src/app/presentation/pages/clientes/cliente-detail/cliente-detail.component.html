@@ -31,26 +31,48 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
-    <!-- Sync Siigo completo: proveedores + empresas + PUC + taxes + trazabilidad.
-         Se dispara ARRIBA del pill DIAN — los datos Siigo son prerequisito
-         para que DIAN clasifique correctamente. -->
-    <div class="siigo-sync-row">
-      <span class="row-label">Siigo:</span>
-      <app-sync-siigo-completo-button
-        [nit]="nit()"
-        (synced)="onSiigoSynced($event)"
-        (partialSuccess)="onSiigoPartialSuccess($event)"
-      />
-    </div>
+    <!-- Sync cards: Siigo catalogs stay separate from the DIAN invoice flow. -->
+    <section class="sync-cards-row" aria-label="Opciones de sincronización">
+      <article class="sync-card sync-card-siigo" aria-labelledby="sync-siigo-title">
+        <div class="card-icon" aria-hidden="true">
+          <i class="pi pi-sync"></i>
+        </div>
+        <div class="card-body">
+          <h3 id="sync-siigo-title" class="card-title">Sincronizar datos Siigo</h3>
+          <p class="card-description">
+            Trae proveedores, PUC, taxes y trazabilidad desde Siigo.
+          </p>
+        </div>
+        <div class="card-actions">
+          <app-sync-siigo-completo-button
+            [nit]="nit()"
+            (synced)="onSiigoSynced($event)"
+            (partialSuccess)="onSiigoPartialSuccess($event)"
+          />
+        </div>
+      </article>
 
-    <!-- Compact DIAN sync banner (smaller than the full SyncBanner) -->
-    <app-sync-status-pill
-      service="DIAN"
-      status="ok"
-      [lastSync]="lastSync()"
-      [loading]="syncLoading()"
-      (sync)="openSyncModal()"
-    />
+      <article class="sync-card sync-card-dian" aria-labelledby="sync-dian-title">
+        <div class="card-icon" aria-hidden="true">
+          <i class="pi pi-cloud-download"></i>
+        </div>
+        <div class="card-body">
+          <h3 id="sync-dian-title" class="card-title">Sincronizar facturas DIAN</h3>
+          <p class="card-description">
+            Descarga facturas desde el portal DIAN (requiere token y rango de fechas).
+          </p>
+        </div>
+        <div class="card-actions">
+          <p-button
+            label="Sincronizar ahora"
+            icon="pi pi-refresh"
+            severity="primary"
+            [text]="true"
+            (onClick)="openSyncModal()"
+          />
+        </div>
+      </article>
+    </section>
 
     <app-sync-dian-modal
       [visible]="syncModalOpen()"
