@@ -17,17 +17,14 @@ export default defineConfig({
   cacheDir: './node_modules/.cache/vitest',
   test: {
     globals: false,
-    environment: 'jsdom',
+    // happy-dom replaces jsdom because jsdom's CSS parser can't handle
+    // modern features PrimeNG relies on (color-mix, custom-property
+    // selectors, layered rules). happy-dom uses a CSS parser that
+    // accepts them, so "Could not parse CSS stylesheet" warnings stop
+    // appearing at the source instead of being silenced downstream.
+    environment: 'happy-dom',
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.spec.ts'],
-    // jsdom's CSS parser doesn't understand modern features (color-mix,
-    // custom-property selectors, layered rules). PrimeNG renders inline
-    // styles into jsdom, which triggers harmless "Could not parse CSS
-    // stylesheet" warnings. Filter them at the framework boundary so the
-    // test output stays clean without affecting test results.
-    onConsoleLog(_log: string, _type: 'stdout' | 'stderr'): boolean | undefined {
-      return undefined;
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
