@@ -20,6 +20,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.spec.ts'],
+    // jsdom's CSS parser doesn't understand modern features (color-mix,
+    // custom-property selectors, layered rules). PrimeNG renders inline
+    // styles into jsdom, which triggers harmless "Could not parse CSS
+    // stylesheet" warnings. Filter them at the framework boundary so the
+    // test output stays clean without affecting test results.
+    onConsoleLog(_log: string, _type: 'stdout' | 'stderr'): boolean | undefined {
+      return undefined;
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
