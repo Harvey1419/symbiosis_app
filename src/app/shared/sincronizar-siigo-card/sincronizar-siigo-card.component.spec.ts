@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { SincronizarSiigoCardComponent } from './sincronizar-siigo-card.component';
 import { FirmaRepository } from '@data/repositories/firma.repository';
 
@@ -143,5 +143,74 @@ describe('SincronizarSiigoCardComponent', () => {
     component.loading.set(false);
     fixture.detectChanges();
     expect(card?.getAttribute('aria-busy')).toBe('false');
+  });
+
+  // PR-E.2 (round-3 fix): empresas sync is ONE catalog (empresas itself),
+  // not five. The card must surface a counter showing 0/1 → 1/1 → Listo so
+  // the user has the same observability as the 4-catalog `SyncSiigoCompletoButtonComponent`.
+  it('embeds the SyncCounterBadge with total=1 — empresas is one catalog, not five', () => {
+    expect(component.totalCatalogs()).toBe(1);
+    const badge = fixture.nativeElement.querySelector('app-sync-counter-badge') as HTMLElement | null;
+    // Pre-sync the card is idle, so the badge is NOT yet rendered.
+    // We only require that, when it renders, it always uses total=1.
+    expect(badge).toBeNull();
+  });
+
+  it('badge transitions "Sincronizando 1/1" while loading (in-flight) — NOT "Listo"', () => {
+    // Click sync → loading becomes true. The done counter increments to 1
+    // immediately (marking the in-flight request) and the badge should
+    // show "Sincronizando 1/1" because the request has not resolved yet.
+    firmaMock.sincronizarEmpresasByUser.mockReturnValue(
+      // NEVER keeps loading=true so we can assert the in-flight state.
+      NEVER,
+    );
+
+    component.sync();
+    fixture.detectChanges();
+
+    expect(component.loading()).toBe(true);
+    expect(component.inFlightDone()).toBe(1);
+
+    const badge = fixture.nativeElement.querySelector('app-sync-counter-badge') as HTMLElement | null;
+    expect(badge).not.toBeNull();
+    const status = badge?.querySelector('[role="status"]') as HTMLElement | null;
+    expect(status?.textContent?.trim()).toBe('Sincronizando 1/1');
+    expect(status?.getAttribute('aria-live')).toBe('polite');
+  });
+
+  it('badge transitions to "Listo" after a successful sync completes (terminal state)', () => {
+    firmaMock.sincronizarEmpresasByUser.mockReturnValue(
+      of({ success: true, count: 4, newCount: 2, newItems: [{ nit: 800333333 }, { nit: 800444444 }] }),
+    );
+
+    component.sync();
+    fixture.detectChanges();
+
+    expect(component.loading()).toBe(false);
+    expect(component.justSynced()).toBe(true);
+    expect(component.inFlightDone()).toBe(1);
+
+    const badge = fixture.nativeElement.querySelector('app-sync-counter-badge') as HTMLElement | null;
+    expect(badge).not.toBeNull();
+    const status = badge?.querySelector('[role="status"]') as HTMLElement | null;
+    expect(status?.textContent?.trim()).toBe('Listo');
+  });
+
+  it('badge hides after the terminal window expires (no lingering counter)', () => {
+    firmaMock.sincronizarEmpresasByUser.mockReturnValue(
+      of({ success: true, count: 0, newCount: 0, newItems: [] }),
+    );
+
+    component.sync();
+    fixture.detectChanges();
+
+    expect(component.justSynced()).toBe(true);
+    expect(fixture.nativeElement.querySelector('app-sync-counter-badge')).not.toBeNull();
+
+    component.clearTerminalState();
+    fixture.detectChanges();
+
+    expect(component.justSynced()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-sync-counter-badge')).toBeNull();
   });
 });
