@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@environments/environment';
-import { Factura, UpdateItemBody } from '@domain/models/factura.model';
+import { Factura, FacturaPdfResponse, UpdateItemBody } from '@domain/models/factura.model';
 
 @Injectable({ providedIn: 'root' })
 export class FacturaRepository {
@@ -16,6 +16,11 @@ export class FacturaRepository {
   /** GET /api/facturas/item/:id — single factura by UUID. */
   getById(id: string): Observable<Factura> {
     return this.http.get<Factura>(`${this.apiUrl}/facturas/item/${id}`);
+  }
+
+  /** GET /api/facturas/:id/pdf — lazy PDF payload. */
+  getPdf(id: string): Observable<FacturaPdfResponse> {
+    return this.http.get<FacturaPdfResponse>(`${this.apiUrl}/facturas/${id}/pdf`);
   }
 
   /** PATCH /api/facturas/:id/items/:idx — edit cuenta/iva_code/rete_code. */

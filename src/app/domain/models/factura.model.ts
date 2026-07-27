@@ -13,6 +13,11 @@ export interface FilaFactura {
   rete_code?: string | null;
 }
 
+export interface FacturaPdfResponse {
+  pdf_base64: string | null;
+  content_type: 'application/pdf';
+}
+
 export interface Factura {
   id: string;
   client_nit: number;

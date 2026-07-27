@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpErrorResponse, HttpResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { FacturaRepository } from './factura.repository';
-import { Factura } from '@domain/models/factura.model';
+import { Factura, FacturaPdfResponse } from '@domain/models/factura.model';
 
 const mockFactura: Factura = {
   id: 'abc-123',
@@ -80,6 +80,64 @@ describe('FacturaRepository', () => {
     expect(req.request.body).toEqual({ target: 'pendiente' });
     req.flush({ ...mockFactura, status: 'pendiente' });
     httpMock.verify();
+  });
+
+  describe('getPdf(id)', () => {
+    it('hace GET a /api/facturas/:id/pdf y conserva la respuesta PDF', () => {
+      const response: FacturaPdfResponse = {
+        pdf_base64: 'JVBERi0xLjQK',
+        content_type: 'application/pdf',
+      };
+      let received: FacturaPdfResponse | undefined;
+
+      repo.getPdf('abc-123').subscribe((res) => {
+        received = res;
+      });
+
+      const req = httpMock.expectOne('/api/facturas/abc-123/pdf');
+      expect(req.request.method).toBe('GET');
+      req.flush(response);
+
+      expect(received).toEqual(response);
+      httpMock.verify();
+    });
+
+    it('conserva una respuesta con pdf_base64 null', () => {
+      const response: FacturaPdfResponse = {
+        pdf_base64: null,
+        content_type: 'application/pdf',
+      };
+      let received: FacturaPdfResponse | undefined;
+
+      repo.getPdf('abc-123').subscribe((res) => {
+        received = res;
+      });
+
+      const req = httpMock.expectOne('/api/facturas/abc-123/pdf');
+      req.flush(response);
+
+      expect(received?.pdf_base64).toBeNull();
+      expect(received?.content_type).toBe('application/pdf');
+      httpMock.verify();
+    });
+
+    it('propaga los errores HTTP sin transformarlos', () => {
+      let receivedError: HttpErrorResponse | undefined;
+
+      repo.getPdf('abc-123').subscribe({
+        error: (error: HttpErrorResponse) => {
+          receivedError = error;
+        },
+      });
+
+      const req = httpMock.expectOne('/api/facturas/abc-123/pdf');
+      req.flush({ error: 'FIRMA_NOT_OWNED' }, { status: 404, statusText: 'Not Found' });
+
+      expect(receivedError).toBeInstanceOf(HttpErrorResponse);
+      expect(receivedError?.status).toBe(404);
+      expect(receivedError?.error).toEqual({ error: 'FIRMA_NOT_OWNED' });
+      httpMock.verify();
+    });
   });
 
   describe('exportSelection(nit, facturaIds)', () => {
