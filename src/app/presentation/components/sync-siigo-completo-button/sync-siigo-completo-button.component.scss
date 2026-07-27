@@ -23,10 +23,9 @@
   }
 }
 
-:host ::ng-deep .siigo-completo-btn.p-button {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+// PR-G (round-4 fix): removed the legacy `.siigo-completo-btn.p-button`
+// override (text-transform: uppercase + 0.7rem + var(--font-mono)) so
+// the 4-catalog sync button matches the default PrimeNG styling used by
+// the DIAN sync button. Both cards now render their action as a
+// standard text-only PrimeNG `<button>` with the same label size and
+// case — fixing the "same size" inconsistency the user reported.

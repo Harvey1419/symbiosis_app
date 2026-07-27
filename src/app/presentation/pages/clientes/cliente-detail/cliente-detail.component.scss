@@ -562,7 +562,11 @@
 }
 
 // ============================================================
-// Sync cards — local copy of the firma-clientes visual pattern
+// Sync cards — local copy of the firma-clientes visual pattern.
+// PR-G (round-4 fix): both remaining cards (Siigo 4-catalog + DIAN)
+// share the same min-height, padding, border-radius, icon size, header
+// size, and description size — the user requested identical text
+// sizing/styling between the two remaining cards.
 // ============================================================
 .sync-cards-row {
   display: grid;
@@ -576,6 +580,11 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem 1.5rem;
+  // PR-G: explicit min-height keeps both cards aligned when their
+  // description text wraps to different line counts. Default would be
+  // intrinsic height — a 1-line Siigo description vs a 2-line DIAN
+  // description would otherwise render at different card heights.
+  min-height: 96px;
   background: var(--surface-card);
   border: 1px solid var(--surface-border);
   border-radius: 8px;
