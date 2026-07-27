@@ -14,3 +14,4 @@ export * from './pdf-viewer-dialog/pdf-viewer-dialog.component';
 export * from './impuestos-dialog/impuestos-dialog.component';
 export * from './crear-empresa-dialog/crear-empresa-dialog.component';
 export * from './app-breadcrumb/app-breadcrumb.component';
+export * from './utils/is-payment-row';
