@@ -148,12 +148,17 @@ describe('SincronizarSiigoCardComponent', () => {
   // PR-E.2 (round-3 fix): empresas sync is ONE catalog (empresas itself),
   // not five. The card must surface a counter showing 0/1 → 1/1 → Listo so
   // the user has the same observability as the 4-catalog `SyncSiigoCompletoButtonComponent`.
+  it('renders the idle badge as Sincronizando 0/1 before syncing', () => {
+    const badge = fixture.nativeElement.querySelector('app-sync-counter-badge') as HTMLElement | null;
+    expect(badge).not.toBeNull();
+    const status = badge?.querySelector('[role="status"]') as HTMLElement | null;
+    expect(status?.textContent?.trim()).toBe('Sincronizando 0/1');
+  });
+
   it('embeds the SyncCounterBadge with total=1 — empresas is one catalog, not five', () => {
     expect(component.totalCatalogs()).toBe(1);
     const badge = fixture.nativeElement.querySelector('app-sync-counter-badge') as HTMLElement | null;
-    // Pre-sync the card is idle, so the badge is NOT yet rendered.
-    // We only require that, when it renders, it always uses total=1.
-    expect(badge).toBeNull();
+    expect(badge).not.toBeNull();
   });
 
   it('badge transitions "Sincronizando 1/1" while loading (in-flight) — NOT "Listo"', () => {
@@ -196,7 +201,7 @@ describe('SincronizarSiigoCardComponent', () => {
     expect(status?.textContent?.trim()).toBe('Listo');
   });
 
-  it('badge hides after the terminal window expires (no lingering counter)', () => {
+  it('badge returns to the idle 0/1 state after the terminal window expires', () => {
     firmaMock.sincronizarEmpresasByUser.mockReturnValue(
       of({ success: true, count: 0, newCount: 0, newItems: [] }),
     );
@@ -205,12 +210,18 @@ describe('SincronizarSiigoCardComponent', () => {
     fixture.detectChanges();
 
     expect(component.justSynced()).toBe(true);
-    expect(fixture.nativeElement.querySelector('app-sync-counter-badge')).not.toBeNull();
+    const terminalStatus = fixture.nativeElement.querySelector(
+      'app-sync-counter-badge [role="status"]',
+    ) as HTMLElement | null;
+    expect(terminalStatus?.textContent?.trim()).toBe('Listo');
 
     component.clearTerminalState();
     fixture.detectChanges();
 
     expect(component.justSynced()).toBe(false);
-    expect(fixture.nativeElement.querySelector('app-sync-counter-badge')).toBeNull();
+    const idleStatus = fixture.nativeElement.querySelector(
+      'app-sync-counter-badge [role="status"]',
+    ) as HTMLElement | null;
+    expect(idleStatus?.textContent?.trim()).toBe('Sincronizando 0/1');
   });
 });

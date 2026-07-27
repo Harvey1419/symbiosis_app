@@ -112,7 +112,10 @@ export class SincronizarSiigoCardComponent {
         this.lastSync.set(new Date());
         this.justSynced.set(true);
         if (this.justSyncedTimer) clearTimeout(this.justSyncedTimer);
-        this.justSyncedTimer = setTimeout(() => this.justSynced.set(false), 3000);
+         this.justSyncedTimer = setTimeout(() => {
+           this.justSynced.set(false);
+           this.inFlightDone.set(0);
+         }, 3000);
         this.message.add({
           severity: 'success',
           summary: 'Sincronizado',
@@ -151,6 +154,7 @@ export class SincronizarSiigoCardComponent {
    * can verify the badge hides without waiting 3 s for the timer. */
   clearTerminalState(): void {
     this.justSynced.set(false);
+    this.inFlightDone.set(0);
     if (this.justSyncedTimer) {
       clearTimeout(this.justSyncedTimer);
       this.justSyncedTimer = null;

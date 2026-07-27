@@ -22,16 +22,16 @@
         {{ err }}
       </small>
     }
-    <!-- PR-E.2 (round-3 fix): empresas is ONE catalog, not five. Show
-         the same 0/1 → 1/1 → Listo lifecycle as the 4-catalog sync
-         completo button so the user has consistent observability. -->
-    @if (loading() || justSynced()) {
+    <!-- Empresas is one catalog. Keep the badge visible in idle so the
+         user sees 0/1 before starting; loading and success preserve the
+         existing 1/1 → Listo lifecycle. -->
+    <div class="sync-badge" [class.sync-badge-idle]="!loading() && !justSynced()">
       <app-sync-counter-badge
         [done]="inFlightDone()"
         [total]="totalCatalogs()"
         [inFlight]="loading()"
       />
-    }
+    </div>
   </div>
   <div class="card-actions">
     <p-button

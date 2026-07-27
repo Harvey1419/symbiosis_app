@@ -91,7 +91,16 @@
     flex-wrap: wrap;
     gap: 1rem;
 
-    .card-actions {
+  .sync-badge {
+    margin-top: 0.5rem;
+    transition: opacity 150ms ease;
+
+    &.sync-badge-idle {
+      opacity: 0.5;
+    }
+  }
+
+  .card-actions {
       width: 100%;
       align-items: stretch;
     }
