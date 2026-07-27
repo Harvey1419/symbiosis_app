@@ -36,6 +36,7 @@ import {
   PdfViewerDialogComponent,
   isPaymentRow,
 } from '@app/shared';
+import { SincronizarSiigoCardComponent } from '@app/shared/sincronizar-siigo-card/sincronizar-siigo-card.component';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 
@@ -76,6 +77,7 @@ interface CuentaOption {
     PdfViewerDialogComponent,
     BackButtonComponent,
     AppBreadcrumbComponent,
+    SincronizarSiigoCardComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './factura-detail.component.html',
@@ -110,6 +112,8 @@ export class FacturaDetailComponent implements OnInit {
   readonly firmaId = signal<string>('');
   /** Nombre de la firma (puede venir por state o resolverse vía repo). */
   readonly firmaNombre = signal<string>('');
+  /** PR-B: credencial Siigo de la firma — habilita el sync desde esta página. */
+  readonly firmaUser = signal<string>('');
   /** Nombre del cliente (del state; fallback si no llega). */
   readonly clienteNombre = signal<string>('');
   readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
@@ -260,12 +264,19 @@ export class FacturaDetailComponent implements OnInit {
     // también lee del state (fast-path), así que no hay diferencia
     // funcional — el breadcrumb está completo desde el primer frame.
     const ctx = this.route.snapshot.data['clienteContext'] as
-      | { nombre_empresa: string; firma_id: string; firma_nombre: string; tipo_siigo?: 'nube' | 'contador' }
+      | {
+          nombre_empresa: string;
+          firma_id: string;
+          firma_nombre: string;
+          firma_user?: string;
+          tipo_siigo?: 'nube' | 'contador';
+        }
       | null;
     if (ctx) {
       this.clienteNombre.set(ctx.nombre_empresa);
       this.firmaId.set(ctx.firma_id);
       this.firmaNombre.set(ctx.firma_nombre);
+      this.firmaUser.set(ctx.firma_user ?? '');
       this.tipoSiigo.set(ctx.tipo_siigo);
     }
 
@@ -274,6 +285,22 @@ export class FacturaDetailComponent implements OnInit {
 
   syncSiigo(): void {
     void this.router.navigate(['/clientes', this.nit()], { queryParams: { sync: 'run' } });
+  }
+
+  /**
+   * El nuevo card `SincronizarSiigoCardComponent` reemplaza el botón viejo
+   * "Sincronizar datos Siigo" (que disparaba un deep-link roto a la lista
+   * de facturas en vez de a `cliente-detail`). El card vive inline en
+   * `factura-detail.component.html` y emite `syncCompleted` cuando termina;
+   * no necesitamos orquestar nada aquí — el éxito se traduce en un toast
+   * del propio card via `MessageService`. Dejamos este handler para que el
+   * padre pueda, en el futuro, refrescar datos si fuera necesario.
+   */
+  onSiigoSyncCompleted(): void {
+    // void handler — angular-eslint flat config no honra `argsIgnorePattern: '^_'`
+    // en este proyecto, así que evitamos el parámetro para no introducir
+    // un lint error. Si en el futuro hace falta el payload, se re-introduce
+    // con un nombre que NO empiece con `_`.
   }
 
   openPdf(): void {

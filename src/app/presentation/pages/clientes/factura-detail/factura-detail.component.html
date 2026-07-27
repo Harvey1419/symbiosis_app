@@ -27,9 +27,13 @@
   }
 
   @if (factura(); as f) {
-     <div class="factura-sync-action">
-       <p-button label="Sincronizar datos Siigo" icon="pi pi-sync" (onClick)="syncSiigo()" severity="secondary" [outlined]="true" />
-     </div>
+     @if (firmaUser()) {
+       <app-sincronizar-siigo-card
+         [firmaUser]="firmaUser()"
+         [firmaId]="firmaId()"
+         (syncCompleted)="onSiigoSyncCompleted()"
+       />
+     }
 
 
     @if (f.status === 'pendiente' || f.status === 'causada' || f.status === 'finalizada') {

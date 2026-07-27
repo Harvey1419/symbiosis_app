@@ -715,3 +715,162 @@ describe('FacturaDetailComponent — payment row differentiation (T5.8/T5.9)', (
     }
   });
 });
+
+// ===========================================================================
+// PR-B: SincronizarSiigoCardComponent en factura-detail
+// Reemplaza el botón viejo "Sincronizar datos Siigo" (deep-link roto).
+// ===========================================================================
+
+describe('FacturaDetailComponent — SincronizarSiigoCard (PR-B fix)', () => {
+  let fixture: ComponentFixture<FacturaDetailComponent>;
+  let component: FacturaDetailComponent;
+
+  beforeEach(async () => {
+    (window as unknown as { happyDOM: { settings: { navigation: { disableChildFrameNavigation: boolean } } } })
+      .happyDOM.settings.navigation.disableChildFrameNavigation = true;
+    TestBed.resetTestingModule();
+
+    const ctxWithFirmaUser = {
+      nombre_empresa: 'Cliente Demo',
+      firma_id: 'firma-uuid-1',
+      firma_nombre: 'Firma Alpha',
+      firma_user: 'contable@test.com',
+      tipo_siigo: 'contador' as const,
+    };
+    const mockActivatedRoute = {
+      snapshot: {
+        paramMap: {
+          get: (key: string) => {
+            if (key === 'nit') return '900123456';
+            if (key === 'id') return 'fac-789';
+            return null;
+          },
+        },
+        data: { clienteContext: ctxWithFirmaUser },
+      },
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [FacturaDetailComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideAnimations(),
+        { provide: DomSanitizer, useClass: ɵDomSanitizerImpl },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        {
+          provide: FacturaRepository,
+          useValue: {
+            getById: vi.fn().mockReturnValue(
+              of({
+                id: 'fac-789',
+                status: 'pendiente',
+                factura_nro: 'SETT-101',
+                filas: [{ descripcion: 'Item A', debito: 100, confianza: 90 }],
+              }),
+            ),
+            getPdf: vi.fn(),
+          },
+        },
+        {
+          provide: PucRepository,
+          useValue: {
+            getCuentasByGroups: vi.fn().mockReturnValue(of([])),
+          },
+        },
+        {
+          provide: ImpuestosRepository,
+          useValue: { getImpuestosByNit: vi.fn().mockReturnValue(of([])) },
+        },
+        {
+          provide: ConfirmService,
+          useValue: { confirm: vi.fn() },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FacturaDetailComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('lee firmaUser del clienteContext del Resolver y lo pasa al card', () => {
+    expect(component.firmaUser()).toBe('contable@test.com');
+
+    const card = fixture.nativeElement.querySelector('app-sincronizar-siigo-card') as HTMLElement | null;
+    expect(card).not.toBeNull();
+  });
+
+  it('NO renderiza el botón viejo "Sincronizar datos Siigo" con deep-link roto', () => {
+    const oldBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: HTMLButtonElement) => (b.textContent ?? '').includes('Sincronizar datos Siigo'),
+    ) as HTMLButtonElement | undefined;
+    expect(oldBtn).toBeUndefined();
+  });
+});
+
+describe('FacturaDetailComponent — SincronizarSiigoCard con firmaUser vacío (PR-B edge case)', () => {
+  let fixture: ComponentFixture<FacturaDetailComponent>;
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+
+    const mockActivatedRoute = {
+      snapshot: {
+        paramMap: {
+          get: (key: string) => {
+            if (key === 'nit') return '900123456';
+            if (key === 'id') return 'fac-789';
+            return null;
+          },
+        },
+        // Sin clienteContext — deep-link sin state propagation.
+        data: {},
+      },
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [FacturaDetailComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideAnimations(),
+        { provide: DomSanitizer, useClass: ɵDomSanitizerImpl },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        {
+          provide: FacturaRepository,
+          useValue: {
+            getById: vi.fn().mockReturnValue(
+              of({
+                id: 'fac-789',
+                status: 'pendiente',
+                filas: [],
+              }),
+            ),
+            getPdf: vi.fn(),
+          },
+        },
+        {
+          provide: PucRepository,
+          useValue: { getCuentasByGroups: vi.fn().mockReturnValue(of([])) },
+        },
+        {
+          provide: ImpuestosRepository,
+          useValue: { getImpuestosByNit: vi.fn().mockReturnValue(of([])) },
+        },
+        {
+          provide: ConfirmService,
+          useValue: { confirm: vi.fn() },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FacturaDetailComponent);
+    fixture.detectChanges();
+  });
+
+  it('NO renderiza el card cuando firmaUser está vacío (no tenemos contexto para disparar sync)', () => {
+    const card = fixture.nativeElement.querySelector('app-sincronizar-siigo-card');
+    expect(card).toBeNull();
+  });
+});
