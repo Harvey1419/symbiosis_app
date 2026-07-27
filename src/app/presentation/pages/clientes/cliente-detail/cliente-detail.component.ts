@@ -145,6 +145,8 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
   readonly firmaNombre = signal<string>('');
   readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
   readonly syncLoading = signal(false);
+  readonly siigoSyncDone = signal(0);
+  readonly siigoSyncTotal = signal(4);
   readonly isExporting = signal(false);
   readonly lastSync = signal<Date | null>(null);
   readonly syncModalOpen = signal(false);
@@ -293,6 +295,12 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const nitParam = this.route.snapshot.paramMap.get('nit');
+    this.siigoSyncDone.set(0);
+    const shouldRunSiigo = this.route.snapshot.queryParamMap?.get('sync') === 'run';
+    if (shouldRunSiigo) {
+      void this.router.navigate([], { relativeTo: this.route, queryParams: { sync: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
+
     if (nitParam) {
       const nitNum = Number(nitParam);
       this.nit.set(nitNum);
@@ -318,14 +326,23 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.facturaRepo.getFacturas(nitNum).subscribe({
-        next: (data: Factura[]) => { this.facturas.set(data); this.loading.set(false); },
-        error: () => { this.error.set(true); this.loading.set(false); }
-      });
+       this.facturaRepo.getFacturas(nitNum).subscribe({
+         next: (data: Factura[]) => { this.facturas.set(data); this.loading.set(false); },
+         error: () => { this.error.set(true); this.loading.set(false); }
+       });
+       if (shouldRunSiigo) {
+         queueMicrotask(() => this.triggerSiigoSync());
+       }
     }
   }
 
-  // ── Filter actions ──
+  private triggerSiigoSync(): void {
+    this.siigoSyncDone.set(0);
+    const buttons = document.querySelectorAll('app-sync-siigo-completo-button button');
+    (buttons.item(0) as HTMLButtonElement | null)?.click();
+  }
+
+
   clearFilters(): void {
     this.searchText.set('');
     this.proveedorFilter.set(null);
@@ -517,6 +534,7 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
   // / filtros. El botón dentro de la tarjeta Siigo emite este evento
   // desde su `synced` output. ──
   onSiigoSynced(_results: SiigoSyncResult[]): void {
+    this.siigoSyncDone.set(4);
     this.facturaRepo.getFacturas(this.nit()).subscribe({
       next: (data: Factura[]) => { this.facturas.set(data); },
       error: () => { /* swallow — la UI del button ya marcó el resultado */ },
@@ -530,6 +548,8 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
    * los datos visibles (p.ej. PUC nuevo → clasificación diferente).
    */
   onSiigoPartialSuccess(results: SiigoSyncResult[]): void {
+    this.siigoSyncDone.set(results.length);
+
     const failed = results.filter((r) => !r.success).map((r) => r.source).join(', ');
     this.message.add({
       severity: 'warn',

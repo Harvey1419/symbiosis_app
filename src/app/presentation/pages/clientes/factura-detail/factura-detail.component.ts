@@ -242,6 +242,10 @@ export class FacturaDetailComponent implements OnInit {
     this.loadAll();
   }
 
+  syncSiigo(): void {
+    void this.router.navigate(['/clientes', this.nit()], { queryParams: { sync: 'run' } });
+  }
+
   /** Navigate back to the client's factura list. */
   goBack(): void {
     this.router.navigate(['/clientes', this.nit()]);
