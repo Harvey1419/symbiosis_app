@@ -534,9 +534,29 @@
 }
 
 .payment-row {
-  // Subtle background supplement. The accessible marker above is the
-  // primary signal; this just helps visual scanning.
-  background: var(--surface-50, #f9fafb);
+  // PR-A Fix 2 — visible border on the payment row so the
+  // differentiation survives even when the accessible badge text is not
+  // read (low vision, dense tables, screen-recorded walkthroughs). The
+  // marker (`<span data-testid="payment-row-marker">`) remains the
+  // primary accessibility signal — this border is a visual supplement.
+  //
+  // We use a left-side accent (the brand yellow) instead of a full
+  // border because:
+  //   - a left accent reads as "this row is the counterparty / cash
+  //     side of the journal entry" — a finance-team convention;
+  //   - a full border would conflict with the table's bottom-row
+  //     separators and break PrimeNG's hover state styling;
+  //   - the border sits on the first cell so it doesn't desync the
+  //     column count for assistive tech walking the `<tr>`.
+  //
+  // The `box-shadow` is used instead of `border-left` on the `<tr>`
+  // itself because shadows don't add box height — table rows already
+  // have a border-bottom separator and an extra `border-left` would
+  // shift the layout by 1px on hover. Shadows paint on top of the
+  // existing background without affecting the geometry.
+  box-shadow: inset 4px 0 0 0 var(--color-yellow);
+  // Subtle background supplement (kept from PR-5) for visual scan.
+  background: color-mix(in srgb, var(--color-yellow) 6%, var(--surface-card));
 }
 
 .impuestos-cell-placeholder {

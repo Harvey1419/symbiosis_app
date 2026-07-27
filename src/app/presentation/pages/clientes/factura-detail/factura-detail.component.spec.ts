@@ -4,6 +4,8 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { DomSanitizer, ɵDomSanitizerImpl } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, provideRouter } from '@angular/router';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { of } from 'rxjs';
 import { FacturaDetailComponent } from './factura-detail.component';
 import { FacturaRepository } from '@data/repositories/factura.repository';
@@ -22,6 +24,12 @@ describe('FacturaDetailComponent — Confianza semáforo column', () => {
   let mockFacturaRepo: any;
 
   async function configure(options: SetupOptions): Promise<void> {
+    // Disable happy-dom's child iframe navigation — when the PDF viewer
+    // dialog sets a blob: URL on its iframe the runner throws
+    // "URL scheme 'blob' is not supported" which is irrelevant noise.
+    (window as unknown as { happyDOM: { settings: { navigation: { disableChildFrameNavigation: boolean } } } })
+      .happyDOM.settings.navigation.disableChildFrameNavigation = true;
+
     TestBed.resetTestingModule();
     const mockActivatedRoute = {
       snapshot: {
@@ -378,6 +386,12 @@ describe('FacturaDetailComponent — payment row differentiation (T5.8/T5.9)', (
     filas: FilaFactura[];
     saveResponse?: Factura;
   }): Promise<void> {
+    // Disable happy-dom's child iframe navigation — when the PDF viewer
+    // dialog sets a blob: URL on its iframe the runner throws
+    // "URL scheme 'blob' is not supported" which is irrelevant noise.
+    (window as unknown as { happyDOM: { settings: { navigation: { disableChildFrameNavigation: boolean } } } })
+      .happyDOM.settings.navigation.disableChildFrameNavigation = true;
+
     TestBed.resetTestingModule();
     const mockActivatedRoute = {
       snapshot: {
@@ -576,5 +590,128 @@ describe('FacturaDetailComponent — payment row differentiation (T5.8/T5.9)', (
     const paymentRow = dataRows.find((tr) => tr.querySelector('[data-testid="payment-row-marker"]'));
     const expenseRow = dataRows.find((tr) => !tr.querySelector('[data-testid="payment-row-marker"]'));
     expect(paymentRow?.cells.length).toBe(expenseRow?.cells.length);
+  });
+
+  /**
+   * PR-A Fix 2 — payment row gets a visible border so the differentiation
+   * survives even when the accessible badge text is not read (e.g., on
+   * dense tables, low vision, or screen-recorded walkthroughs). The
+   * `payment-row` class is the binding contract: it MUST be present on
+   * the `<tr>` exactly when `isPaymentRow(fila)` is true and absent
+   * otherwise. The CSS rule (see factura-detail.component.scss) uses
+   * theme tokens (`--color-yellow`) to draw the border.
+   */
+  it('applies the payment-row border class on credit rows only', async () => {
+    await configureForPaymentRow({
+      filas: [
+        { descripcion: 'Gasto A', debito: 100, cuenta: '51050301' },
+        { descripcion: 'Pago a proveedor', debito: 0, credito: 100, cuenta: '11050501' },
+        { descripcion: 'Gasto B', debito: 50, cuenta: '51059901' },
+      ],
+    });
+
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('tr'));
+    const dataRows = rows.filter((tr) => tr.querySelector('.fila-desc'));
+    expect(dataRows.length).toBe(3);
+
+    const paymentRow = dataRows.find((tr) => tr.querySelector('[data-testid="payment-row-marker"]'));
+    const expenseRows = dataRows.filter((tr) => !tr.querySelector('[data-testid="payment-row-marker"]'));
+
+    expect(paymentRow).toBeDefined();
+    // The credit row MUST carry the border class.
+    expect(paymentRow?.classList.contains('payment-row')).toBe(true);
+
+    // Expense rows MUST NOT carry the border class — otherwise the
+    // differentiation collapses and every row looks like a payment row.
+    expect(expenseRows.length).toBe(2);
+    for (const row of expenseRows) {
+      expect(row.classList.contains('payment-row')).toBe(false);
+    }
+  });
+
+  it('does not apply the payment-row border class when no credit row exists', async () => {
+    await configureForPaymentRow({
+      filas: [
+        { descripcion: 'Gasto A', debito: 100, cuenta: '51050301' },
+        { descripcion: 'Gasto B', debito: 50, cuenta: '51059901' },
+      ],
+    });
+
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('tr'));
+    const dataRows = rows.filter((tr) => tr.querySelector('.fila-desc'));
+    expect(dataRows.length).toBe(2);
+
+    for (const row of dataRows) {
+      expect(row.classList.contains('payment-row')).toBe(false);
+    }
+  });
+
+  /**
+   * Triangulation: when a row has `credito <= 0` (zero, negative,
+   * missing) it MUST be treated as an expense row regardless of what
+   * the user might be tempted to add. The `isPaymentRow` helper is
+   * already exhaustively tested at the unit level (T5.2); this case
+   * guards the integration with the template's `isPaymentRow(fila)`
+   * branch.
+   */
+  it('treats credito=0 and negative credito as expense rows (no border class)', async () => {
+    await configureForPaymentRow({
+      filas: [
+        { descripcion: 'Zero credit', debito: 100, credito: 0, cuenta: '51050301' },
+        { descripcion: 'Negative credit', debito: 50, credito: -10, cuenta: '51059901' },
+      ],
+    });
+
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('tr'));
+    const dataRows = rows.filter((tr) => tr.querySelector('.fila-desc'));
+    expect(dataRows.length).toBe(2);
+
+    for (const row of dataRows) {
+      expect(row.classList.contains('payment-row')).toBe(false);
+    }
+  });
+
+  /**
+   * PR-A Fix 2 — theme-token guard. The acceptance criteria for the
+   * visible border say "border uses theme tokens (not hardcoded
+   * colors)". This test reads the SCSS source and asserts that the
+   * `.payment-row` rule references at least one `var(--…)` token, so
+   * future contributors cannot silently swap the brand-yellow accent
+   * for a hardcoded hex.
+   *
+   * We read the file directly because happy-dom does not fully compute
+   * external stylesheet rules — the assertion is on the source of
+   * truth, not the runtime style.
+   */
+  it('styles the payment-row border with theme tokens (no hardcoded colors)', () => {
+    const scssPath = resolve(__dirname, 'factura-detail.component.scss');
+    const scss = readFileSync(scssPath, 'utf8');
+
+    // Find the `.payment-row { ... }` rule. Allow nested rules (e.g.
+    // `.payment-row > td`) — we only care about declarations inside
+    // the outer block.
+    const ruleMatch = /\.payment-row\s*\{([\s\S]*?)\n\}/m.exec(scss);
+    expect(ruleMatch).not.toBeNull();
+    const ruleBody = ruleMatch?.[1] ?? '';
+
+    // Strip comments so we don't false-positive on a hex literal in a
+    // comment that explains the fallback.
+    const stripped = ruleBody.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // Must reference at least one theme token (e.g. var(--color-yellow)).
+    expect(/var\(--[a-z0-9-]+/i.test(stripped)).toBe(true);
+
+    // Must NOT contain a bare hex color literal in a property position
+    // (i.e. after `:`). The hex fallback inside a var() default is OK
+    // because it's a token fallback, not a hardcoded style.
+    const decls = stripped.split(';').map((s) => s.trim()).filter(Boolean);
+    for (const decl of decls) {
+      const colonIdx = decl.indexOf(':');
+      if (colonIdx < 0) continue;
+      const value = decl.slice(colonIdx + 1).trim();
+      // Skip CSS keywords and var() / functions.
+      if (value.startsWith('var(') || value.startsWith('inherit') || value.startsWith('none')) continue;
+      expect(value).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    }
   });
 });
