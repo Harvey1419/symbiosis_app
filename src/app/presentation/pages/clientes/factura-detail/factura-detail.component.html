@@ -159,26 +159,35 @@
           </div>
         </div>
 
-        @if (f.pdf_url || f.xml_url) {
-          <div class="info-chip files-chip">
-            <i class="pi pi-paperclip info-icon"></i>
-            <div class="info-content">
-              <span class="info-label">Archivos</span>
-              <span class="info-value file-actions">
-                @if (f.pdf_url) {
-                  <a [href]="f.pdf_url" target="_blank" rel="noopener">
-                    <i class="pi pi-file-pdf"></i> PDF
-                  </a>
-                }
-                @if (f.xml_url) {
-                  <a [href]="f.xml_url" target="_blank" rel="noopener">
-                    <i class="pi pi-code"></i> XML
-                  </a>
-                }
-              </span>
-            </div>
+        <div class="info-chip files-chip">
+          <i class="pi pi-paperclip info-icon"></i>
+          <div class="info-content">
+            <span class="info-label">Archivos</span>
+            <span class="info-value file-actions">
+              @if (f.pdf_url) {
+                <a [href]="f.pdf_url" target="_blank" rel="noopener">
+                  <i class="pi pi-file-pdf"></i> PDF
+                </a>
+              }
+              @if (f.xml_url) {
+                <a [href]="f.xml_url" target="_blank" rel="noopener">
+                  <i class="pi pi-code"></i> XML
+                </a>
+              }
+              <p-button
+                label="Ver PDF"
+                icon="pi pi-eye"
+                severity="secondary"
+                [outlined]="true"
+                [loading]="pdfLoading()"
+                [disabled]="pdfLoading()"
+                (onClick)="openPdf()"
+                pTooltip="Cargar y visualizar el PDF"
+                data-testid="ver-pdf-button"
+              />
+            </span>
           </div>
-        }
+        </div>
       </div>
     </p-card>
 
@@ -344,5 +353,11 @@
         (dismissed)="impuestosDialogOpen.set(false)"
       />
     }
+
+    <app-pdf-viewer-dialog
+      [visible]="pdfDialogOpen()"
+      [pdfBase64]="pdfBase64()"
+      (dismissed)="closePdfDialog()"
+    />
   }
 </div>

@@ -33,6 +33,7 @@ import {
   ConfirmService,
   ImpuestosDialogComponent,
   ConfianzaCellComponent,
+  PdfViewerDialogComponent,
 } from '@app/shared';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
@@ -71,6 +72,7 @@ interface CuentaOption {
     StatusBadgeComponent,
     ImpuestosDialogComponent,
     ConfianzaCellComponent,
+    PdfViewerDialogComponent,
     BackButtonComponent,
     AppBreadcrumbComponent,
   ],
@@ -95,6 +97,9 @@ export class FacturaDetailComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly actionLoading = signal(false);
+  readonly pdfDialogOpen = signal(false);
+  readonly pdfBase64 = signal<string | null>(null);
+  readonly pdfLoading = signal(false);
 
   // ── Breadcrumb state ──
   /** Identificador de la firma (para el segmento clickeable del breadcrumb). */
@@ -246,6 +251,30 @@ export class FacturaDetailComponent implements OnInit {
 
   syncSiigo(): void {
     void this.router.navigate(['/clientes', this.nit()], { queryParams: { sync: 'run' } });
+  }
+
+  openPdf(): void {
+    if (this.pdfLoading()) return;
+
+    this.pdfLoading.set(true);
+    this.pdfDialogOpen.set(false);
+    this.pdfBase64.set(null);
+    this.facturaRepo.getPdf(this.facturaId()).subscribe({
+      next: ({ pdf_base64 }) => {
+        this.pdfBase64.set(pdf_base64);
+        this.pdfDialogOpen.set(true);
+        this.pdfLoading.set(false);
+      },
+      error: (err: { error?: { message?: string }; message?: string }) => {
+        this.pdfLoading.set(false);
+        this.error.set(err?.error?.message ?? err?.message ?? 'Error al cargar el PDF');
+      },
+    });
+  }
+
+  closePdfDialog(): void {
+    this.pdfDialogOpen.set(false);
+    this.pdfBase64.set(null);
   }
 
   /** Navigate back to the client's factura list. */

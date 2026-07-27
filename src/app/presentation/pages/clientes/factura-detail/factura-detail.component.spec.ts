@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { DomSanitizer, ɵDomSanitizerImpl } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -35,23 +36,27 @@ describe('FacturaDetailComponent — Confianza semáforo column', () => {
       },
     };
 
-    mockFacturaRepo = {
-      getById: vi.fn().mockReturnValue(
-        of({
-          id: 'fac-789',
-          status: 'pendiente',
-          factura_nro: 'SETT-101',
-          filas: options.filas,
-        }),
-      ),
-    };
+     mockFacturaRepo = {
+       getById: vi.fn().mockReturnValue(
+         of({
+           id: 'fac-789',
+           status: 'pendiente',
+           factura_nro: 'SETT-101',
+           filas: options.filas,
+         }),
+       ),
+       getPdf: vi.fn(),
+     };
+
 
     await TestBed.configureTestingModule({
       imports: [FacturaDetailComponent],
       providers: [
         provideRouter([]),
         provideHttpClient(),
-        provideAnimations(),
+         provideAnimations(),
+         { provide: DomSanitizer, useClass: ɵDomSanitizerImpl },
+
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: FacturaRepository, useValue: mockFacturaRepo },
         {
@@ -159,6 +164,82 @@ describe('FacturaDetailComponent — Confianza semáforo column', () => {
     );
     expect(descriptions).toEqual(['Item A', 'Item B', 'Item C', 'Item D']);
   });
+
+  describe('FacturaDetailComponent — lazy Ver PDF action', () => {
+  async function configureForPdf(): Promise<void> {
+    await configure({
+      filas: [{ descripcion: 'Item A', debito: 100, confianza: 90 }],
+    });
+  }
+
+  function verPdfButton(): HTMLButtonElement | null {
+    return Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (button: HTMLButtonElement) => button.textContent?.includes('Ver PDF'),
+    ) ?? null;
+  }
+
+  it('does not request the PDF during detail loading', async () => {
+    await configureForPdf();
+
+    expect(mockFacturaRepo.getPdf).not.toHaveBeenCalled();
+  });
+
+  it('requests the PDF once after clicking Ver PDF and renders the iframe', async () => {
+    await configureForPdf();
+    mockFacturaRepo.getPdf.mockReturnValue(of({
+      pdf_base64: 'JVBERi0xLjQK',
+      content_type: 'application/pdf',
+    }));
+
+    const button = verPdfButton();
+    expect(button).not.toBeNull();
+    button?.click();
+    fixture.detectChanges();
+
+    expect(mockFacturaRepo.getPdf).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('[data-testid="pdf-frame"]')).not.toBeNull();
+  });
+
+  it('opens the dialog without an iframe when the endpoint returns null PDF data', async () => {
+    await configureForPdf();
+    mockFacturaRepo.getPdf.mockReturnValue(of({
+      pdf_base64: null,
+      content_type: 'application/pdf',
+    }));
+
+    const button = verPdfButton();
+    expect(button).not.toBeNull();
+    button?.click();
+    fixture.detectChanges();
+
+    expect(mockFacturaRepo.getPdf).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('[data-testid="pdf-frame"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('PDF no disponible');
+  });
+
+  it('clears the PDF on close so the next open fetches again', async () => {
+    await configureForPdf();
+    mockFacturaRepo.getPdf.mockReturnValue(of({
+      pdf_base64: 'JVBERi0xLjQK',
+      content_type: 'application/pdf',
+    }));
+
+    verPdfButton()?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="pdf-frame"]')).not.toBeNull();
+
+    component.closePdfDialog();
+    fixture.detectChanges();
+
+    expect(component.pdfBase64()).toBeNull();
+    expect(component.pdfDialogOpen()).toBe(false);
+
+    verPdfButton()?.click();
+    fixture.detectChanges();
+    expect(mockFacturaRepo.getPdf).toHaveBeenCalledTimes(2);
+  });
+});
+
 });
 
 describe('FacturaDetailComponent - Dual Hierarchy Breadcrumb (regression)', () => {
@@ -206,7 +287,9 @@ describe('FacturaDetailComponent - Dual Hierarchy Breadcrumb (regression)', () =
       providers: [
         provideRouter([]),
         provideHttpClient(),
-        provideAnimations(),
+         provideAnimations(),
+         { provide: DomSanitizer, useClass: ɵDomSanitizerImpl },
+
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: FacturaRepository, useValue: mockFacturaRepo },
         { provide: PucRepository, useValue: mockPucRepo },
