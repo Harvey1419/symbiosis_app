@@ -195,6 +195,7 @@
               <th style="width: 240px">Cuenta PUC</th>
               <th style="width: 70px" class="num-col">Cantidad</th>
               <th style="width: 130px" class="num-col">Valor Total</th>
+              <th style="width: 90px" class="num-col">Confianza</th>
               <th style="width: 200px">Impuestos</th>
             </tr>
           </ng-template>
@@ -241,6 +242,11 @@
                     ${{ formatMoney(fila.credito) }}
                   }
                 </span>
+              </td>
+
+              <!-- Confianza semáforo: pure UI render, null renders nothing. -->
+              <td class="num-col">
+                <app-confianza-cell [value]="fila.confianza ?? null" />
               </td>
 
               <!-- Impuestos: whole cell clickable, no buttons. Opens modal directly. -->

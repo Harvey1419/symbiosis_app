@@ -32,6 +32,7 @@ import {
   StatusBadgeComponent,
   ConfirmService,
   ImpuestosDialogComponent,
+  ConfianzaCellComponent,
 } from '@app/shared';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
@@ -69,6 +70,7 @@ interface CuentaOption {
     EmptyStateComponent,
     StatusBadgeComponent,
     ImpuestosDialogComponent,
+    ConfianzaCellComponent,
     BackButtonComponent,
     AppBreadcrumbComponent,
   ],

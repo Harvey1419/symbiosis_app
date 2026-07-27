@@ -44,8 +44,8 @@ export class ConfianzaCellComponent {
     return `Confianza ${label}: ${v}`;
   });
 
-  readonly numericLabel = computed<string | null>(() => {
+  readonly numericLabel = computed<string | undefined>(() => {
     const v = this.value();
-    return v === null || v === undefined ? null : `${v}`;
+    return v === null || v === undefined ? undefined : `${v}`;
   });
 }
