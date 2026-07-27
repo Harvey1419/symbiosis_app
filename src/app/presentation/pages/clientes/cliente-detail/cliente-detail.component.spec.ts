@@ -645,8 +645,10 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
     // PR-E.3 (round-3 fix): Siigo y DIAN antes compartían un mismo
     // `<section class="sync-cards-row">`. Ahora viven en dos `<section>`
     // separados con sus propios aria-labels (ver tests posteriores). El
-    // smoke-test de "hay cards de sync" se mantiene: Siigo expone 2
-    // cards apiladas (empresas + sync completo), DIAN expone 1.
+    // smoke-test de "hay cards de sync" se mantiene: Siigo expone 1
+    // card (sync completo 4 catálogos), DIAN expone 1.
+    // PR-G (round-4 fix): la card de empresas (per-firma) se eliminó de
+    // cliente-detail — pertenece a firma-clientes y factura-detail.
     const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
     const dianSection = fixture.nativeElement.querySelector('section.sync-section-dian') as HTMLElement | null;
 
@@ -656,43 +658,24 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
     expect(dianSection?.querySelector('article.sync-card-dian')).not.toBeNull();
   });
 
-  // PR-E.3 (round-3 fix): the Siigo section now stacks two cards:
-  // empresas on top (SincronizarSiigoCardComponent, 1 catalog) and the
-  // 4-catalog sync completo below (SyncSiigoCompletoButtonComponent).
-  // The DIAN section stays in its own <section> with its own aria-label
-  // so screen readers can navigate between the two flows.
-  it('la sección Siigo apila DOS cards: empresas (per-firma) + sync completo (4 catálogos del cliente)', () => {
+  // PR-G (round-4 fix): the Siigo section now exposes a single card
+  // (the 4-catalog sync completo). The empresas card was removed from
+  // `cliente-detail` because it's per-firma, not per-cliente.
+  it('la sección Siigo expone UNA sola card (sync completo 4 catálogos del cliente)', () => {
     const siigoSection = fixture.nativeElement.querySelector(
       'section.sync-section-siigo[aria-label*="Siigo"]',
     ) as HTMLElement | null;
 
     expect(siigoSection).not.toBeNull();
     const siigoCards = siigoSection?.querySelectorAll('article.sync-card') ?? [];
-    expect(siigoCards).toHaveLength(2);
+    expect(siigoCards).toHaveLength(1);
   });
 
-  it('la card de empresas arriba muestra SincronizarSiigoCardComponent cuando hay firma_user', () => {
-    const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
-    const firstCard = siigoSection?.querySelector('article.sync-card') as HTMLElement | null;
-    const empresasCard = firstCard?.querySelector('[data-testid="sincronizar-siigo-card"]') as HTMLElement | null;
-
-    // La firma del fixture de "DIAN realtime integration" tiene firma_user
-    // vacío (no se pasa en clienteContext). En ese caso la card de
-    // empresas NO se renderiza — debe haber UN fallback que explique por qué.
-    if (!empresasCard) {
-      const fallback = firstCard?.querySelector('[data-testid="siigo-empresas-missing-firma"]');
-      expect(fallback).not.toBeNull();
-      return;
-    }
-    // Si tenemos firma_user, la card renderiza normalmente.
-    expect(empresasCard).not.toBeNull();
-  });
-
-  it('la card de sync completo abajo muestra SyncSiigoCompletoButtonComponent con nit del cliente', () => {
+  it('la card de sync completo muestra SyncSiigoCompletoButtonComponent con nit del cliente', () => {
     const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
     const cards = siigoSection?.querySelectorAll('article.sync-card') ?? [];
-    const secondCard = cards[1] as HTMLElement | null;
-    const syncCompleto = secondCard?.querySelector(
+    const onlyCard = cards[0] as HTMLElement | null;
+    const syncCompleto = onlyCard?.querySelector(
       'app-sync-siigo-completo-button',
     ) as HTMLElement | null;
 
@@ -903,5 +886,172 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
 
     expect(jobRepo.getJobStatus).not.toHaveBeenCalled();
     expect(jobRepo.getJobInvoices).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * PR-G (round-4 fix): the duplicated empresas card was removed from
+ * `cliente-detail`. The page is a per-cliente context — the per-firma
+ * empresas card belongs on `firma-clientes` and `factura-detail`, NOT
+ * on this list page. The remaining two cards (Siigo 4-catalog sync and
+ * DIAN) must share the same visual treatment: same H3 header tag,
+ * same `<p>` description, and same action rendered as a `<button>`.
+ */
+describe('ClienteDetailComponent - PR-G duplicated empresas card removed + consistent sync styling', () => {
+  let fixture: ComponentFixture<ClienteDetailComponent>;
+  let stream: Subject<SyncEventProcessing | SyncEventFacturaInserted | SyncEventTerminal>;
+  let jobRepo: {
+    createSyncJob: ReturnType<typeof vi.fn>;
+    getJobStatus: ReturnType<typeof vi.fn>;
+    getJobInvoices: ReturnType<typeof vi.fn>;
+    retryErrors: ReturnType<typeof vi.fn>;
+  };
+  let realtime: {
+    subscribe: ReturnType<typeof vi.fn>;
+    unsubscribe: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    stream = new Subject();
+    jobRepo = {
+      createSyncJob: vi.fn().mockReturnValue(of({ jobId: 'job-1', total: 10 })),
+      getJobStatus: vi.fn().mockReturnValue(of({
+        estado: 'completed', total: 10, procesadas: 10, errors: 0, progress: 100,
+      })),
+      getJobInvoices: vi.fn().mockReturnValue(of({
+        invoices: [], meta: { page: 1, limit: 100, total: 0, pages: 0 },
+      })),
+      retryErrors: vi.fn().mockReturnValue(of({ jobId: 'retry-job', total: 1 })),
+    };
+    realtime = {
+      subscribe: vi.fn().mockReturnValue(stream.asObservable()),
+      unsubscribe: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [ClienteDetailComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: (key: string) => (key === 'nit' ? '900123456' : null) },
+              data: {
+                clienteContext: {
+                  nombre_empresa: 'Cliente Test',
+                  firma_id: 'firma-1',
+                  firma_nombre: 'Firma Uno',
+                  firma_user: 'jharvey1419@gmail.com', // present on this fixture → previously rendered the empresas card
+                  tipo_siigo: 'contador',
+                },
+              },
+            },
+          },
+        },
+        { provide: FacturaRepository, useValue: { getFacturas: vi.fn().mockReturnValue(of([])) } },
+        { provide: JobRepository, useValue: jobRepo },
+        { provide: RealtimeFacturasService, useValue: realtime },
+        { provide: TokenService, useValue: { token: vi.fn().mockReturnValue('auth-jwt') } },
+        { provide: MessageService, useClass: MessageService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ClienteDetailComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  it('PR-G: NO renderiza el card de empresas de Siigo en cliente-detail (es per-firma, no per-cliente)', () => {
+    // La card de empresas sigue viva en firma-clientes y factura-detail
+    // (per-firma). Aquí, que es contexto per-cliente, NO debe aparecer.
+    const empresasCard = fixture.nativeElement.querySelector('app-sincronizar-siigo-card');
+    expect(empresasCard).toBeNull();
+  });
+
+  it('PR-G: NO renderiza el fallback legacy de "no firma" (sin empresa, sin fallback)', () => {
+    const fallback = fixture.nativeElement.querySelector('[data-testid="siigo-empresas-missing-firma"]');
+    expect(fallback).toBeNull();
+  });
+
+  it('PR-G: la sección Siigo expone EXACTAMENTE 1 card (solo sync completo), no 2', () => {
+    const siigoSection = fixture.nativeElement.querySelector(
+      'section.sync-section-siigo[aria-label*="Siigo"]',
+    ) as HTMLElement | null;
+
+    expect(siigoSection).not.toBeNull();
+    const siigoCards = siigoSection?.querySelectorAll('article.sync-card') ?? [];
+    expect(siigoCards).toHaveLength(1);
+  });
+
+  it('PR-G: la sección DIAN expone EXACTAMENTE 1 card (sin cambios)', () => {
+    const dianSection = fixture.nativeElement.querySelector(
+      'section.sync-section-dian[aria-label*="DIAN"]',
+    ) as HTMLElement | null;
+
+    expect(dianSection).not.toBeNull();
+    const dianCards = dianSection?.querySelectorAll('article.sync-card') ?? [];
+    expect(dianCards).toHaveLength(1);
+  });
+
+  it('PR-G: la card de sync completo queda en la sección Siigo con su botón embebido', () => {
+    const siigoSection = fixture.nativeElement.querySelector(
+      'section.sync-section-siigo',
+    ) as HTMLElement | null;
+    const card = siigoSection?.querySelector('article.sync-card') as HTMLElement | null;
+    const syncCompleto = card?.querySelector('app-sync-siigo-completo-button');
+
+    expect(card).not.toBeNull();
+    expect(syncCompleto).not.toBeNull();
+  });
+
+  it('PR-G: ambas cards (Siigo + DIAN) comparten la misma estructura semántica (h3 + p + button)', () => {
+    // La consistencia visual se verifica a nivel estructural: ambos
+    // títulos son <h3>, ambas descripciones son <p>, ambos CTAs son
+    // <button>. Esto evita assertions sobre clases CSS específicas.
+    const siigoCard = fixture.nativeElement.querySelector(
+      'section.sync-section-siigo article.sync-card',
+    ) as HTMLElement | null;
+    const dianCard = fixture.nativeElement.querySelector(
+      'section.sync-section-dian article.sync-card',
+    ) as HTMLElement | null;
+
+    expect(siigoCard).not.toBeNull();
+    expect(dianCard).not.toBeNull();
+
+    // Mismo tagName para títulos (h3) — garantiza mismo nivel jerárquico
+    const siigoTitle = siigoCard?.querySelector('.card-title');
+    const dianTitle = dianCard?.querySelector('.card-title');
+    expect(siigoTitle?.tagName).toBe('H3');
+    expect(dianTitle?.tagName).toBe('H3');
+
+    // Mismo tagName para descripciones (p)
+    const siigoDesc = siigoCard?.querySelector('.card-description');
+    const dianDesc = dianCard?.querySelector('.card-description');
+    expect(siigoDesc?.tagName).toBe('P');
+    expect(dianDesc?.tagName).toBe('P');
+
+    // Mismo tagName para la acción primaria (button)
+    const siigoAction = siigoCard?.querySelector('button');
+    const dianAction = dianCard?.querySelector('button');
+    expect(siigoAction?.tagName).toBe('BUTTON');
+    expect(dianAction?.tagName).toBe('BUTTON');
+  });
+
+  it('PR-G: el Siigo sync button ya NO se renderiza en uppercase font-mono (consistencia con DIAN)', () => {
+    // El botón legacy de 4-catalog aplicaba `text-transform: uppercase`,
+    // `font-family: var(--font-mono)` y `font-size: 0.7rem` — lo que
+    // rompía la consistencia visual con la card DIAN. Después de PR-G
+    // ambos botones deben ser `<button>` HTML estándar (PrimeNG render).
+    const siigoCard = fixture.nativeElement.querySelector(
+      'section.sync-section-siigo article.sync-card button',
+    ) as HTMLButtonElement | null;
+
+    expect(siigoCard).not.toBeNull();
+    const computed = window.getComputedStyle(siigoCard);
+    // text-transform NO debe ser uppercase
+    expect(computed.textTransform).not.toBe('uppercase');
   });
 });
