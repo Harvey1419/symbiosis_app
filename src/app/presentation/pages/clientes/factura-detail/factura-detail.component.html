@@ -209,16 +209,34 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-fila let-i="rowIndex">
-            <tr [class.dirty]="isDirty(i)">
+            <tr [class.dirty]="isDirty(i)" [class.payment-row]="isPaymentRow(fila)">
               <td>
                 <span class="fila-desc">{{ fila.descripcion || '—' }}</span>
+                @if (isPaymentRow(fila)) {
+                  <!--
+                    Accessible marker (text + icon + role/aria-label) so
+                    color is NEVER the sole signal for a payment row.
+                    The `data-testid` is the contract the spec uses.
+                  -->
+                  <span
+                    class="payment-row-marker"
+                    data-testid="payment-row-marker"
+                    role="status"
+                    aria-label="Cuenta de pago"
+                  >
+                    <i class="pi pi-credit-card" aria-hidden="true"></i>
+                    <span class="payment-row-marker-text">Cuenta de pago</span>
+                  </span>
+                }
               </td>
 
-              <!-- Cuenta PUC: p-select with code-name format. Click on cell to open. -->
+              <!-- Cuenta PUC: p-select with code-name format. Click on cell to open.
+                   Payment rows use `paymentOptions` (?groups=1,2); expense rows
+                   use `cuentasOptions` (?groups=5). -->
               <td class="cuenta-cell-wrapper">
                 @if (canEdit()) {
                   <p-select
-                    [options]="cuentasOptions()"
+                    [options]="isPaymentRow(fila) ? paymentOptions() : cuentasOptions()"
                     [(ngModel)]="fila.cuenta"
                     (onChange)="onCuentaChanged(i, $any($event).value)"
                     [filter]="true"
@@ -258,28 +276,40 @@
                 <app-confianza-cell [value]="fila.confianza ?? null" />
               </td>
 
-              <!-- Impuestos: whole cell clickable, no buttons. Opens modal directly. -->
-              <td class="impuestos-cell-wrapper" (click)="onImpuestosCellClick(i)" [class.clickable]="canEdit()">
-                <div class="impuestos-cell">
-                  @if (fila.iva_code || fila.rete_code) {
-                    <div class="impuestos-chips">
-                      @if (fila.iva_code) {
-                        <span class="imp-chip iva-chip">
-                          <i class="pi pi-percentage"></i> {{ fila.iva_code }}
-                        </span>
-                      }
-                      @if (fila.rete_code) {
-                        <span class="imp-chip rete-chip">
-                          <i class="pi pi-percentage"></i> {{ fila.rete_code }}
-                        </span>
-                      }
-                    </div>
-                  } @else {
-                    <span class="imp-empty">
-                      <i class="pi pi-plus-circle"></i> Asignar
-                    </span>
-                  }
-                </div>
+              <!-- Impuestos: hidden for payment rows but the <td> stays so
+                   the column count is preserved across all rows. The
+                   `.impuestos-cell-wrapper` class is only applied to
+                   expense rows; the cell is otherwise an empty placeholder
+                   for payment rows. -->
+              <td
+                [class.impuestos-cell-wrapper]="!isPaymentRow(fila)"
+                [class.impuestos-cell-placeholder]="isPaymentRow(fila)"
+                (click)="!isPaymentRow(fila) && onImpuestosCellClick(i)"
+                [class.clickable]="canEdit() && !isPaymentRow(fila)"
+                [attr.data-testid]="isPaymentRow(fila) ? 'payment-row-impuestos-placeholder' : null"
+              >
+                @if (!isPaymentRow(fila)) {
+                  <div class="impuestos-cell">
+                    @if (fila.iva_code || fila.rete_code) {
+                      <div class="impuestos-chips">
+                        @if (fila.iva_code) {
+                          <span class="imp-chip iva-chip">
+                            <i class="pi pi-percentage"></i> {{ fila.iva_code }}
+                          </span>
+                        }
+                        @if (fila.rete_code) {
+                          <span class="imp-chip rete-chip">
+                            <i class="pi pi-percentage"></i> {{ fila.rete_code }}
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="imp-empty">
+                        <i class="pi pi-plus-circle"></i> Asignar
+                      </span>
+                    }
+                  </div>
+                }
               </td>
             </tr>
           </ng-template>

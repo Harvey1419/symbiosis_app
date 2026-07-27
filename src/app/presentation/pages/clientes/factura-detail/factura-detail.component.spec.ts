@@ -61,7 +61,14 @@ describe('FacturaDetailComponent — Confianza semáforo column', () => {
         { provide: FacturaRepository, useValue: mockFacturaRepo },
         {
           provide: PucRepository,
-          useValue: { getCuentaPuc: vi.fn().mockReturnValue(of([])) },
+          useValue: {
+            getCuentaPuc: vi.fn().mockReturnValue(of([])),
+            // PR-5 (T5.3): the component now sources PUC accounts via
+            // getCuentasByGroups, one call per branch. The Confianza /
+            // PDF / breadcrumb specs only care that the forkJoin
+            // resolves, so an empty list per call is fine.
+            getCuentasByGroups: vi.fn().mockReturnValue(of([])),
+          },
         },
         {
           provide: ImpuestosRepository,
@@ -272,6 +279,7 @@ describe('FacturaDetailComponent - Dual Hierarchy Breadcrumb (regression)', () =
 
     mockPucRepo = {
       getCuentaPuc: vi.fn().mockReturnValue(of([])),
+      getCuentasByGroups: vi.fn().mockReturnValue(of([])),
     };
 
     mockImpuestosRepo = {

@@ -21,7 +21,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { FacturaRepository } from '@data/repositories/factura.repository';
 import { PucRepository } from '@data/repositories/puc.repository';
 import { ImpuestosRepository } from '@data/repositories/impuestos.repository';
-import { Factura, UpdateItemBody } from '@domain/models/factura.model';
+import { Factura, FilaFactura, UpdateItemBody } from '@domain/models/factura.model';
 import { CuentaPuc } from '@domain/models/puc.model';
 import { Impuesto } from '@domain/models/impuesto.model';
 import {
@@ -34,6 +34,7 @@ import {
   ImpuestosDialogComponent,
   ConfianzaCellComponent,
   PdfViewerDialogComponent,
+  isPaymentRow,
 } from '@app/shared';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
@@ -92,7 +93,10 @@ export class FacturaDetailComponent implements OnInit {
   readonly nit = signal<number>(0);
   readonly facturaId = signal<string>('');
   readonly factura = signal<Factura | null>(null);
+  /** Expense PUC accounts (account_group = 5) — used by debit rows. */
   readonly cuentasPuc = signal<CuentaPuc[]>([]);
+  /** Payment PUC accounts (account_group in {1, 2}) — used by the credit row. */
+  readonly cuentasPago = signal<CuentaPuc[]>([]);
   readonly impuestos = signal<readonly Impuesto[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -168,7 +172,7 @@ export class FacturaDetailComponent implements OnInit {
     return s === 'pendiente' || s === 'clasificando';
   });
 
-  /** Computed: PUC options formatted as "51050301 - Salario integral". */
+  /** Computed: expense PUC options formatted as "51050301 - Salario integral". */
   readonly cuentasOptions = computed<CuentaOption[]>(() =>
     this.cuentasPuc().map((c) => ({
       account_code: c.account_code,
@@ -176,6 +180,25 @@ export class FacturaDetailComponent implements OnInit {
       display: `${c.account_code} — ${c.account_name}`,
     })),
   );
+
+  /** Computed: payment-account PUC options (groups 1, 2). */
+  readonly paymentOptions = computed<CuentaOption[]>(() =>
+    this.cuentasPago().map((c) => ({
+      account_code: c.account_code,
+      account_name: c.account_name,
+      display: `${c.account_code} — ${c.account_name}`,
+    })),
+  );
+
+  /**
+   * Re-exported predicate so the template can branch on payment rows
+   * without importing the helper itself. The spec mandates
+   * `credito > 0`; the helper handles malformed/missing values
+   * safely (returns false).
+   */
+  isPaymentRow(fila: FilaFactura | null | undefined): boolean {
+    return isPaymentRow(fila);
+  }
 
   /** Default cuenta for crédito (cash/bank) rows. Used as placeholder
    *  when the user hasn't assigned a specific cuenta yet. 11200501 is
@@ -287,12 +310,18 @@ export class FacturaDetailComponent implements OnInit {
     this.error.set(null);
     forkJoin({
       factura: this.facturaRepo.getById(this.facturaId()),
-      puc: this.pucRepo.getCuentaPuc(this.nit()),
+      // PR-5 (T5.3): expense p-select sources from `?groups=5`; payment
+      // row p-select sources from `?groups=1,2`. Both calls hit the
+      // SAME endpoint with different filter args — backend-side
+      // filtering keeps a single source of truth.
+      pucExpenses: this.pucRepo.getCuentasByGroups(this.nit(), [5]),
+      pucPayments: this.pucRepo.getCuentasByGroups(this.nit(), [1, 2]),
       impuestos: this.impuestosRepo.getImpuestosByNit(this.nit()),
     }).subscribe({
-      next: ({ factura, puc, impuestos }) => {
+      next: ({ factura, pucExpenses, pucPayments, impuestos }) => {
         this.factura.set(factura);
-        this.cuentasPuc.set(puc);
+        this.cuentasPuc.set(pucExpenses);
+        this.cuentasPago.set(pucPayments);
         this.impuestos.set(impuestos.filter((i) => i.active));
         this.loading.set(false);
       },

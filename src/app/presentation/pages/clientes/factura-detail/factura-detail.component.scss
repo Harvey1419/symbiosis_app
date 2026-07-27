@@ -507,3 +507,41 @@
     gap: 0.5rem;
   }
 }
+// ============================================================
+// Payment row differentiation (PR-5, T5.9)
+// ============================================================
+// The marker is text + icon + role="status" + aria-label, so colour
+// is NEVER the sole signal (per spec §7 and accessibility rule).
+.payment-row-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--surface-border, #d1d5db);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--surface-100, #f3f4f6);
+  color: var(--text-color, #111827);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.payment-row-marker-text {
+  // Explicit text content is what assistive tech reads; the icon is
+  // marked aria-hidden in the template.
+}
+
+.payment-row {
+  // Subtle background supplement. The accessible marker above is the
+  // primary signal; this just helps visual scanning.
+  background: var(--surface-50, #f9fafb);
+}
+
+.impuestos-cell-placeholder {
+  // Payment rows render an empty cell here to keep the column count
+  // stable. The class is distinct from `.impuestos-cell-wrapper` so
+  // the contract test can assert the wrapper is absent.
+  color: var(--text-color-secondary, #6b7280);
+}
