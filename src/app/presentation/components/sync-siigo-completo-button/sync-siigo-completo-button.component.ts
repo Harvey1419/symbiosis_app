@@ -10,7 +10,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { catchError, forkJoin, of } from 'rxjs';
+import { SyncCounterBadgeComponent } from '@app/shared/sync-counter-badge/sync-counter-badge.component';
+import { catchError, combineLatest, map, of, tap } from 'rxjs';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
 
 /**
@@ -48,13 +49,15 @@ export interface SiigoSyncResult {
 @Component({
   selector: 'app-sync-siigo-completo-button',
   standalone: true,
-  imports: [CommonModule, ButtonModule, TooltipModule],
+  imports: [CommonModule, ButtonModule, TooltipModule, SyncCounterBadgeComponent],
   templateUrl: './sync-siigo-completo-button.component.html',
   styleUrl: './sync-siigo-completo-button.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SyncSiigoCompletoButtonComponent {
   readonly nit = input.required<number>();
+  readonly done = input<number | null>(null);
+  readonly total = input<number | null>(null);
 
   /** Emits cuando TODOS los 4 sync succeed — el padre debe refrescar facturas. */
   readonly synced = output<SiigoSyncResult[]>();
@@ -69,6 +72,8 @@ export class SyncSiigoCompletoButtonComponent {
   readonly hasError = signal(false);
   readonly partialFailed = signal(false);
   readonly results = signal<SiigoSyncResult[]>([]);
+  readonly doneCount = signal(0);
+  readonly totalCount = signal(4);
 
   readonly label = computed(() => {
     if (this.loading()) return 'Sincronizando Siigo…';
@@ -101,31 +106,16 @@ export class SyncSiigoCompletoButtonComponent {
     this.partialFailed.set(false);
     this.justSynced.set(false);
     this.results.set([]);
+    this.doneCount.set(0);
 
     const calls = {
-      proveedores: this.clienteRepo.sincronizarProveedores(this.nit()).pipe(
-        catchError((err: unknown) =>
-          of({ success: false, error: this.toMessage(err) }),
-        ),
-      ),
-      puc: this.clienteRepo.sincronizarPuc(this.nit()).pipe(
-        catchError((err: unknown) =>
-          of({ success: false, error: this.toMessage(err) }),
-        ),
-      ),
-      taxes: this.clienteRepo.sincronizarTaxes(this.nit()).pipe(
-        catchError((err: unknown) =>
-          of({ success: false, error: this.toMessage(err) }),
-        ),
-      ),
-      trazabilidad: this.clienteRepo.sincronizarTrazabilidad(this.nit()).pipe(
-        catchError((err: unknown) =>
-          of({ success: false, error: this.toMessage(err) }),
-        ),
-      ),
+      proveedores: this.trackCompletion(this.clienteRepo.sincronizarProveedores(this.nit()), 'proveedores'),
+      puc: this.trackCompletion(this.clienteRepo.sincronizarPuc(this.nit()), 'puc'),
+      taxes: this.trackCompletion(this.clienteRepo.sincronizarTaxes(this.nit()), 'taxes'),
+      trazabilidad: this.trackCompletion(this.clienteRepo.sincronizarTrazabilidad(this.nit()), 'trazabilidad'),
     };
 
-    forkJoin(calls).subscribe({
+    combineLatest(calls).subscribe({
       next: (responses) => {
         const collected: SiigoSyncResult[] = (
           Object.keys(responses) as (keyof typeof responses)[]
@@ -170,6 +160,16 @@ export class SyncSiigoCompletoButtonComponent {
     });
   }
 
+  private trackCompletion(
+    source$: ReturnType<ClienteRepository['sincronizarProveedores']>,
+    source: SiigoSyncResult['source'],
+  ) {
+    return source$.pipe(
+      map((response) => ({ source, ...response })),
+      catchError((err: unknown) => of({ source, success: false, error: this.toMessage(err) })),
+      tap(() => this.doneCount.update((count) => count + 1)),
+    );
+  }
   private toMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
     if (typeof err === 'string') return err;

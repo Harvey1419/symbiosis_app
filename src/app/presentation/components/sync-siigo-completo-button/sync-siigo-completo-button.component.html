@@ -1,3 +1,6 @@
+@if (loading() || justSynced() || partialFailed()) {
+  <app-sync-counter-badge [done]="doneCount()" [total]="totalCount()" />
+}
 <button
   pButton
   type="button"

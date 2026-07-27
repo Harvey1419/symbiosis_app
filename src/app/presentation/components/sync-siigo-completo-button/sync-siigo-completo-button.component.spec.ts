@@ -67,6 +67,29 @@ describe('SyncSiigoCompletoButtonComponent', () => {
     expect(mockRepo.sincronizarEmpresas).not.toHaveBeenCalled();
   });
 
+  it('tracks each catalog completion exactly once before the aggregate settles', () => {
+    allSucceed();
+
+    component.sync();
+    fixture.detectChanges();
+
+    expect(component.totalCount()).toBe(4);
+    expect(component.doneCount()).toBe(4);
+  });
+
+  it('counts failed catalogs as settled so partial failures do not remain loading', () => {
+    mockRepo.sincronizarProveedores.mockReturnValue(of({ success: true, registros: 5 }));
+    mockRepo.sincronizarPuc.mockReturnValue(throwError(() => new Error('puc failed')));
+    mockRepo.sincronizarTaxes.mockReturnValue(of({ success: true, registros: 7 }));
+    mockRepo.sincronizarTrazabilidad.mockReturnValue(throwError(() => new Error('trazabilidad failed')));
+
+    component.sync();
+    fixture.detectChanges();
+
+    expect(component.doneCount()).toBe(4);
+    expect(component.totalCount()).toBe(4);
+    expect(component.loading()).toBe(false);
+  });
   it('cuando TODOS los 4 sync succeed → synced.emit(results) fires AND justSynced signal becomes true', () => {
     allSucceed();
     const synced = vi.fn();
