@@ -2,61 +2,35 @@ import { Component, ChangeDetectionStrategy, input, output, booleanAttribute } f
 import { CommonModule, DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { SyncCounterBadgeComponent } from '../sync-counter-badge/sync-counter-badge.component';
 
-/**
- * SyncStatusPillComponent — compact single-line sync indicator.
- * Smaller sibling of SyncBannerComponent, used at the firma level
- * (sync of clients from Siigo) where a full banner would dominate
- * the page.
- *
- * Usage:
- *   <app-sync-status-pill
- *     service="Siigo Nube"
- *     [lastSync]="lastSync()"
- *     [status]="'ok' | 'pending' | 'never'"
- *     [loading]="syncing()"
- *     (sync)="onSync()"
- *   />
- */
 @Component({
   selector: 'app-sync-status-pill',
   standalone: true,
-  imports: [CommonModule, DatePipe, ButtonModule, TooltipModule],
+  imports: [CommonModule, DatePipe, ButtonModule, TooltipModule, SyncCounterBadgeComponent],
   template: `
     <div class="sync-pill" [class.syncing]="loading()">
       <i class="pi pi-refresh status-icon" [class.spinning]="loading()"></i>
-
       <div class="pill-text">
         <span class="service-name">{{ service() }}</span>
         <span class="separator">·</span>
-
-        @switch (status()) {
-          @case ('ok') {
-            <span class="status-ok">
-              Sincronizado
-              @if (lastSync(); as d) {
-                · {{ d | date: 'd MMM, h:mm a' }}
-              }
-            </span>
-          }
-          @case ('pending') {
-            <span class="status-pending">Sincronización pendiente</span>
-          }
-          @default {
-            <span class="status-never">Nunca sincronizado</span>
+        @if (done() !== null && total() !== null) {
+          <app-sync-counter-badge [done]="done() ?? 0" [total]="total() ?? 0" />
+        } @else {
+          @switch (status()) {
+            @case ('ok') {
+              <span class="status-ok">Sincronizado @if (lastSync(); as d) { · {{ d | date: 'd MMM, h:mm a' }} }</span>
+            }
+            @case ('pending') { <span class="status-pending">Sincronización pendiente</span> }
+            @default { <span class="status-never">Nunca sincronizado</span> }
           }
         }
       </div>
-
       <p-button
         [label]="loading() ? 'Sincronizando…' : 'Sincronizar ahora'"
         [icon]="loading() ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
-        severity="primary"
-        size="small"
-        [text]="true"
-        [disabled]="loading()"
-        (onClick)="sync.emit()"
-        styleClass="sync-btn"
+        severity="primary" size="small" [text]="true" [disabled]="loading()"
+        (onClick)="sync.emit()" styleClass="sync-btn"
       />
     </div>
   `,
@@ -68,7 +42,7 @@ export class SyncStatusPillComponent {
   readonly lastSync = input<Date | string | null | undefined>(null);
   readonly status = input<'ok' | 'pending' | 'never'>('never');
   readonly loading = input(false, { transform: booleanAttribute });
-
-  /** Emitted when the user clicks "Sincronizar ahora". */
+  readonly done = input<number | null>(null);
+  readonly total = input<number | null>(null);
   readonly sync = output<void>();
 }
