@@ -20,7 +20,6 @@ describe('SyncSiigoCompletoButtonComponent', () => {
     TestBed.resetTestingModule();
     mockRepo = {
       sincronizarProveedores: vi.fn(),
-      sincronizarEmpresas: vi.fn(),
       sincronizarPuc: vi.fn(),
       sincronizarTaxes: vi.fn(),
       sincronizarTrazabilidad: vi.fn(),
@@ -64,7 +63,12 @@ describe('SyncSiigoCompletoButtonComponent', () => {
 
     component.sync();
 
-    expect(mockRepo.sincronizarEmpresas).not.toHaveBeenCalled();
+    // El mock ya no declara `sincronizarEmpresas` desde PR-B — el método
+    // se movió a FirmaRepository.sincronizarEmpresasByUser. Esta
+    // invariante se cumple por construcción.
+    expect(
+      (mockRepo as unknown as Record<string, unknown>)['sincronizarEmpresas'],
+    ).toBeUndefined();
   });
 
   it('tracks each catalog completion exactly once before the aggregate settles', () => {

@@ -42,6 +42,7 @@ describe('clienteContextResolver', () => {
       clienteNombre: 'Cliente Fast',
       firmaId: 'firma-123',
       firmaNombre: 'Firma Fast',
+      firmaUser: 'contable@test.com',
       tipoSiigo: 'contador',
     }, '');
 
@@ -56,6 +57,7 @@ describe('clienteContextResolver', () => {
       nombre_empresa: 'Cliente Fast',
       firma_id: 'firma-123',
       firma_nombre: 'Firma Fast',
+      firma_user: 'contable@test.com',
       tipo_siigo: 'contador',
     });
     expect(mockClienteRepo.getBreadcrumbContext).not.toHaveBeenCalled();
@@ -77,6 +79,7 @@ describe('clienteContextResolver', () => {
       nombre_empresa: 'Cliente Solo Nombre',
       firma_id: '',
       firma_nombre: 'Cliente Solo Nombre',
+      firma_user: '',
       tipo_siigo: undefined,
     });
     expect(mockClienteRepo.getBreadcrumbContext).not.toHaveBeenCalled();
@@ -89,6 +92,7 @@ describe('clienteContextResolver', () => {
       nombre_empresa: 'Cliente Slow',
       firma_id: 'firma-456',
       firma_nombre: 'Firma Nube',
+      firma_user: 'nube@test.com',
       tipo_siigo: 'nube',
     };
     mockClienteRepo.getBreadcrumbContext.mockReturnValue(of(mockContext));

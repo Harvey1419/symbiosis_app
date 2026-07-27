@@ -175,4 +175,35 @@ describe('FirmaRepository', () => {
       httpMock.verify();
     });
   });
+
+  describe('sincronizarEmpresasByUser (PR-B fix)', () => {
+    it('hace POST /api/sync/siigo/empresas con body { firma_user } — NO nit_cliente', () => {
+      let received: { success: boolean; count: number; newCount: number; newItems: unknown[] } | null = null;
+      repo.sincronizarEmpresasByUser('firma@example.com').subscribe((res) => {
+        received = res;
+      });
+
+      const req = httpMock.expectOne((r) => r.url === '/api/sync/siigo/empresas');
+      expect(req.request.method).toBe('POST');
+      // Contrato clave: el backend rechaza { nit_cliente } con 400.
+      // El método garantiza body { firma_user }.
+      expect(req.request.body).toEqual({ firma_user: 'firma@example.com' });
+      req.flush({ success: true, count: 3, newCount: 1, newItems: [{ nit: 800111111 }] });
+
+      expect(received).toEqual({ success: true, count: 3, newCount: 1, newItems: [{ nit: 800111111 }] });
+      httpMock.verify();
+    });
+
+    it('NIT en lugar de firma_user es la trampa histórica — usar este método la evita', () => {
+      // Triangulación: si alguien pasa un NIT numérico al método, igual
+      // lo manda como `firma_user` (el método es estricto sobre el shape).
+      // El backend seguirá siendo el dueño de validar el ownership.
+      repo.sincronizarEmpresasByUser('900123456').subscribe();
+
+      const req = httpMock.expectOne('/api/sync/siigo/empresas');
+      expect(req.request.body).toEqual({ firma_user: '900123456' });
+      req.flush({ success: true, count: 0, newCount: 0, newItems: [] });
+      httpMock.verify();
+    });
+  });
 });

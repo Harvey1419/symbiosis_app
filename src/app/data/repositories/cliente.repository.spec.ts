@@ -74,28 +74,14 @@ describe('ClienteRepository', () => {
     httpMock.verify();
   });
 
-  it('sincronizarEmpresas(nit) hace POST /api/sync/siigo/empresas con body { nit_cliente: nit }', () => {
-    const nit = 900123456;
-
-    let actualBody: unknown;
-    let actualUrl = '';
-    repo.sincronizarEmpresas(nit).subscribe((res) => {
-      expect(res.success).toBe(true);
-      expect(res.registros).toBe(3);
-    });
-
-    const req = httpMock.expectOne((r) => {
-      actualUrl = r.url;
-      actualBody = r.body;
-      return true;
-    });
-
-    expect(req.request.method).toBe('POST');
-    expect(actualUrl).toBe('/api/sync/siigo/empresas');
-    expect(actualBody).toEqual({ nit_cliente: nit });
-
-    req.flush({ success: true, registros: 3 });
-    httpMock.verify();
+  it('sincronizarEmpresas ya NO existe en ClienteRepository — vive en FirmaRepository.sincronizarEmpresasByUser (PR-B fix)', () => {
+    // El bug raíz: este método enviaba `{ nit_cliente }` pero el backend
+    // exige `{ firma_user }`. La nueva API en FirmaRepository garantiza el
+    // body shape correcto.
+    expect((repo as unknown as Record<string, unknown>)['sincronizarEmpresas']).toBeUndefined();
+    expect(typeof (repo as unknown as Record<string, unknown>)['sincronizarProveedores']).toBe(
+      'function',
+    );
   });
 
   it('sincronizarPuc(nit) hace POST /api/sync/siigo/puc con body { nit_cliente: nit }', () => {

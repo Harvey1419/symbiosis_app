@@ -13,6 +13,7 @@ interface NavigationState {
   clienteNombre?: string;
   firmaId?: string;
   firmaNombre?: string;
+  firmaUser?: string;
   tipoSiigo?: 'nube' | 'contador';
   tipo_siigo?: 'nube' | 'contador';
 }
@@ -65,6 +66,7 @@ export const clienteContextResolver: ResolveFn<ClienteBreadcrumbContext | null> 
       nombre_empresa: navState.clienteNombre,
       firma_id: navState.firmaId ?? '',
       firma_nombre: navState.firmaNombre || navState.clienteNombre || 'Firma',
+      firma_user: navState.firmaUser ?? '',
       tipo_siigo,
     });
   }

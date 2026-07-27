@@ -143,6 +143,8 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
   /** Firma a la que pertenece este cliente (para el breadcrumb). */
   readonly firmaId = signal<string>('');
   readonly firmaNombre = signal<string>('');
+  /** PR-B: credencial Siigo de la firma — habilita el card de sync desde `factura-detail`. */
+  readonly firmaUser = signal<string>('');
   readonly tipoSiigo = signal<'nube' | 'contador' | undefined>(undefined);
   readonly syncLoading = signal(false);
   readonly siigoSyncDone = signal(0);
@@ -311,12 +313,19 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
       // también lee del state (fast-path), así que no hay diferencia
       // funcional — el breadcrumb está completo desde el primer frame.
       const ctx = this.route.snapshot.data['clienteContext'] as
-        | { nombre_empresa: string; firma_id: string; firma_nombre: string; tipo_siigo?: 'nube' | 'contador' }
+        | {
+            nombre_empresa: string;
+            firma_id: string;
+            firma_nombre: string;
+            firma_user?: string;
+            tipo_siigo?: 'nube' | 'contador';
+          }
         | null;
       if (ctx) {
         this.clienteNombre.set(ctx.nombre_empresa);
         this.firmaId.set(ctx.firma_id);
         this.firmaNombre.set(ctx.firma_nombre);
+        this.firmaUser.set(ctx.firma_user ?? '');
         this.tipoSiigo.set(ctx.tipo_siigo);
       } else {
         // Resolver retornó null → el NIT no existe o no pertenece a una
@@ -568,6 +577,7 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
         clienteNombre: this.clienteNombre(),
         firmaId: this.firmaId(),
         firmaNombre: this.firmaNombre(),
+        firmaUser: this.firmaUser(),
         tipoSiigo: this.tipoSiigo(),
       }
     });

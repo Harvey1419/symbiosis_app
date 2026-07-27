@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -23,10 +23,10 @@ describe('FirmaClientesComponent', () => {
   let firmaMock: {
     getFirmas: ReturnType<typeof vi.fn>;
     getFirmaClientes: ReturnType<typeof vi.fn>;
+    sincronizarEmpresasByUser: ReturnType<typeof vi.fn>;
   };
   let clienteMock: {
     sincronizarTrazabilidad: ReturnType<typeof vi.fn>;
-    sincronizarEmpresas: ReturnType<typeof vi.fn>;
     updateCliente: ReturnType<typeof vi.fn>;
   };
   let dialogMock: DialogMock;
@@ -59,10 +59,12 @@ describe('FirmaClientesComponent', () => {
     firmaMock = {
       getFirmas: vi.fn().mockReturnValue(of([])),
       getFirmaClientes: vi.fn().mockReturnValue(of([])),
+      sincronizarEmpresasByUser: vi
+        .fn()
+        .mockReturnValue(of({ success: true, count: 1, newCount: 0, newItems: [] })),
     };
     clienteMock = {
       sincronizarTrazabilidad: vi.fn().mockReturnValue(of(undefined)),
-      sincronizarEmpresas: vi.fn().mockReturnValue(of({ success: true, registros: 1 })),
       updateCliente: vi.fn().mockReturnValue(of(undefined)),
     };
     dialogMock = {
@@ -144,9 +146,10 @@ describe('FirmaClientesComponent', () => {
     expect(component.breadcrumbItems()[1].label).toBe('Firma Alpha');
   });
 
-  it('goToClienteDetail navigates with the client and firma context in state', () => {
+  it('goToClienteDetail navigates with the client and firma context in state (incluye firmaUser para deep-link)', () => {
     component.firmaId.set('firma-123');
     component.firmaNombre.set('Firma Alpha');
+    component.firma.set(firma);
 
     component.goToClienteDetail(900123456, 'Cliente Beta');
 
@@ -155,9 +158,22 @@ describe('FirmaClientesComponent', () => {
         clienteNombre: 'Cliente Beta',
         firmaId: 'firma-123',
         firmaNombre: 'Firma Alpha',
+        firmaUser: 'firma@example.com',
         tipoSiigo: 'contador',
       },
     });
+  });
+
+  it('goToClienteDetail sin firmaUser en state cuando no hay firma cargada (no rompe navegación)', () => {
+    component.firmaId.set('firma-123');
+    component.firmaNombre.set('Firma Alpha');
+    component.firma.set(null);
+
+    component.goToClienteDetail(900123456, 'Cliente Beta');
+
+    const state = (routerMock.navigate.mock.calls[0]?.[1] as { state?: Record<string, unknown> })?.state;
+    expect(state).toBeDefined();
+    expect(state?.['firmaUser']).toBe('');
   });
 
   it('onConfigurarCliente opens the dialog for the selected client', () => {
@@ -166,72 +182,25 @@ describe('FirmaClientesComponent', () => {
     expect(dialogMock.openForEdit).toHaveBeenCalledWith(clientes[0]);
   });
 
-  describe('onSync (Siigo empresa sync per UI level)', () => {
-    it('ngOnInit loads the firma so its NIT is available to onSync', () => {
-      firmaMock.getFirmas.mockReturnValue(of([firma]));
+  it('onSyncCompleted recarga la lista de clientes', () => {
+    component.firmaId.set('firma-123');
 
-      component.ngOnInit();
+    component.onSyncCompleted();
 
-      expect(component.firma()).toEqual(firma);
-      expect(component.firma()?.nit).toBe(900123456);
-    });
-
-    it('onSync calls clienteRepo.sincronizarEmpresas with the firma NIT (NOT trazabilidad)', () => {
-      firmaMock.getFirmas.mockReturnValue(of([firma]));
-      component.ngOnInit();
-
-      component.onSync();
-
-      expect(clienteMock.sincronizarEmpresas).toHaveBeenCalledOnce();
-      expect(clienteMock.sincronizarEmpresas).toHaveBeenCalledWith(900123456);
-      expect(clienteMock.sincronizarTrazabilidad).not.toHaveBeenCalled();
-    });
-
-    it('onSync sets syncLoading false and lastSync after a successful empresa sync, then reloads the clientes', () => {
-      firmaMock.getFirmas.mockReturnValue(of([firma]));
-      firmaMock.getFirmaClientes.mockReturnValue(of(clientes));
-      component.ngOnInit();
-
-      component.onSync();
-
-      expect(component.syncLoading()).toBe(false);
-      expect(component.lastSync()).toBeInstanceOf(Date);
-      expect(firmaMock.getFirmaClientes).toHaveBeenCalledTimes(2); // ngOnInit + post-sync reload
-    });
-
-    it('onSync bails without calling the repository when the firma has no NIT', () => {
-      const firmaSinNit: Firma = { ...firma, nit: null };
-      firmaMock.getFirmas.mockReturnValue(of([firmaSinNit]));
-      component.ngOnInit();
-
-      component.onSync();
-
-      expect(clienteMock.sincronizarEmpresas).not.toHaveBeenCalled();
-      expect(clienteMock.sincronizarTrazabilidad).not.toHaveBeenCalled();
-      expect(component.syncLoading()).toBe(false);
-      expect(component.lastSync()).toBeNull();
-    });
-
-    it('onSync clears syncLoading when the repository fails', () => {
-      firmaMock.getFirmas.mockReturnValue(of([firma]));
-      clienteMock.sincronizarEmpresas.mockReturnValue(throwError(() => new Error('boom')));
-      component.ngOnInit();
-
-      component.onSync();
-
-      expect(component.syncLoading()).toBe(false);
-      expect(component.lastSync()).toBeNull();
-    });
+    expect(firmaMock.getFirmaClientes).toHaveBeenCalledWith('firma-123');
   });
 });
 
-describe('FirmaClientesComponent - Sync Card (descriptive UI)', () => {
+describe('FirmaClientesComponent — SincronizarSiigoCard integration (PR-B fix)', () => {
+  let fixture: ComponentFixture<FirmaClientesComponent>;
   let component: FirmaClientesComponent;
-  let fixture: import('@angular/core/testing').ComponentFixture<FirmaClientesComponent>;
-  let firmaMock: { getFirmas: ReturnType<typeof vi.fn>; getFirmaClientes: ReturnType<typeof vi.fn> };
+  let firmaMock: {
+    getFirmas: ReturnType<typeof vi.fn>;
+    getFirmaClientes: ReturnType<typeof vi.fn>;
+    sincronizarEmpresasByUser: ReturnType<typeof vi.fn>;
+  };
   let clienteMock: {
     sincronizarTrazabilidad: ReturnType<typeof vi.fn>;
-    sincronizarEmpresas: ReturnType<typeof vi.fn>;
     updateCliente: ReturnType<typeof vi.fn>;
   };
   let dialogMock: DialogMock;
@@ -249,10 +218,12 @@ describe('FirmaClientesComponent - Sync Card (descriptive UI)', () => {
     firmaMock = {
       getFirmas: vi.fn().mockReturnValue(of([firma])),
       getFirmaClientes: vi.fn().mockReturnValue(of([])),
+      sincronizarEmpresasByUser: vi
+        .fn()
+        .mockReturnValue(of({ success: true, count: 2, newCount: 1, newItems: [{ nit: 800111 }] })),
     };
     clienteMock = {
       sincronizarTrazabilidad: vi.fn().mockReturnValue(of(undefined)),
-      sincronizarEmpresas: vi.fn().mockReturnValue(of({ success: true, registros: 1 })),
       updateCliente: vi.fn().mockReturnValue(of(undefined)),
     };
     dialogMock = {
@@ -289,52 +260,37 @@ describe('FirmaClientesComponent - Sync Card (descriptive UI)', () => {
     await fixture.whenStable();
   });
 
-  it('renders a sync card with the Siigo variant, NOT the compact pill', () => {
-    const card = fixture.nativeElement.querySelector('.sync-card.sync-card-siigo') as HTMLElement | null;
+  it('renders the shared SincronizarSiigoCardComponent', () => {
+    const card = fixture.nativeElement.querySelector('app-sincronizar-siigo-card');
     expect(card).not.toBeNull();
-
-    const pillEl = fixture.nativeElement.querySelector('app-sync-status-pill');
-    expect(pillEl).toBeNull();
   });
 
-  it('does NOT render SyncStatusPillComponent at all (replaced by the card)', () => {
-    // Real assertion: there should be no <app-sync-status-pill> in the DOM.
-    expect(fixture.nativeElement.querySelector('app-sync-status-pill')).toBeNull();
+  it('la clase .sync-card.sync-card-siigo está dentro del subcomponente, no inline en el template', () => {
+    // El card viejo estaba escrito literal en este template (sync-card
+    // como hijo directo de content-card). Ahora es un subcomponente, así
+    // que cualquier `.sync-card` debe estar DENTRO de
+    // `<app-sincronizar-siigo-card>` y no en el template directo.
+    const directCard = fixture.nativeElement.querySelector(
+      '.content-card > .sync-card.sync-card-siigo',
+    );
+    expect(directCard).toBeNull();
+
+    // El subcomponente sí tiene la clase internamente.
+    const wrappedCard = fixture.nativeElement.querySelector(
+      'app-sincronizar-siigo-card .sync-card.sync-card-siigo',
+    );
+    expect(wrappedCard).not.toBeNull();
   });
 
-  it('sync card includes the title and description that explain what it does', () => {
-    const card = fixture.nativeElement.querySelector('.sync-card.sync-card-siigo') as HTMLElement;
-    const title = card.querySelector('.card-title')?.textContent ?? '';
-    const description = card.querySelector('.card-description')?.textContent ?? '';
+  it('clicking the card button calls FirmaRepository.sincronizarEmpresasByUser (NO clienteRepo.sincronizarEmpresas)', () => {
+    const btn = fixture.nativeElement.querySelector(
+      'app-sincronizar-siigo-card [data-testid="sincronizar-siigo-card-btn"] button',
+    ) as HTMLButtonElement | null;
+    expect(btn).not.toBeNull();
 
-    expect(title).toContain('Siigo');
-    expect(description.toLowerCase()).toContain('empresas');
-  });
-
-  it('sync card has a button labeled "Sincronizar" that is enabled when not loading', () => {
-    const button = fixture.nativeElement.querySelector('.sync-card button') as HTMLButtonElement | null;
-    expect(button).not.toBeNull();
-    expect(button?.textContent ?? '').toContain('Sincronizar');
-    expect(button?.disabled).toBe(false);
-  });
-
-  it('sync card button is disabled while loading', () => {
-    // Drive the loading state directly via the public signal — we test the
-    // template binding, not the internal subscribe lifecycle.
-    component.syncLoading.set(true);
+    btn?.click();
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('.sync-card button') as HTMLButtonElement | null;
-    expect(button).not.toBeNull();
-    expect(button?.disabled).toBe(true);
-  });
-
-  it('shows the last-sync timestamp after a successful sync', () => {
-    component.lastSync.set(new Date('2026-07-23T10:00:00Z'));
-    fixture.detectChanges();
-
-    const lastSync = fixture.nativeElement.querySelector('.last-sync') as HTMLElement | null;
-    expect(lastSync).not.toBeNull();
-    expect(lastSync?.textContent ?? '').toMatch(/Última sincronización/);
+    expect(firmaMock.sincronizarEmpresasByUser).toHaveBeenCalledWith('firma@example.com');
   });
 });

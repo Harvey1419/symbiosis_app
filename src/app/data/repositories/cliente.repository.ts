@@ -24,14 +24,19 @@ export interface UpdateClienteInput {
 /**
  * Respuesta de `GET /api/empresas/:nit` para el contexto del breadcrumb.
  * El backend hace un JOIN de `clientes_siigo` + `empresas` + `firmas`
- * en una sola query, así que esta info está disponible incluso en
+ * en una sola query a Supabase, así que esta info está disponible incluso en
  * deep-links / refresh (cuando `window.history.state` está vacío).
+ *
+ * PR-B: `firma_user` se expone para que `SincronizarSiigoCardComponent`
+ * pueda disparar `POST /api/sync/siigo/empresas` desde `factura-detail`
+ * sin tener que volver a pedir `/api/firmas`.
  */
 export interface ClienteBreadcrumbContext {
   nit: number;
   nombre_empresa: string;
   firma_id: string;
   firma_nombre: string;
+  firma_user: string;
   tipo_siigo?: 'nube' | 'contador';
 }
 
@@ -64,15 +69,12 @@ export class ClienteRepository {
   }
 
   /**
-   * Sync Siigo: empresas del cliente (multi-empresa en Siigo).
-   * Forma parte del "sync completo" disparado por `SyncSiigoCompletoButtonComponent`.
+   * NOTA — el sync de EMPRESAS (lista de clientes Siigo de la firma) NO
+   * vive aquí: es per-firma, no per-cliente, y el backend espera el body
+   * `{ firma_user }` (no `{ nit_cliente }`). Está expuesto en
+   * `FirmaRepository.sincronizarEmpresasByUser` y es lo que dispara
+   * `SincronizarSiigoCardComponent` (PR-B).
    */
-  sincronizarEmpresas(nit: number): Observable<{ success: boolean; registros: number }> {
-    return this.http.post<{ success: boolean; registros: number }>(
-      `${this.apiUrl}/sync/siigo/empresas`,
-      { nit_cliente: nit }
-    );
-  }
 
   /**
    * Sync Siigo: PUC (Plan Único de Cuentas) del cliente.

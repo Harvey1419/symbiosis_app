@@ -21,10 +21,11 @@ import { ClienteRepository } from '@data/repositories/cliente.repository';
  * toast/refresh.
  *
  * IMPORTANTE: `empresas` NO aparece en este union. El sync de empresas
- * es per-firma, no per-cliente — se dispara desde `firma-clientes` vía
- * `clienteRepo.sincronizarEmpresas` directamente. Mezclarlo en este
- * botón causaría un re-sync innecesario de la lista de empresas cada
- * vez que el usuario entra a un cliente.
+ * es per-firma, no per-cliente — se dispara desde `firma-clientes` o
+ * desde el card en `factura-detail` vía `SincronizarSiigoCardComponent`
+ * (que usa `FirmaRepository.sincronizarEmpresasByUser`). Mezclarlo en
+ * este botón causaría un re-sync innecesario de la lista de empresas
+ * cada vez que el usuario entra a un cliente.
  */
 export interface SiigoSyncResult {
   source: 'proveedores' | 'puc' | 'taxes' | 'trazabilidad';

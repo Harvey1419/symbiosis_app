@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
-import type { MenuItem } from 'primeng/api';
+import { MessageService, type MenuItem } from 'primeng/api';
 import { Firma, FirmaRepository } from '@data/repositories/firma.repository';
 import { Cliente } from '@domain/models/cliente.model';
 import { ClienteRepository } from '@data/repositories/cliente.repository';
@@ -13,13 +13,27 @@ import { ClienteConfigDialogService } from '@app/core/cliente-config-dialog.serv
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { PageHeaderComponent } from '@app/shared/page-header/page-header.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
+import {
+  SincronizarSiigoCardComponent,
+} from '@app/shared/sincronizar-siigo-card/sincronizar-siigo-card.component';
 
 @Component({
   selector: 'app-firma-clientes',
   standalone: true,
-  imports: [CommonModule, TableModule, ToastModule, ButtonModule, ClienteConfigDialogComponent, BackButtonComponent, PageHeaderComponent, AppBreadcrumbComponent],
+  imports: [
+    CommonModule,
+    TableModule,
+    ToastModule,
+    ButtonModule,
+    ClienteConfigDialogComponent,
+    BackButtonComponent,
+    PageHeaderComponent,
+    AppBreadcrumbComponent,
+    SincronizarSiigoCardComponent,
+  ],
   templateUrl: './firma-clientes.component.html',
-  styleUrl: './firma-clientes.component.scss'
+  styleUrl: './firma-clientes.component.scss',
+  providers: [MessageService],
 })
 export class FirmaClientesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -27,17 +41,16 @@ export class FirmaClientesComponent implements OnInit {
   private readonly firmaRepo = inject(FirmaRepository);
   private readonly clienteRepo = inject(ClienteRepository);
   readonly clienteConfigDialog = inject(ClienteConfigDialogService);
+  private readonly message = inject(MessageService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly clientes = signal<Cliente[]>([]);
-  firmaId = signal<string>('');
-  /** Firma actualmente listada — incluye el NIT que necesita `sincronizarEmpresas`. */
+  readonly firmaId = signal<string>('');
+  /** Firma actualmente listada — incluye `firma_user` y `nit`. */
   readonly firma = signal<Firma | null>(null);
   /** Nombre de la firma para mostrar en el breadcrumb. */
   readonly firmaNombre = signal<string>('');
-  readonly syncLoading = signal(false);
-  readonly lastSync = signal<Date | null>(null);
 
   /**
    * Items del p-breadcrumb. El primer segmento (home) es siempre "Firmas"
@@ -68,8 +81,7 @@ export class FirmaClientesComponent implements OnInit {
    * Resuelve la firma desde el listado cacheado de `getFirmas()`. La firma
    * puede no estar en el cache si el usuario llegó directo por URL (sin
    * pasar por /clientes); en ese caso los signals `firma` y `firmaNombre`
-   * quedan vacíos y el breadcrumb muestra solo "Firmas". El sync Siigo
-   * (`onSync`) NO se dispara sin firma porque necesita el NIT.
+   * quedan vacíos y el breadcrumb muestra solo "Firmas".
    */
   private loadFirmaNombre(id: string): void {
     this.firmaRepo.getFirmas().subscribe({
@@ -96,41 +108,18 @@ export class FirmaClientesComponent implements OnInit {
       error: () => {
         this.error.set(true);
         this.loading.set(false);
-      }
+      },
     });
   }
 
   /**
-   * Sync Siigo "empresas" para esta firma. Per la regla de scope del spec,
-   * en `firma-clientes` SOLO se sincroniza la lista de empresas (clientes
-   * Siigo de la firma) — NO se dispara trazabilidad, taxes, puc ni
-   * proveedores aquí. Esos viven en `cliente-detail` y los dispara el
-   * `SyncSiigoCompletoButtonComponent` por cliente.
-   *
-   * Requiere que la firma tenga NIT. Si la firma es legacy sin NIT
-   * (`firmas.nit = null`), el endpoint `/api/sync/siigo/empresas` no puede
-   * resolver nada — en ese caso logueamos y bailamos sin tocar loading.
+   * Maneja el `syncCompleted` del `SincronizarSiigoCardComponent`. Solo
+   * se ejecuta en el path de éxito — los errores los emite el card via
+   * `MessageService` directamente. Aquí recargamos la lista para reflejar
+   * cualquier empresa nueva.
    */
-  onSync(): void {
-    this.syncLoading.set(true);
-    const firmaNit = this.firma()?.nit;
-    if (!firmaNit) {
-      // eslint-disable-next-line no-console -- feedback to operator for legacy firms
-      console.warn('[firma-clientes] No se puede sincronizar empresas: la firma no tiene NIT asignado.');
-      this.syncLoading.set(false);
-      return;
-    }
-    this.clienteRepo.sincronizarEmpresas(firmaNit).subscribe({
-      next: () => {
-        this.lastSync.set(new Date());
-        this.syncLoading.set(false);
-        this.loadClientes(this.firmaId());
-      },
-      error: () => {
-        this.syncLoading.set(false);
-        // Could show toast in future
-      }
-    });
+  onSyncCompleted(): void {
+    this.loadClientes(this.firmaId());
   }
 
   /**
@@ -160,8 +149,9 @@ export class FirmaClientesComponent implements OnInit {
         clienteNombre: nombre,
         firmaId: this.firmaId(),
         firmaNombre: this.firmaNombre(),
+        firmaUser: this.firma()?.firma_user ?? '',
         tipoSiigo: 'contador',
-      }
+      },
     });
   }
 

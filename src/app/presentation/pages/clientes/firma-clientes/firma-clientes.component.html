@@ -24,31 +24,13 @@
         <p>Error al cargar los clientes. Intenta de nuevo.</p>
       </div>
     }     @else {
-      <div class="sync-card sync-card-siigo">
-        <div class="card-icon" aria-hidden="true">
-          <i class="pi pi-sync"></i>
-        </div>
-        <div class="card-body">
-          <h3 class="card-title">Sincronizar desde Siigo</h3>
-          <p class="card-description">
-            Actualiza la lista de clientes de esta firma desde Siigo
-            (sincronización de empresas).
-          </p>
-        </div>
-        <div class="card-actions">
-          <p-button
-            [label]="syncLoading() ? 'Sincronizando…' : 'Sincronizar'"
-            [icon]="syncLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
-            [loading]="syncLoading()"
-            [disabled]="syncLoading()"
-            severity="primary"
-            (onClick)="onSync()"
-          />
-          @if (lastSync(); as d) {
-            <small class="last-sync">Última sincronización: {{ d | date: 'd MMM, h:mm a' }}</small>
-          }
-        </div>
-      </div>
+      @if (firma(); as f) {
+        <app-sincronizar-siigo-card
+          [firmaUser]="f.firma_user"
+          [firmaId]="f.id"
+          (syncCompleted)="onSyncCompleted()"
+        />
+      }
 
       <p-table [value]="clientes()" styleClass="clientes-table">
         <ng-template pTemplate="header">

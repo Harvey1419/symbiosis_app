@@ -118,4 +118,29 @@ export class FirmaRepository {
       }),
     );
   }
+
+  /**
+   * POST /api/sync/siigo/empresas — sincroniza la lista de empresas
+   * (clientes Siigo de la firma) para la firma identificada por su
+   * `firma_user`. Per-firma, no per-cliente.
+   *
+   * Es el único endpoint que recibe `firma_user` en el body (los otros 4
+   * sincs reciben `nit_cliente` porque resuelven la firma desde el NIT).
+   * Si el caller pasa el `nit` por error, el backend responde 400
+   * `VALIDATION_FAILED` — usar este método para garantizar el body shape
+   * correcto.
+   */
+  sincronizarEmpresasByUser(firmaUser: string): Observable<{
+    success: boolean;
+    count: number;
+    newCount: number;
+    newItems: unknown[];
+  }> {
+    return this.http.post<{
+      success: boolean;
+      count: number;
+      newCount: number;
+      newItems: unknown[];
+    }>(`${this.apiUrl}/sync/siigo/empresas`, { firma_user: firmaUser });
+  }
 }

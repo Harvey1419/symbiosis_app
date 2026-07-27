@@ -1,0 +1,41 @@
+<div
+  class="sync-card sync-card-siigo"
+  data-testid="sincronizar-siigo-card"
+  [attr.aria-busy]="ariaBusy()"
+  role="region"
+  [attr.aria-label]="'Sincronizar empresas de la firma desde Siigo'"
+>
+  <div class="card-icon" aria-hidden="true">
+    <i class="pi pi-sync"></i>
+  </div>
+  <div class="card-body">
+    <h3 class="card-title">Sincronizar desde Siigo</h3>
+    <p class="card-description">
+      Actualiza la lista de clientes de esta firma desde Siigo
+      (sincronización de empresas).
+    </p>
+    @if (lastSync(); as d) {
+      <small class="last-sync">Última sincronización: {{ d | date: 'd MMM, h:mm a' }}</small>
+    }
+    @if (lastError(); as err) {
+      <small class="last-error" role="alert" data-testid="sincronizar-siigo-card-error">
+        {{ err }}
+      </small>
+    }
+  </div>
+  <div class="card-actions">
+    <p-button
+      [label]="buttonLabel()"
+      [icon]="buttonIcon()"
+      [loading]="loading()"
+      [disabled]="loading()"
+      severity="primary"
+      (onClick)="sync()"
+      [pTooltip]="
+        'Actualiza los clientes Siigo (empresas) de la firma desde la API de Siigo'
+      "
+      tooltipPosition="bottom"
+      data-testid="sincronizar-siigo-card-btn"
+    />
+  </div>
+</div>
