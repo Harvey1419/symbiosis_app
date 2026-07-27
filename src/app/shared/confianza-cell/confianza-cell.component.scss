@@ -1,28 +1,13 @@
+/**
+ * PR-C (decision #878, user feedback): la visual del semáforo la
+ * maneja PrimeNG `p-tag` (severity + rounded). El wrapper span sólo
+ * provee el context de accesibilidad (aria-level/aria-label/pTooltip)
+ * — NO aplica colores propios (CSS para no duplicar los tokens de
+ * PrimeNG).
+ */
 .confianza-cell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.25rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.25;
   cursor: default;
-}
-
-.confianza-cell[aria-level='high'] {
-  background: var(--color-success-soft, color-mix(in srgb, var(--color-success) 15%, transparent));
-  color: var(--color-success);
-}
-
-.confianza-cell[aria-level='medium'] {
-  background: var(--color-warning-soft, color-mix(in srgb, var(--color-warning) 15%, transparent));
-  color: var(--color-warning);
-}
-
-.confianza-cell[aria-level='low'] {
-  background: var(--color-error-soft, color-mix(in srgb, var(--color-error) 15%, transparent));
-  color: var(--color-error);
 }
