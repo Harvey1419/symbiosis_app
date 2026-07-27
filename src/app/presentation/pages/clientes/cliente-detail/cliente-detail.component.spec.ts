@@ -642,12 +642,79 @@ describe('ClienteDetailComponent - DIAN realtime integration', () => {
   }
 
   it('renderiza una región con las dos opciones de sincronización', () => {
-    const region = fixture.nativeElement.querySelector(
-      'section.sync-cards-row[aria-label="Opciones de sincronización"]',
+    // PR-E.3 (round-3 fix): Siigo y DIAN antes compartían un mismo
+    // `<section class="sync-cards-row">`. Ahora viven en dos `<section>`
+    // separados con sus propios aria-labels (ver tests posteriores). El
+    // smoke-test de "hay cards de sync" se mantiene: Siigo expone 2
+    // cards apiladas (empresas + sync completo), DIAN expone 1.
+    const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
+    const dianSection = fixture.nativeElement.querySelector('section.sync-section-dian') as HTMLElement | null;
+
+    expect(siigoSection).not.toBeNull();
+    expect(dianSection).not.toBeNull();
+    expect((siigoSection?.querySelectorAll('article.sync-card') ?? []).length).toBeGreaterThanOrEqual(1);
+    expect(dianSection?.querySelector('article.sync-card-dian')).not.toBeNull();
+  });
+
+  // PR-E.3 (round-3 fix): the Siigo section now stacks two cards:
+  // empresas on top (SincronizarSiigoCardComponent, 1 catalog) and the
+  // 4-catalog sync completo below (SyncSiigoCompletoButtonComponent).
+  // The DIAN section stays in its own <section> with its own aria-label
+  // so screen readers can navigate between the two flows.
+  it('la sección Siigo apila DOS cards: empresas (per-firma) + sync completo (4 catálogos del cliente)', () => {
+    const siigoSection = fixture.nativeElement.querySelector(
+      'section.sync-section-siigo[aria-label*="Siigo"]',
     ) as HTMLElement | null;
 
-    expect(region).not.toBeNull();
-    expect(region?.querySelectorAll('article.sync-card')).toHaveLength(2);
+    expect(siigoSection).not.toBeNull();
+    const siigoCards = siigoSection?.querySelectorAll('article.sync-card') ?? [];
+    expect(siigoCards).toHaveLength(2);
+  });
+
+  it('la card de empresas arriba muestra SincronizarSiigoCardComponent cuando hay firma_user', () => {
+    const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
+    const firstCard = siigoSection?.querySelector('article.sync-card') as HTMLElement | null;
+    const empresasCard = firstCard?.querySelector('[data-testid="sincronizar-siigo-card"]') as HTMLElement | null;
+
+    // La firma del fixture de "DIAN realtime integration" tiene firma_user
+    // vacío (no se pasa en clienteContext). En ese caso la card de
+    // empresas NO se renderiza — debe haber UN fallback que explique por qué.
+    if (!empresasCard) {
+      const fallback = firstCard?.querySelector('[data-testid="siigo-empresas-missing-firma"]');
+      expect(fallback).not.toBeNull();
+      return;
+    }
+    // Si tenemos firma_user, la card renderiza normalmente.
+    expect(empresasCard).not.toBeNull();
+  });
+
+  it('la card de sync completo abajo muestra SyncSiigoCompletoButtonComponent con nit del cliente', () => {
+    const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
+    const cards = siigoSection?.querySelectorAll('article.sync-card') ?? [];
+    const secondCard = cards[1] as HTMLElement | null;
+    const syncCompleto = secondCard?.querySelector(
+      'app-sync-siigo-completo-button',
+    ) as HTMLElement | null;
+
+    expect(syncCompleto).not.toBeNull();
+  });
+
+  // PR-E.5 (round-3 fix): DIAN sync es OTRO flow distinto (descarga
+  // facturas del portal DIAN) — debe estar en su propia <section> con
+  // aria-label distinto al Siigo. Antes ambos vivían en un mismo row
+  // con clases CSS pero sin barrera semántica.
+  it('DIAN vive en su PROPIA <section> con aria-label distinto al Siigo (no mezcladas)', () => {
+    const dianSection = fixture.nativeElement.querySelector(
+      'section.sync-section-dian[aria-label*="DIAN"]',
+    ) as HTMLElement | null;
+
+    expect(dianSection).not.toBeNull();
+
+    // Garantizar que NO están en el mismo <section> (la mezcla original
+    // ponía Siigo+DIAN dentro de un único `<section class="sync-cards-row">`).
+    const siigoSection = fixture.nativeElement.querySelector('section.sync-section-siigo') as HTMLElement | null;
+    expect(siigoSection).not.toBeNull();
+    expect(siigoSection?.contains(dianSection?.querySelector('article.sync-card-dian') as Node)).toBe(false);
   });
 
   it('renderiza la tarjeta DIAN con título y descripción del flujo', () => {

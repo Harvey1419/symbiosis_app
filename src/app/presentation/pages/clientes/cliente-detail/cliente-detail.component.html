@@ -31,8 +31,38 @@
       <p>Error al cargar las facturas. Intenta de nuevo.</p>
     </div>
   } @else {
-    <!-- Sync cards: Siigo catalogs stay separate from the DIAN invoice flow. -->
-    <section class="sync-cards-row" aria-label="Opciones de sincronización">
+    <!-- PR-E.3 (round-3 fix): stacked sync UI.
+         - Siigo section: dos cards apiladas verticalmente — empresas
+           (per-firma) arriba + sync completo (4 catálogos del cliente)
+           abajo. Mismo patrón que `firma-clientes` y `factura-detail`.
+         - DIAN section: visualmente aparte con su propio <section> +
+           aria-label distinto al Siigo. Son flujos completamente
+           diferentes: Siigo = catálogos de Siigo, DIAN = facturas del
+           portal DIAN. Antes vivían en una misma `<section class="sync-cards-row">`
+           lado a lado — sin barrera semántica para screen readers. -->
+    <section class="sync-section-siigo" aria-label="Sincronización con Siigo">
+      <article class="sync-card sync-card-siigo-empresas" aria-labelledby="sync-siigo-empresas-title">
+        @if (firmaUser()) {
+          <app-sincronizar-siigo-card
+            [firmaUser]="firmaUser()"
+            [firmaId]="firmaId()"
+            (syncCompleted)="onEmpresasSynced($event)"
+          />
+        } @else {
+          <div class="sync-card sync-card-siigo-fallback" data-testid="siigo-empresas-missing-firma">
+            <div class="card-icon" aria-hidden="true">
+              <i class="pi pi-sync"></i>
+            </div>
+            <div class="card-body">
+              <h3 id="sync-siigo-empresas-title" class="card-title">Sincronizar empresas desde Siigo</h3>
+              <p class="card-description">
+                No tenemos la credencial de la firma para sincronizar la lista de empresas.
+              </p>
+            </div>
+          </div>
+        }
+      </article>
+
       <article class="sync-card sync-card-siigo" aria-labelledby="sync-siigo-title">
         <div class="card-icon" aria-hidden="true">
           <i class="pi pi-sync"></i>
@@ -51,7 +81,9 @@
           />
         </div>
       </article>
+    </section>
 
+    <section class="sync-section-dian" aria-label="Sincronización con DIAN">
       <article class="sync-card sync-card-dian" aria-labelledby="sync-dian-title">
         <div class="card-icon" aria-hidden="true">
           <i class="pi pi-cloud-download"></i>

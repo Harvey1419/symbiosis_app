@@ -929,3 +929,74 @@ describe('FacturaDetailComponent — SincronizarSiigoCard con firmaUser vacío (
     expect(card).toBeNull();
   });
 });
+
+// PR-E.4 (round-3 fix): la sync completo de 4 catálogos (proveedores,
+// puc, taxes, trazabilidad) que existe en `cliente-detail` debe estar
+// también disponible en `factura-detail` para que ambos pages ofrezcan
+// el mismo botón de "Sincronizar datos Siigo". Antes `factura-detail`
+// solo tenía el card per-firma (empresas) — los 4 catálogos del
+// cliente solo se podían disparar navegando a la lista de facturas.
+describe('FacturaDetailComponent — SyncSiigoCompletoButton availability (PR-E.4)', () => {
+  it('renderiza SyncSiigoCompletoButtonComponent junto al SincronizarSiigoCardComponent (Fix 4)', async () => {
+    (window as unknown as { happyDOM: { settings: { navigation: { disableChildFrameNavigation: boolean } } } })
+      .happyDOM.settings.navigation.disableChildFrameNavigation = true;
+
+    TestBed.resetTestingModule();
+    const mockActivatedRoute = {
+      snapshot: {
+        paramMap: {
+          get: (key: string) => {
+            if (key === 'nit') return '900123456';
+            if (key === 'id') return 'fac-789';
+            return null;
+          },
+        },
+        data: {
+          clienteContext: {
+            nombre_empresa: 'Cliente Test',
+            firma_id: 'firma-1',
+            firma_nombre: 'Firma Uno',
+            firma_user: 'firma@example.com',
+            tipo_siigo: 'contador',
+          },
+        },
+      },
+    };
+
+    const mockFacturaRepo = {
+      getById: vi.fn().mockReturnValue(of({ id: 'fac-789', status: 'pendiente', filas: [] })),
+      getPdf: vi.fn(),
+      updateItem: vi.fn(),
+      causar: vi.fn(),
+      finalizar: vi.fn(),
+      reabrir: vi.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [FacturaDetailComponent],
+      providers: [
+        provideAnimations(),
+        provideRouter([]),
+        provideHttpClient(),
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        { provide: FacturaRepository, useValue: mockFacturaRepo },
+        { provide: PucRepository, useValue: { getCuentasByGroups: vi.fn().mockReturnValue(of([])) } },
+        { provide: ImpuestosRepository, useValue: { getImpuestosByNit: vi.fn().mockReturnValue(of([])) } },
+        { provide: ConfirmService, useValue: { confirm: vi.fn().mockResolvedValue(true) } },
+      ],
+    }).compileComponents();
+
+    const fixture2 = TestBed.createComponent(FacturaDetailComponent);
+    fixture2.detectChanges();
+    await fixture2.whenStable();
+
+    const syncCompleto = fixture2.nativeElement.querySelector('app-sync-siigo-completo-button') as HTMLElement | null;
+    const empresasCard = fixture2.nativeElement.querySelector('app-sincronizar-siigo-card') as HTMLElement | null;
+
+    // Ambos componentes deben coexistir en la página para que el usuario
+    // pueda disparar CUALQUIER de los dos sincs sin tener que volver a
+    // /clientes/:nit. Mismo contrato visual que la lista.
+    expect(empresasCard).not.toBeNull();
+    expect(syncCompleto).not.toBeNull();
+  });
+});

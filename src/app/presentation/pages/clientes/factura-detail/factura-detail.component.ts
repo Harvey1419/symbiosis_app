@@ -37,6 +37,7 @@ import {
   isPaymentRow,
 } from '@app/shared';
 import { SincronizarSiigoCardComponent } from '@app/shared/sincronizar-siigo-card/sincronizar-siigo-card.component';
+import { SyncSiigoCompletoButtonComponent } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
 import { BackButtonComponent } from '@app/shared/back-button/back-button.component';
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 
@@ -78,6 +79,7 @@ interface CuentaOption {
     BackButtonComponent,
     AppBreadcrumbComponent,
     SincronizarSiigoCardComponent,
+    SyncSiigoCompletoButtonComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './factura-detail.component.html',

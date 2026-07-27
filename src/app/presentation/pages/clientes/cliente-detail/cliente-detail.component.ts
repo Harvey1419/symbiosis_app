@@ -31,6 +31,8 @@ import { PageHeaderComponent } from '@app/shared/page-header/page-header.compone
 import { AppBreadcrumbComponent } from '@app/shared/app-breadcrumb/app-breadcrumb.component';
 import { SyncSiigoCompletoButtonComponent } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
 import type { SiigoSyncResult } from '@app/presentation/components/sync-siigo-completo-button/sync-siigo-completo-button.component';
+import { SincronizarSiigoCardComponent } from '@app/shared/sincronizar-siigo-card/sincronizar-siigo-card.component';
+import type { SincronizarSiigoResult } from '@app/shared/sincronizar-siigo-card/sincronizar-siigo-card.component';
 import {
   SyncDianModalComponent,
   SyncDianSubmitPayload,
@@ -115,6 +117,7 @@ function mergeInvoicesById(
   imports: [
     CommonModule, FormsModule,
     SyncSiigoCompletoButtonComponent,
+    SincronizarSiigoCardComponent,
     SyncDianModalComponent,
     TableModule, ButtonModule, SelectModule, DatePickerModule, InputTextModule, ToggleSwitchModule, TooltipModule,
     ToastModule,
@@ -547,6 +550,23 @@ export class ClienteDetailComponent implements OnInit, OnDestroy {
     this.facturaRepo.getFacturas(this.nit()).subscribe({
       next: (data: Factura[]) => { this.facturas.set(data); },
       error: () => { /* swallow — la UI del button ya marcó el resultado */ },
+    });
+  }
+
+  /**
+   * PR-E.3 (round-3 fix): el card per-firma `SincronizarSiigoCardComponent`
+   * emite `syncCompleted` con `SincronizarSiigoResult` (shape de EMPRESAS,
+   * no del 4-catalog sync completo). Las empresas son per-firma: no
+   * cambian los PUC/proveedores/taxes del cliente actual, pero SÍ pueden
+   * refrescar la lista de clientes de la firma (que vive en otra
+   * página). Aquí recargamos igual las facturas por consistencia: si la
+   * operación tardó mucho el usuario probablemente quiere ver datos frescos.
+   */
+  onEmpresasSynced(result: SincronizarSiigoResult): void {
+    void result;
+    this.facturaRepo.getFacturas(this.nit()).subscribe({
+      next: (data: Factura[]) => { this.facturas.set(data); },
+      error: () => { /* swallow — la UI del card ya marcó el resultado */ },
     });
   }
 

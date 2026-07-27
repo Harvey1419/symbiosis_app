@@ -33,6 +33,15 @@
          [firmaId]="firmaId()"
          (syncCompleted)="onSiigoSyncCompleted()"
        />
+       <!-- PR-E.4 (round-3 fix): la sync completo de 4 catálogos
+            (proveedores, puc, taxes, trazabilidad) que existe en
+            `cliente-detail` debe estar también disponible aquí para
+            que el usuario pueda disparar CUALQUIER sync sin tener
+            que volver a la lista de facturas. Mismo botón, mismo
+            comportamiento X/4. -->
+       <app-sync-siigo-completo-button
+         [nit]="nit()"
+       />
      }
 
 
