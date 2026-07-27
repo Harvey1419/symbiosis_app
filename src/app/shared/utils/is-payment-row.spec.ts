@@ -53,7 +53,7 @@ describe('isPaymentRow (T5.2)', () => {
     expect(isPaymentRow(fila)).toBe(false);
   });
 
-  it('returns false for non-numeric strings (Number(\"foo\") is NaN, NaN > 0 is false)', () => {
+  it("returns false for non-numeric strings (Number('foo') is NaN, NaN > 0 is false)", () => {
     const fila = { descripcion: 'Bad string', credito: 'foo' } as unknown as FilaFactura;
     expect(isPaymentRow(fila)).toBe(false);
   });

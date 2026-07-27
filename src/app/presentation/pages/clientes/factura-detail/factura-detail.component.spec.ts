@@ -402,7 +402,7 @@ describe('FacturaDetailComponent — payment row differentiation (T5.8/T5.9)', (
         }),
       ),
       getPdf: vi.fn(),
-      updateItem: vi.fn().mockImplementation((_id: string, idx: number, _body: unknown) => {
+      updateItem: vi.fn().mockImplementation(() => {
         // Echo back the updated factura with whatever filas we received
         // plus a tiny tweak so callers can assert the PATCH fired.
         const updated = {
