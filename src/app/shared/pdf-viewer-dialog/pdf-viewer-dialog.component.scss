@@ -1,0 +1,19 @@
+:host {
+  display: contents;
+}
+
+.pdf-frame {
+  display: block;
+  width: 100%;
+  min-height: 70vh;
+  border: 0;
+}
+
+.pdf-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 12rem;
+  color: var(--p-text-muted-color);
+}

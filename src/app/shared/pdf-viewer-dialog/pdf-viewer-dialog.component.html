@@ -1,0 +1,24 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(92vw, 1100px)' }"
+  header="Vista previa del PDF"
+  styleClass="pdf-viewer-dialog"
+>
+  @if (pdfSource(); as source) {
+    <iframe
+      data-testid="pdf-frame"
+      [src]="source"
+      title="Vista previa del PDF"
+      class="pdf-frame"
+    ></iframe>
+  } @else {
+    <div class="pdf-empty-state" role="status">
+      <i class="pi pi-file-pdf" aria-hidden="true"></i>
+      <span>PDF no disponible</span>
+    </div>
+  }
+</p-dialog>
