@@ -5,6 +5,7 @@
   [draggable]="false"
   [resizable]="false"
   [style]="{ width: 'min(92vw, 1100px)' }"
+  [contentStyle]="{ height: '85vh', padding: '0', overflow: 'hidden' }"
   header="Vista previa del PDF"
   styleClass="pdf-viewer-dialog"
 >
@@ -14,6 +15,8 @@
       [src]="source"
       title="Vista previa del PDF"
       class="pdf-frame"
+      height="100%"
+      width="100%"
     ></iframe>
   } @else {
     <div class="pdf-empty-state" role="status">

@@ -2,11 +2,20 @@
   display: contents;
 }
 
+// The dialog body uses [contentStyle] to lock height at 85vh so the
+// iframe can grow inside it. The iframe itself MUST have an explicit
+// height (not just min-height) — when the iframe only declares
+// min-height and the dialog body has no fixed height, the iframe
+// collapses to 0 and the PDF appears as "text completely lost".
 .pdf-frame {
   display: block;
   width: 100%;
-  min-height: 70vh;
+  // Explicit height (matching the dialog content height) plus internal
+  // scrolling for tall PDFs keeps the modal viewport stable. The user
+  // can scroll inside the iframe for multi-page documents.
+  height: 85vh;
   border: 0;
+  background: var(--surface-card);
 }
 
 .pdf-empty-state {
