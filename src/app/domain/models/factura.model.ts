@@ -9,6 +9,12 @@ export interface FilaFactura {
   consecutivo?: string;
   descripcion?: string;
   justificacion?: string;
+  /**
+   * PR-C (issue 5): cantidad de unidades del ítem. Entero >= 1.
+   * Optional porque las filas pre-PR-C en la DB no tienen este campo;
+   * el renderer cae a 1 cuando es undefined/null.
+   */
+  cantidad?: number | null;
   iva_code?: string | null;
   rete_code?: string | null;
 }

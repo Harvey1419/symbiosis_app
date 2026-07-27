@@ -180,6 +180,61 @@ describe('FacturaDetailComponent — Confianza semáforo column', () => {
     expect(descriptions).toEqual(['Item A', 'Item B', 'Item C', 'Item D']);
   });
 
+  // PR-C (issue 5): cantidad column. The items table should show
+  // fila.cantidad when set, falling back to "1" for legacy filas.
+  function cantidadCells(): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('.cantidad-cell'));
+  }
+
+  it('PR-C: Cantidad column header is present in the items table', async () => {
+    await configure({
+      filas: [{ descripcion: 'Item A', debito: 100, confianza: 90 }],
+    });
+
+    const headers = Array.from(fixture.nativeElement.querySelectorAll('th')).map(
+      (th: HTMLElement) => th.textContent?.trim() ?? '',
+    );
+    expect(headers).toContain('Cantidad');
+  });
+
+  it('PR-C: renders fila.cantidad when set (3, 5, etc.)', async () => {
+    await configure({
+      filas: [
+        { descripcion: 'Item A', debito: 100, cantidad: 3 },
+        { descripcion: 'Item B', debito: 50, cantidad: 5 },
+      ],
+    });
+
+    const cells = cantidadCells();
+    expect(cells.length).toBe(2);
+    expect(cells[0].textContent?.trim()).toBe('3');
+    expect(cells[1].textContent?.trim()).toBe('5');
+  });
+
+  it('PR-C: falls back to 1 when fila.cantidad is undefined (legacy filas)', async () => {
+    await configure({
+      filas: [
+        { descripcion: 'Item A', debito: 100 /* cantidad undefined */ },
+      ],
+    });
+
+    const cells = cantidadCells();
+    expect(cells.length).toBe(1);
+    expect(cells[0].textContent?.trim()).toBe('1');
+  });
+
+  it('PR-C: falls back to 1 when fila.cantidad is null (also legacy filas)', async () => {
+    await configure({
+      filas: [
+        { descripcion: 'Item A', debito: 100, cantidad: null },
+      ],
+    });
+
+    const cells = cantidadCells();
+    expect(cells.length).toBe(1);
+    expect(cells[0].textContent?.trim()).toBe('1');
+  });
+
   describe('FacturaDetailComponent — lazy Ver PDF action', () => {
   async function configureForPdf(): Promise<void> {
     await configure({

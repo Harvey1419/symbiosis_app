@@ -264,7 +264,9 @@
                 }
               </td>
 
-              <td class="num-col">1</td>
+              <!-- PR-C (issue 5): render fila.cantidad with fallback to 1
+                   para filas pre-PR-C (sin el campo en la DB). -->
+              <td class="num-col cantidad-cell">{{ fila.cantidad ?? 1 }}</td>
               <td class="num-col">
                 <span class="valor-total">
                   @if ((fila.debito ?? 0) > 0) {

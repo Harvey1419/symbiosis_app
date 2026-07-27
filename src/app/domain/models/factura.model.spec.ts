@@ -148,4 +148,44 @@ describe('factura.model — payment-row contract (T5.1)', () => {
     expect(pdf.content_type).toBe('application/pdf');
     expect(factura.id).toBe('fac-1');
   });
+
+  // PR-C (issue 5): the FilaFactura shape gains `cantidad` to mirror
+  // the backend's FilaRow.cantidad (added in api/ feat(commit 654c3b0)).
+  // The Cantidad column in the items table reads from this field.
+  // Pre-PR-C filas from the DB have no `cantidad`, so the field is
+  // optional and the renderer falls back to 1.
+  it('PR-C: FilaFactura accepts an optional cantidad number (>= 1)', () => {
+    const filaWithCantidad: FilaFactura = {
+      descripcion: 'Resma papel carta',
+      cuenta: '51952501',
+      debito: 125_000,
+      credito: 0,
+      cantidad: 5,
+    };
+
+    expect(filaWithCantidad.cantidad).toBe(5);
+  });
+
+  it('PR-C: FilaFactura allows cantidad to be null (filas pre-PR-C en la DB)', () => {
+    const legacyRow: FilaFactura = {
+      descripcion: 'Línea pre-PR-C',
+      cuenta: '51050301',
+      debito: 100,
+      credito: 0,
+      cantidad: null,
+    };
+
+    expect(legacyRow.cantidad).toBeNull();
+  });
+
+  it('PR-C: FilaFactura allows cantidad to be absent (renderer falls back to 1)', () => {
+    const noCantidadRow: FilaFactura = {
+      descripcion: 'Línea sin campo',
+      cuenta: '51050301',
+      debito: 100,
+      credito: 0,
+    };
+
+    expect(noCantidadRow.cantidad).toBeUndefined();
+  });
 });
